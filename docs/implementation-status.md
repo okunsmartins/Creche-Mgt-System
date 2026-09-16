@@ -16,13 +16,13 @@ code is marked 🔵 (reusable, NOT crèche-complete). Everything else is ⬜ out
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **697 passed** / 52 files (incl. 18 FEE-05, 13 FEE-03/CFG-01) |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **715 passed** / 53 files (incl. 18 FEE-05, 13 FEE-03/CFG-01, 18 CF-01) |
 | Type-check | `npm run type-check` | ✅ exit 0, clean |
 | Lint | `npm run lint` | ✅ exit 0, clean |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
 
-Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-funding-config` (stacked on FEE-05), `feature/CFG-01-onboarding-settings` (stacked on FEE-03, current). Not pushed — **no GitHub remote yet.**
+Branches: `feature/FEE-05-subvention-engine` (base `main`) → `feature/FEE-03-funding-config` → `feature/CFG-01-onboarding-settings` → `feature/CF-01-custom-fields` (current), each stacked on the previous. Not pushed — **no GitHub remote yet.**
 
 ---
 
@@ -46,6 +46,12 @@ Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-fund
 - **What it does (Layer 2 of dynamic-onboarding-fields.md):** the finite "both ways" choices as per-tenant settings — `fee_model` (FLAT_PER_CHILD / PER_SESSION_TYPE), `gross_fee_basis` (BEFORE/AFTER_SUBSIDY), `deposits_enabled` — added to `tenant_funding_settings` with safe defaults (standard onboarding). Zod schema + defaults extended.
 - **Verified:** funding-config suite 13 tests (incl. new toggle accept/reject cases); type-check + lint clean.
 - **⚠️ Not complete:** migration 069 **written but NOT applied** (no DB) — schema/CHECKs unverified; **no settings UI yet** (the radio/dropdown screen is the remaining CFG-01 work, needs the app running).
+
+### CF-01 — Custom fields data layer (code + tests verified; migration NOT applied)
+- **Files:** `supabase/migrations/070_custom_fields.sql`, `src/lib/custom-fields/schema.ts`, `src/lib/custom-fields/__tests__/schema.test.ts`.
+- **What it does (Layer 3):** `custom_field_definitions` (tenant-scoped: entity child/parent/staff/room, type, options, required, `promoted_to`, `affects_billing`) + `custom_fields JSONB` on students/profiles/teachers/classes. Pure logic: value validation per type, slug generation, sensitive-key blocking (PPSN/IBAN/etc.), and the **promotion type-contract** (`canPromoteTo` — billing needs number, filter needs enum/checkbox, compliance needs date/enum; sensitive fields barred from messaging/reporting).
+- **Verified:** 18 tests; type-check + lint clean.
+- **⚠️ Not complete:** migration 070 **written but NOT applied** (no DB) — table/JSONB columns/grants/RLS unverified. **Remaining CF work:** CF-02 dynamic form renderer, CF-03 import-wizard "create/map custom field" + near-duplicate detection, CF-04 promotion engine (wire targets + audit), CF-05 materialise-to-core. No UI yet.
 
 ### Project setup
 - Repo forked from Skool Bido (`scoil-bhride-portal`); secrets (`.env.local`, Revolut key) and artifacts excluded; fresh git history; planning/design docs added under `docs/{adr,design,backlog}`.
