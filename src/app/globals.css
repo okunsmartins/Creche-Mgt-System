@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f3f0fb;
+    --surface: #ffffff;
+    --surface-raised: #f7f4fd;
+    --text-primary: #322c47;
+    --text-secondary: #635c78;
+    --text-muted: #9993ac;
+    --border: #e8e2f6;
+    --primary: #8b6fe0;
+    --primary-hover: #7a5cd6;
+    --primary-light: #ece6fc;
+    --secondary: #ef8fb3;
+    --secondary-hover: #e97aa4;
+    --secondary-light: #fce7ef;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-text-primary antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-primary;
+  }
+
+  .skip-to-content {
+    @apply absolute -top-full left-4 z-50 rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all focus:top-4;
+  }
+}
+
+@keyframes nav-progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 82%;
+  }
+}
+
+@layer components {
+  /* Card — dark surface with subtle border */
+  .card {
+    @apply rounded-2xl border border-border bg-surface shadow-card;
+  }
+
+  .section-heading {
+    @apply text-xl font-semibold text-text-primary;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-text-primary;
+  }
+
+  .input-base {
+    @apply block w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  /* Soft pastel stat tiles — playful lavender theme */
+  .card-glow-green {
+    background: linear-gradient(135deg, #f1ecfd 0%, #e7dffb 100%);
+    border: 1px solid #ddd1f7;
+  }
+  .card-glow-teal {
+    background: linear-gradient(135deg, #fdeef4 0%, #fbe0ec 100%);
+    border: 1px solid #f7cfdf;
+  }
+  .card-glow-amber {
+    background: linear-gradient(135deg, #fdf6e3 0%, #fbeecb 100%);
+    border: 1px solid #f5e3b4;
+  }
+  .card-glow-blue {
+    background: linear-gradient(135deg, #eaf1fd 0%, #dbe8fb 100%);
+    border: 1px solid #cbddf7;
+  }
+
+  /* Purple gradient sidebar — signature element */
+  .sidebar-gradient {
+    background: linear-gradient(180deg, #8b6fe0 0%, #7a5cd6 55%, #6f4fce 100%);
+  }
+}
+
+/* ── Print ─────────────────────────────────────────────────────────────────
+   Print only the page content. Hides the app chrome (site/admin headers = the
+   <header>s, the sidebar = <aside>, and anything tagged .no-print), and expands
+   the fixed-height, scroll-locked shell so tables paginate across pages. Used by
+   the Print buttons on attendance/reports pages. */
+@media print {
+  header,
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  .h-screen {
+    height: auto !important;
+  }
+  .overflow-hidden,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

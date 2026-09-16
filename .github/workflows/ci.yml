@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# NOTE: This workflow assumes the git repository is initialised at the project
+# root (i.e. the directory that contains package.json, next.config.ts, etc.).
+# If you instead create the repo one level up and keep this project in a
+# subdirectory, add `working-directory: '<subdirectory>'` to every step and
+# update `cache-dependency-path` accordingly.
+
+jobs:
+  # ─── Static analysis ──────────────────────────────────────────────────────────
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+  # ─── Unit tests ───────────────────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npx vitest run
+
+  # ─── Production build ─────────────────────────────────────────────────────────
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, unit-tests]
+    env:
+      # Build-time env vars — use placeholder values for CI build verification.
+      # The build does not connect to external services; only validates that it compiles.
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
+      NEXT_PUBLIC_APP_URL: https://placeholder.example.com
+      NEXT_PUBLIC_SCHOOL_ID: 00000000-0000-0000-0000-000000000001
+      # Server-only vars — needed at build time only if used in generateStaticParams
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      RESEND_API_KEY: re_placeholder
+      EMAIL_FROM_ADDRESS: noreply@placeholder.example.com
+      EMAIL_FROM_NAME: Placeholder
+      SCHOOL_NOTIFICATION_EMAIL: school@placeholder.example.com
+      APP_ENV: poc
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  # ─── E2E tests (preview environment only) ────────────────────────────────────
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    # Only run e2e when test credentials are available (set as repository secrets)
+    if: >
+      github.event_name == 'push' &&
+      vars.E2E_ENABLED == 'true'
+    needs: [build]
+    env:
+      PLAYWRIGHT_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_PARENT_EMAIL: ${{ secrets.E2E_PARENT_EMAIL }}
+      E2E_PARENT_PASSWORD: ${{ secrets.E2E_PARENT_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run e2e tests
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

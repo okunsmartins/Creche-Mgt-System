@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80" role="img" aria-label="Scoil Demo crest">
+  <!-- Neutral demo crest for multi-school outreach -->
+  <circle cx="40" cy="40" r="38" fill="#48347d" stroke="#d4a017" stroke-width="3"/>
+  <text x="40" y="36" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#d4a017" text-anchor="middle">SCOIL</text>
+  <text x="40" y="50" font-family="Georgia, serif" font-size="11" font-weight="bold" fill="#d4a017" text-anchor="middle">DEMO</text>
+  <text x="40" y="63" font-family="Georgia, serif" font-size="6.5" fill="#ffffff" text-anchor="middle">PORTAL</text>
+</svg>
