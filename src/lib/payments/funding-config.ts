@@ -135,19 +135,34 @@ export const REFERENCE_FUNDING_VERSIONS: readonly FundingSchemeVersion[] = [
 export const BILLING_MODELS = ['BILL_ON_CONTRACTED', 'RECONCILE_ON_ATTENDANCE'] as const
 export type BillingModel = (typeof BILLING_MODELS)[number]
 
+/** CFG-01 onboarding toggles — the finite "both ways" choices (mig 069). */
+export const FEE_MODELS = ['FLAT_PER_CHILD', 'PER_SESSION_TYPE'] as const
+export type FeeModel = (typeof FEE_MODELS)[number]
+
+export const GROSS_FEE_BASES = ['BEFORE_SUBSIDY', 'AFTER_SUBSIDY'] as const
+export type GrossFeeBasis = (typeof GROSS_FEE_BASES)[number]
+
 export const tenantFundingSettingsSchema = z.object({
   ecceEnabled: z.boolean(),
   ncsEnabled: z.boolean(),
   higherCapitationDefault: z.boolean(),
   subventionBillingModel: z.enum(BILLING_MODELS),
+  // CFG-01 onboarding toggles
+  feeModel: z.enum(FEE_MODELS),
+  grossFeeBasis: z.enum(GROSS_FEE_BASES),
+  depositsEnabled: z.boolean(),
 })
 
 export type TenantFundingSettings = z.infer<typeof tenantFundingSettingsSchema>
 
-/** Safe defaults for a new tenant (ADR-002: bill on contracted, true-up later). */
+/** Safe defaults for a new tenant — the standard onboarding approach
+ *  (ADR-002: bill on contracted, true-up later; flat fee; gross before subsidy). */
 export const DEFAULT_TENANT_FUNDING_SETTINGS: TenantFundingSettings = {
   ecceEnabled: true,
   ncsEnabled: true,
   higherCapitationDefault: false,
   subventionBillingModel: 'BILL_ON_CONTRACTED',
+  feeModel: 'FLAT_PER_CHILD',
+  grossFeeBasis: 'BEFORE_SUBSIDY',
+  depositsEnabled: false,
 }

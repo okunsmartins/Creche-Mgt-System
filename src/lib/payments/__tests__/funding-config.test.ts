@@ -121,4 +121,23 @@ describe('tenantFundingSettingsSchema', () => {
     const bad = { ...DEFAULT_TENANT_FUNDING_SETTINGS, subventionBillingModel: 'WHENEVER' }
     expect(tenantFundingSettingsSchema.safeParse(bad).success).toBe(false)
   })
+
+  it('accepts the non-default onboarding toggles (CFG-01)', () => {
+    const cfg = {
+      ...DEFAULT_TENANT_FUNDING_SETTINGS,
+      feeModel: 'PER_SESSION_TYPE',
+      grossFeeBasis: 'AFTER_SUBSIDY',
+      depositsEnabled: true,
+    }
+    expect(tenantFundingSettingsSchema.safeParse(cfg).success).toBe(true)
+  })
+
+  it('rejects unknown fee model and gross-fee basis', () => {
+    expect(
+      tenantFundingSettingsSchema.safeParse({ ...DEFAULT_TENANT_FUNDING_SETTINGS, feeModel: 'PER_HOUR' }).success,
+    ).toBe(false)
+    expect(
+      tenantFundingSettingsSchema.safeParse({ ...DEFAULT_TENANT_FUNDING_SETTINGS, grossFeeBasis: 'MIDWAY' }).success,
+    ).toBe(false)
+  })
 })

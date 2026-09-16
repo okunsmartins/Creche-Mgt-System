@@ -16,13 +16,13 @@ code is marked 🔵 (reusable, NOT crèche-complete). Everything else is ⬜ out
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **695 passed** / 52 files (incl. 18 FEE-05, 11 FEE-03) |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **697 passed** / 52 files (incl. 18 FEE-05, 13 FEE-03/CFG-01) |
 | Type-check | `npm run type-check` | ✅ exit 0, clean |
 | Lint | `npm run lint` | ✅ exit 0, clean |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
 
-Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-funding-config` (stacked on FEE-05, current). Not pushed — **no GitHub remote yet.**
+Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-funding-config` (stacked on FEE-05), `feature/CFG-01-onboarding-settings` (stacked on FEE-03, current). Not pushed — **no GitHub remote yet.**
 
 ---
 
@@ -40,6 +40,12 @@ Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-fund
 - **Files:** `src/lib/payments/funding-config.ts`, `src/lib/payments/__tests__/funding-config.test.ts`, `supabase/migrations/068_funding_config.sql`.
 - **Verified (11 tests):** effective-dated `resolveSchemeVersion` (from-inclusive/to-exclusive, null-before, latest-on-overlap), `toIsoDate`, mappers to the FEE-05 `EcceConfig` + NCS rate, tenant-settings zod schema, and an **integration test** feeding the resolved reference config into FEE-05 to reproduce the €96.50 worked example.
 - **⚠️ Not complete:** migration `068_funding_config.sql` (tables `funding_scheme_versions`, `tenant_funding_settings`, grants, RLS, 2025/26 seed) is **written but NOT applied to any database** (no Supabase project yet) — so the DB schema, grants, RLS and cross-tenant behaviour are **unverified**. Seed rates flagged `CONFIRM`. No server actions/UI yet.
+
+### CFG-01 — Onboarding config toggles (code + tests verified; migration NOT applied)
+- **Files:** `supabase/migrations/069_onboarding_settings.sql`, extends `src/lib/payments/funding-config.ts` + its test.
+- **What it does (Layer 2 of dynamic-onboarding-fields.md):** the finite "both ways" choices as per-tenant settings — `fee_model` (FLAT_PER_CHILD / PER_SESSION_TYPE), `gross_fee_basis` (BEFORE/AFTER_SUBSIDY), `deposits_enabled` — added to `tenant_funding_settings` with safe defaults (standard onboarding). Zod schema + defaults extended.
+- **Verified:** funding-config suite 13 tests (incl. new toggle accept/reject cases); type-check + lint clean.
+- **⚠️ Not complete:** migration 069 **written but NOT applied** (no DB) — schema/CHECKs unverified; **no settings UI yet** (the radio/dropdown screen is the remaining CFG-01 work, needs the app running).
 
 ### Project setup
 - Repo forked from Skool Bido (`scoil-bhride-portal`); secrets (`.env.local`, Revolut key) and artifacts excluded; fresh git history; planning/design docs added under `docs/{adr,design,backlog}`.
