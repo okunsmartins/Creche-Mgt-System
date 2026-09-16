@@ -16,13 +16,13 @@ code is marked 🔵 (reusable, NOT crèche-complete). Everything else is ⬜ out
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **684 passed** / 51 files (incl. 18 FEE-05) |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **695 passed** / 52 files (incl. 18 FEE-05, 11 FEE-03) |
 | Type-check | `npm run type-check` | ✅ exit 0, clean |
 | Lint | `npm run lint` | ✅ exit 0, clean |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
 
-Branch: `feature/FEE-05-subvention-engine` (base `main`). Not pushed — **no GitHub remote yet.**
+Branches: `feature/FEE-05-subvention-engine` (base `main`), `feature/FEE-03-funding-config` (stacked on FEE-05, current). Not pushed — **no GitHub remote yet.**
 
 ---
 
@@ -35,6 +35,11 @@ Branch: `feature/FEE-05-subvention-engine` (base `main`). Not pushed — **no Gi
 - **Tests:** 18 passing incl. the design worked example (€150 gross → €96.50 net; €69 ECCE + €53.50 NCS receivable), single-scheme, caps, no-profit/never-negative, rounding, exact period sums, property loop.
 - **⚠️ Data caveat:** rate constants (`NCS_UNIVERSAL_HOURLY_RATE_CENTS`, `DEFAULT_ECCE_CONFIG`) are **2025/26 reference values flagged `CONFIRM`** — must be verified with a Pobal/finance SME before go-live and normally sourced from effective-dated config (FEE-03), not these fallbacks.
 - **Not yet:** not wired to any DB, invoice, or UI. It is a calculation library only.
+
+### FEE-03 — Funding config (code + tests verified; migration NOT applied)
+- **Files:** `src/lib/payments/funding-config.ts`, `src/lib/payments/__tests__/funding-config.test.ts`, `supabase/migrations/068_funding_config.sql`.
+- **Verified (11 tests):** effective-dated `resolveSchemeVersion` (from-inclusive/to-exclusive, null-before, latest-on-overlap), `toIsoDate`, mappers to the FEE-05 `EcceConfig` + NCS rate, tenant-settings zod schema, and an **integration test** feeding the resolved reference config into FEE-05 to reproduce the €96.50 worked example.
+- **⚠️ Not complete:** migration `068_funding_config.sql` (tables `funding_scheme_versions`, `tenant_funding_settings`, grants, RLS, 2025/26 seed) is **written but NOT applied to any database** (no Supabase project yet) — so the DB schema, grants, RLS and cross-tenant behaviour are **unverified**. Seed rates flagged `CONFIRM`. No server actions/UI yet.
 
 ### Project setup
 - Repo forked from Skool Bido (`scoil-bhride-portal`); secrets (`.env.local`, Revolut key) and artifacts excluded; fresh git history; planning/design docs added under `docs/{adr,design,backlog}`.
@@ -66,7 +71,7 @@ require the domain rename + fee wiring before they count. Do **not** report thes
 **P3 fee & subvention (remaining tickets — see backlog):**
 - ⬜ FEE-01 service rates & fee schedules (schema)
 - ⬜ FEE-02 child funding registrations (CHICK, PPSN encrypted)
-- ⬜ FEE-03 effective-dated funding config + tenant settings (**feeds real rates into FEE-05**)
+- 🟡 FEE-03 effective-dated funding config + tenant settings — **code + 11 tests done; migration 068 written but NOT applied/verified against a DB; no server actions/UI**
 - ⬜ FEE-04 invoice + line ledger + state machine
 - ⬜ FEE-06 invoice generation job
 - ⬜ FEE-07 parent transparent breakdown view
