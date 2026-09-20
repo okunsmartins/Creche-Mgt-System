@@ -23,7 +23,7 @@ export default async function PlatformLayout({ children }: { children: ReactNode
       </Link>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary">Platform</h1>
-        <p className="mt-1 text-sm text-text-muted">Owner overview of Skool Bido.</p>
+        <p className="mt-1 text-sm text-text-muted">Owner overview of Crèche Management System.</p>
       </div>
       <PlatformTabs />
       <div className="mt-8">{children}</div>

@@ -130,7 +130,7 @@ export function AdminSidebar({ user, logoUrl, isOwner = false }: AdminSidebarPro
     !allHrefs.some((other) => other !== href && other.startsWith(`${href}/`) && matchesPath(other))
   const platformActive = matchesPath('/platform')
 
-  const brandName = user.schoolName ?? 'Skool Bido'
+  const brandName = user.schoolName ?? 'Crèche Management System'
   const firstName = user.profile?.firstName ?? ''
   const lastName = user.profile?.lastName ?? ''
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : user.email

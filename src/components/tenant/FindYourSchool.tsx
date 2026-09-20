@@ -21,7 +21,7 @@ export function FindYourSchool() {
         <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
           Open your school&apos;s portal using the link they shared with you — usually your
           school&apos;s own web address, or the payment link in a message from the school. If
-          you&apos;re not sure, ask your school office for their Skool Bido link.
+          you&apos;re not sure, ask your school office for their Crèche Management System link.
         </p>
       </div>
 

@@ -157,7 +157,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div
             className="relative flex flex-col justify-center overflow-hidden rounded-3xl px-6 py-10 shadow-card sm:px-10 md:min-h-[466px] md:px-14 md:py-14"
-            style={{ background: 'linear-gradient(135deg, #a68bf2 0%, #8b6fe0 52%, #7350cf 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #3fc5c0 0%, #14b3ad 52%, #0f9b96 100%)' }}
           >
             {/* Soft decorative blobs */}
             <div

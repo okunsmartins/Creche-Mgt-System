@@ -41,7 +41,7 @@ export function TeacherSidebar({ user, logoUrl }: { user: SessionUser; logoUrl?:
   const initials = user.profile
     ? `${user.profile.firstName[0] ?? ''}${user.profile.lastName[0] ?? ''}`.toUpperCase()
     : user.email.slice(0, 2).toUpperCase()
-  const brandName = user.schoolName ?? 'Skool Bido'
+  const brandName = user.schoolName ?? 'Crèche Management System'
 
   return (
     <>

@@ -13,8 +13,8 @@ const sans = Nunito({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Skool Bido',
-    default: 'Skool Bido — online school payments',
+    template: '%s | Crèche Management System',
+    default: 'Crèche Management System — online school payments',
   },
   description: 'Securely pay for school activities, trips, books and uniforms.',
   robots: {
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#8b6fe0',
+  themeColor: '#14b3ad',
 }
 
 export default function RootLayout({

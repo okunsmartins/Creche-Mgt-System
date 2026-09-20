@@ -10,42 +10,51 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand palette — soft violet / lavender
+        // Brand palette — cheerful early-years (teal primary, playful accents)
         brand: {
-          purple: {
-            50: '#f6f3fe',
-            100: '#ece6fc',
-            200: '#dbcff9',
-            300: '#c3aef3',
-            400: '#a888ea',
-            500: '#8b6fe0',
-            600: '#7a5cd6',
-            700: '#6949be',
-            800: '#573c9b',
-            900: '#48347d',
-            950: '#2e2050',
+          teal: {
+            50: '#e9faf8',
+            100: '#d0f4f1',
+            200: '#a3e9e3',
+            300: '#6fdad2',
+            400: '#3fc5c0',
+            500: '#17b0ae',
+            600: '#0f9b96',
+            700: '#0c7e7a',
+            800: '#0b6360',
+            900: '#0c5250',
+            950: '#053331',
           },
         },
-        // Semantic colour aliases — light lavender theme
+        // Playful accent colours for feature tiles / category chips
+        accent: {
+          sunny: '#ffca3a',
+          coral: '#ff6b6b',
+          pink: '#ff7fa8',
+          leaf: '#8ac926',
+          sky: '#4cc9f0',
+          grape: '#b57edc',
+        },
+        // Semantic colour aliases — bright, warm, cream-based theme
         primary: {
-          DEFAULT: '#8b6fe0',
+          DEFAULT: '#14b3ad',
           foreground: '#ffffff',
-          hover: '#7a5cd6',
-          light: '#ece6fc',
+          hover: '#0f9b96',
+          light: '#d6f4f2',
         },
         secondary: {
-          DEFAULT: '#ef8fb3',
+          DEFAULT: '#ff7fa8',
           foreground: '#ffffff',
-          hover: '#e97aa4',
-          light: '#fce7ef',
+          hover: '#f4638f',
+          light: '#ffe4ee',
         },
-        background: '#f3f0fb',
+        background: '#fff8ee',
         surface: '#ffffff',
-        'surface-raised': '#f7f4fd',
-        'text-primary': '#322c47',
-        'text-secondary': '#635c78',
-        'text-muted': '#9993ac',
-        border: '#e8e2f6',
+        'surface-raised': '#fff3e0',
+        'text-primary': '#2b3a4a',
+        'text-secondary': '#5c6b7a',
+        'text-muted': '#93a0ac',
+        border: '#efe3d0',
         // Status colours — light-theme tuned (DEFAULT readable on white, light = pale tint)
         success: {
           DEFAULT: '#16a34a',
@@ -78,10 +87,10 @@ const config: Config = {
         '3xl': '1.75rem',
       },
       boxShadow: {
-        card: '0 4px 16px -2px rgb(139 111 224 / 0.10), 0 2px 6px -2px rgb(139 111 224 / 0.08)',
-        'card-hover': '0 0 0 1px rgb(139 111 224 / 0.22), 0 14px 34px -6px rgb(139 111 224 / 0.24)',
-        glow: '0 0 28px 0 rgb(139 111 224 / 0.25)',
-        sidebar: '4px 0 30px 0 rgb(139 111 224 / 0.16)',
+        card: '0 4px 16px -2px rgb(20 179 173 / 0.10), 0 2px 6px -2px rgb(20 179 173 / 0.08)',
+        'card-hover': '0 0 0 1px rgb(20 179 173 / 0.22), 0 14px 34px -6px rgb(20 179 173 / 0.24)',
+        glow: '0 0 28px 0 rgb(20 179 173 / 0.25)',
+        sidebar: '4px 0 30px 0 rgb(20 179 173 / 0.16)',
       },
       keyframes: {
         'nav-progress': {

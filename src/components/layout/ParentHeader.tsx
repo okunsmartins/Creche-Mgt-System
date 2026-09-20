@@ -87,7 +87,7 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
   // Fall back to the product name (never "Admin Portal") so an unattached
   // account never mislabels the crest. Once the school is attached this shows
   // the school's own name + crest.
-  const brandName = user.schoolName ?? 'Skool Bido'
+  const brandName = user.schoolName ?? 'Crèche Management System'
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm">

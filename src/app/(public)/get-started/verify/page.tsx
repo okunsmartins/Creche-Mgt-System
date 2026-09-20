@@ -24,7 +24,7 @@ export default async function VerifyPortalPage({
   return (
     <section
       className="relative overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at top, #ece6fc 0%, #f3f0fb 62%)' }}
+      style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
     >
       <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-border bg-surface p-8">
