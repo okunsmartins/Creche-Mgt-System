@@ -31,6 +31,7 @@ import {
   Building2,
   FileText,
   Banknote,
+  Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
 import { signOutAction } from '@/lib/auth/actions'
@@ -55,6 +56,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Students',
     items: [
       { href: '/admin/students', label: 'Students', icon: Users },
+      { href: '/admin/import', label: 'Import', icon: Upload },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
       { href: '/admin/link-requests', label: 'Link Requests', icon: ChevronRight },
