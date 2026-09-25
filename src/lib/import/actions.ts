@@ -7,7 +7,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { schoolCodePrefix } from '@/lib/utils'
 import { logger } from '@/lib/logging'
 import { CHILD_FIELDS, autoMap } from './fields'
-import { parseWorkbook, MAX_IMPORT_ROWS } from './parse'
+import { parseSpreadsheet, MAX_IMPORT_ROWS } from './parse'
 import { validateRows, type ColumnMapping } from './validate'
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
@@ -31,7 +31,7 @@ export async function parseImportAction(formData: FormData): Promise<ParseResult
 
   try {
     const buf = await file.arrayBuffer()
-    const { headers, rows, sheetName } = parseWorkbook(buf)
+    const { headers, rows, sheetName } = parseSpreadsheet(buf, file.name)
     if (headers.length === 0) return { ok: false, error: 'No columns found in the first sheet.' }
     if (rows.length === 0) return { ok: false, error: 'No data rows found under the header row.' }
     return { ok: true, headers, rows, autoMapping: autoMap(headers, CHILD_FIELDS), sheetName }

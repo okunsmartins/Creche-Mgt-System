@@ -42,6 +42,12 @@ describe('normaliseDate', () => {
     expect(normaliseDate('foo')).toBeNull()
     expect(normaliseDate('2023-13-01')).toBeNull()
   })
+
+  it('handles ambiguous DD/MM dates as day/month (regression: 02/11/2022)', () => {
+    // Both parts <= 12; must be read as 2 Nov 2022, never coerced to US M/D.
+    expect(normaliseDate('02/11/2022')).toBe('2022-11-02')
+    expect(normaliseDate('05/06/2021')).toBe('2021-06-05')
+  })
 })
 
 describe('validateRows', () => {
