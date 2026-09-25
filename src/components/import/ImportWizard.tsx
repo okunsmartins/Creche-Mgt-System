@@ -56,6 +56,24 @@ export function ImportWizard() {
     })
   }
 
+  function downloadErrorReport() {
+    const failed = summary?.rowErrors ?? []
+    if (failed.length === 0) return
+    const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+    const lines = [[...headers, 'Import errors'].map(esc).join(',')]
+    for (const re of failed) {
+      const orig = rows[re.rowNumber - 1] ?? []
+      lines.push([...headers.map((_, i) => esc(orig[i] ?? '')), esc(re.errors.join('; '))].join(','))
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'import-errors.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   // ─── Step 1: upload ─────────────────────────────────────────────────────────
   if (step === 'upload') {
     return (
@@ -63,6 +81,17 @@ export function ImportWizard() {
         <p className="text-sm text-text-secondary">
           Upload your existing spreadsheet (.csv or .xlsx). You&apos;ll map your columns to the
           right fields on the next step — no need to rename anything first.
+        </p>
+        <p className="text-sm text-text-muted">
+          Starting from scratch?{' '}
+          <a
+            href="/creche-children-import-template.csv"
+            download
+            className="font-semibold text-primary hover:underline"
+          >
+            Download the template
+          </a>
+          .
         </p>
         <input
           type="file"
@@ -95,12 +124,25 @@ export function ImportWizard() {
         </div>
         {summary.rowErrors && summary.rowErrors.length > 0 && (
           <div className="rounded-lg border border-error/30 bg-error-light p-3 text-sm">
-            <p className="font-medium text-text-primary">Rows not imported:</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-medium text-text-primary">Rows not imported:</p>
+              <button
+                onClick={downloadErrorReport}
+                className="shrink-0 rounded-lg border border-border bg-surface px-3 py-1 text-xs font-semibold text-text-secondary hover:bg-surface-raised"
+              >
+                Download error report (CSV)
+              </button>
+            </div>
             <ul className="mt-1 space-y-0.5 text-text-secondary">
               {summary.rowErrors.slice(0, 20).map((re) => (
                 <li key={re.rowNumber}>Row {re.rowNumber}: {re.errors.join('; ')}</li>
               ))}
             </ul>
+            {summary.rowErrors.length > 20 && (
+              <p className="mt-1 text-xs text-text-muted">
+                Showing 20 of {summary.rowErrors.length}. Download the full report above.
+              </p>
+            )}
           </div>
         )}
         <Link href="/admin/students" className="inline-block text-sm font-semibold text-primary hover:underline">
