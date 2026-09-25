@@ -6,7 +6,7 @@ import { requireFeature } from '@/lib/subscriptions/access'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { schoolCodePrefix } from '@/lib/utils'
 import { logger } from '@/lib/logging'
-import { CHILD_FIELDS, autoMap } from './fields'
+import { CHILD_FIELDS, STAFF_FIELDS, DATASET_FIELDS, autoMap, type ImportDataset } from './fields'
 import { parseSpreadsheet, MAX_IMPORT_ROWS } from './parse'
 import { validateRows, type ColumnMapping } from './validate'
 
@@ -17,9 +17,13 @@ export type ParseResult =
   | { ok: false; error: string }
 
 /** Step 1: parse an uploaded .csv/.xlsx → headers, rows, and a suggested mapping. */
-export async function parseImportAction(formData: FormData): Promise<ParseResult> {
+export async function parseImportAction(
+  formData: FormData,
+  dataset: ImportDataset = 'child',
+): Promise<ParseResult> {
   const admin = await requireAdmin()
   await requireFeature('csv_import', admin.schoolId!)
+  const fields = DATASET_FIELDS[dataset] ?? CHILD_FIELDS
 
   const file = formData.get('file')
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Choose a file to upload.' }
@@ -34,7 +38,7 @@ export async function parseImportAction(formData: FormData): Promise<ParseResult
     const { headers, rows, sheetName } = parseSpreadsheet(buf, file.name)
     if (headers.length === 0) return { ok: false, error: 'No columns found in the first sheet.' }
     if (rows.length === 0) return { ok: false, error: 'No data rows found under the header row.' }
-    return { ok: true, headers, rows, autoMapping: autoMap(headers, CHILD_FIELDS), sheetName }
+    return { ok: true, headers, rows, autoMapping: autoMap(headers, fields), sheetName }
   } catch (e) {
     logger.error('import_parse_failed', { error: (e as Error).message })
     return { ok: false, error: 'Could not read that file. Is it a valid .csv or .xlsx?' }
@@ -170,6 +174,82 @@ export async function importChildrenAction(input: ImportChildrenInput): Promise<
 
   logger.info('children_imported', { schoolId, created, skipped, failed, total: rows.length })
   revalidatePath('/admin/students')
+
+  return { ok: true, created, skipped, failed, rowErrors: rowErrors.slice(0, 100) }
+}
+
+const STAFF_CORE_KEYS = new Set(['firstName', 'lastName', 'email'])
+
+/** Import staff into the teachers table (extras → custom_fields). Dedupe by name+email. */
+export async function importStaffAction(input: ImportChildrenInput): Promise<ImportChildrenResult> {
+  const admin = await requireAdmin()
+  await requireFeature('csv_import', admin.schoolId!)
+  const schoolId = admin.schoolId!
+
+  const rows = Array.isArray(input.rows) ? input.rows.slice(0, MAX_IMPORT_ROWS) : []
+  const result = validateRows(rows, input.mapping, STAFF_FIELDS)
+  if (result.missingRequired.length > 0) {
+    return { ok: false, missingRequired: result.missingRequired, error: 'Map all required fields first.' }
+  }
+
+  const adminClient = createSupabaseAdminClient()
+  const { data: existing } = await adminClient
+    .from('teachers')
+    .select('first_name, last_name, email')
+    .eq('school_id', schoolId)
+  const seen = new Set(
+    (existing ?? []).map(
+      (t: { first_name: string; last_name: string; email: string | null }) =>
+        `${t.first_name.toLowerCase()}|${t.last_name.toLowerCase()}|${(t.email ?? '').toLowerCase()}`,
+    ),
+  )
+
+  let created = 0
+  let skipped = 0
+  let failed = 0
+  const rowErrors: { rowNumber: number; errors: string[] }[] = []
+
+  for (const r of result.rows) {
+    if (r.errors.length > 0) {
+      rowErrors.push({ rowNumber: r.rowNumber, errors: r.errors })
+      continue
+    }
+    const firstName = r.values['firstName']!
+    const lastName = r.values['lastName']!
+    const email = r.values['email'] ?? null
+
+    const dedupKey = `${firstName.toLowerCase()}|${lastName.toLowerCase()}|${(email ?? '').toLowerCase()}`
+    if (seen.has(dedupKey)) {
+      skipped++
+      continue
+    }
+
+    const customFields: Record<string, string> = {}
+    for (const f of STAFF_FIELDS) {
+      if (STAFF_CORE_KEYS.has(f.key)) continue
+      const v = r.values[f.key]
+      if (v) customFields[f.key] = v
+    }
+
+    const ins = await adminClient.from('teachers').insert({
+      school_id: schoolId,
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      is_active: true,
+      custom_fields: customFields,
+    })
+    if (ins.error) {
+      failed++
+      rowErrors.push({ rowNumber: r.rowNumber, errors: ['Database insert failed.'] })
+      continue
+    }
+    seen.add(dedupKey)
+    created++
+  }
+
+  logger.info('staff_imported', { schoolId, created, skipped, failed, total: rows.length })
+  revalidatePath('/admin/teachers')
 
   return { ok: true, created, skipped, failed, rowErrors: rowErrors.slice(0, 100) }
 }

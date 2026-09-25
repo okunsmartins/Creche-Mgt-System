@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { CHILD_FIELDS, autoMap, normaliseHeader } from '../fields'
+import { CHILD_FIELDS, STAFF_FIELDS, autoMap, normaliseHeader } from '../fields'
 import { validateRows, normaliseDate, type ColumnMapping } from '../validate'
 
 describe('normaliseHeader', () => {
@@ -28,6 +28,26 @@ describe('autoMap', () => {
     expect(m['dateOfBirth']).toBeNull()
     const used = Object.values(m).filter((v) => v !== null)
     expect(new Set(used).size).toBe(used.length)
+  })
+
+  it('maps staff headers onto staff fields', () => {
+    const headers = ['Staff First Name', 'Surname', 'Email', 'Role', 'Garda Vetting Expiry']
+    const m = autoMap(headers, STAFF_FIELDS)
+    expect(m['firstName']).toBe(0)
+    expect(m['lastName']).toBe(1)
+    expect(m['email']).toBe(2)
+    expect(m['role']).toBe(3)
+    expect(m['gardaVettingExpiry']).toBe(4)
+  })
+})
+
+describe('validateRows — staff', () => {
+  it('validates a staff row and warns on a bad email', () => {
+    const mapping = { firstName: 0, lastName: 1, email: 2, gardaVettingExpiry: 3 }
+    const res = validateRows([['Aoife', 'Kelly', 'not-an-email', '15/05/2027']], mapping, STAFF_FIELDS)
+    expect(res.validCount).toBe(1) // email is a warning, not an error
+    expect(res.rows[0]!.warnings.some((w) => w.toLowerCase().includes('email'))).toBe(true)
+    expect(res.rows[0]!.values['gardaVettingExpiry']).toBe('2027-05-15')
   })
 })
 

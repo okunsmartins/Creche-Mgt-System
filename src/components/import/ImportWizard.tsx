@@ -2,18 +2,26 @@
 
 import Link from 'next/link'
 import { useMemo, useState, useTransition } from 'react'
-import { CHILD_FIELDS } from '@/lib/import/fields'
+import { DATASET_FIELDS, DATASET_LABELS, type ImportDataset } from '@/lib/import/fields'
 import { validateRows, type ColumnMapping } from '@/lib/import/validate'
 import {
   parseImportAction,
   importChildrenAction,
+  importStaffAction,
   type ImportChildrenResult,
 } from '@/lib/import/actions'
 
 type Step = 'upload' | 'map' | 'done'
 
+const VIEW_LINK: Record<ImportDataset, { href: string; label: string }> = {
+  child: { href: '/admin/students', label: 'View children' },
+  staff: { href: '/admin/teachers', label: 'View staff' },
+  parent: { href: '/admin/students', label: 'Done' },
+}
+
 export function ImportWizard() {
   const [step, setStep] = useState<Step>('upload')
+  const [dataset, setDataset] = useState<ImportDataset>('child')
   const [headers, setHeaders] = useState<string[]>([])
   const [rows, setRows] = useState<string[][]>([])
   const [mapping, setMapping] = useState<ColumnMapping>({})
@@ -21,9 +29,12 @@ export function ImportWizard() {
   const [summary, setSummary] = useState<ImportChildrenResult | null>(null)
   const [pending, startTransition] = useTransition()
 
+  const fields = DATASET_FIELDS[dataset]
+  const datasetLabel = DATASET_LABELS[dataset].toLowerCase()
+
   const validation = useMemo(
-    () => (rows.length ? validateRows(rows, mapping, CHILD_FIELDS) : null),
-    [rows, mapping],
+    () => (rows.length ? validateRows(rows, mapping, fields) : null),
+    [rows, mapping, fields],
   )
 
   function onUpload(e: React.FormEvent<HTMLFormElement>) {
@@ -31,7 +42,7 @@ export function ImportWizard() {
     setError(null)
     const form = new FormData(e.currentTarget)
     startTransition(async () => {
-      const res = await parseImportAction(form)
+      const res = await parseImportAction(form, dataset)
       if (!res.ok) {
         setError(res.error)
         return
@@ -45,8 +56,9 @@ export function ImportWizard() {
 
   function onImport() {
     setError(null)
+    const action = dataset === 'staff' ? importStaffAction : importChildrenAction
     startTransition(async () => {
-      const res = await importChildrenAction({ rows, mapping })
+      const res = await action({ rows, mapping })
       if (!res.ok) {
         setError(res.error ?? 'Import failed.')
         return
@@ -78,21 +90,49 @@ export function ImportWizard() {
   if (step === 'upload') {
     return (
       <form onSubmit={onUpload} className="space-y-4">
+        <fieldset>
+          <legend className="text-sm font-medium text-text-secondary">What are you importing?</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(['child', 'staff'] as ImportDataset[]).map((d) => (
+              <label
+                key={d}
+                className={`cursor-pointer rounded-lg border px-4 py-2 text-sm font-medium ${
+                  dataset === d
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-text-secondary hover:bg-surface-raised'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="dataset"
+                  value={d}
+                  checked={dataset === d}
+                  onChange={() => setDataset(d)}
+                  className="sr-only"
+                />
+                {DATASET_LABELS[d]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <p className="text-sm text-text-secondary">
           Upload your existing spreadsheet (.csv or .xlsx). You&apos;ll map your columns to the
           right fields on the next step — no need to rename anything first.
         </p>
-        <p className="text-sm text-text-muted">
-          Starting from scratch?{' '}
-          <a
-            href="/creche-children-import-template.csv"
-            download
-            className="font-semibold text-primary hover:underline"
-          >
-            Download the template
-          </a>
-          .
-        </p>
+        {dataset === 'child' && (
+          <p className="text-sm text-text-muted">
+            Starting from scratch?{' '}
+            <a
+              href="/creche-children-import-template.csv"
+              download
+              className="font-semibold text-primary hover:underline"
+            >
+              Download the template
+            </a>
+            .
+          </p>
+        )}
         <input
           type="file"
           name="file"
@@ -114,6 +154,7 @@ export function ImportWizard() {
 
   // ─── Step 3: done ───────────────────────────────────────────────────────────
   if (step === 'done' && summary) {
+    const view = VIEW_LINK[dataset]
     return (
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-text-primary">Import complete</h3>
@@ -145,28 +186,28 @@ export function ImportWizard() {
             )}
           </div>
         )}
-        <Link href="/admin/students" className="inline-block text-sm font-semibold text-primary hover:underline">
-          View children →
+        <Link href={view.href} className="inline-block text-sm font-semibold text-primary hover:underline">
+          {view.label} →
         </Link>
       </div>
     )
   }
 
   // ─── Step 2: map + preview ──────────────────────────────────────────────────
-  const preview = rows.slice(0, 8)
   const canImport = validation !== null && validation.missingRequired.length === 0
+  const mappedFields = fields.filter((f) => mapping[f.key] != null)
 
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-base font-semibold text-text-primary">Map your columns</h3>
+        <h3 className="text-base font-semibold text-text-primary">Map your columns — {datasetLabel}</h3>
         <p className="text-sm text-text-muted">
           We matched what we could. Adjust any field, then review the preview below.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {CHILD_FIELDS.map((f) => (
+        {fields.map((f) => (
           <label key={f.key} className="text-sm">
             <span className="text-text-secondary">
               {f.label}
@@ -199,9 +240,7 @@ export function ImportWizard() {
       {validation && validation.missingRequired.length > 0 && (
         <p className="text-sm text-error">
           Map these required fields to continue:{' '}
-          {validation.missingRequired
-            .map((k) => CHILD_FIELDS.find((f) => f.key === k)?.label ?? k)
-            .join(', ')}
+          {validation.missingRequired.map((k) => fields.find((f) => f.key === k)?.label ?? k).join(', ')}
         </p>
       )}
 
@@ -210,7 +249,7 @@ export function ImportWizard() {
           <thead className="bg-surface-raised text-text-secondary">
             <tr>
               <th className="px-3 py-2">#</th>
-              {CHILD_FIELDS.filter((f) => mapping[f.key] != null).map((f) => (
+              {mappedFields.map((f) => (
                 <th key={f.key} className="px-3 py-2">{f.label}</th>
               ))}
               <th className="px-3 py-2">Status</th>
@@ -221,7 +260,7 @@ export function ImportWizard() {
               validation.rows.slice(0, 8).map((r, idx) => (
                 <tr key={idx} className="border-t border-border">
                   <td className="px-3 py-2 text-text-muted">{r.rowNumber}</td>
-                  {CHILD_FIELDS.filter((f) => mapping[f.key] != null).map((f) => (
+                  {mappedFields.map((f) => (
                     <td key={f.key} className="px-3 py-2 text-text-primary">{r.values[f.key] ?? '—'}</td>
                   ))}
                   <td className="px-3 py-2">
@@ -238,7 +277,7 @@ export function ImportWizard() {
           </tbody>
         </table>
       </div>
-      {rows.length > preview.length && (
+      {validation && rows.length > 8 && (
         <p className="text-xs text-text-muted">Showing 8 of {rows.length} rows.</p>
       )}
 
@@ -256,7 +295,7 @@ export function ImportWizard() {
           disabled={!canImport || pending}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-hover disabled:opacity-60"
         >
-          {pending ? 'Importing…' : `Import ${validation?.validCount ?? 0} children`}
+          {pending ? 'Importing…' : `Import ${validation?.validCount ?? 0} ${datasetLabel}`}
         </button>
       </div>
     </div>

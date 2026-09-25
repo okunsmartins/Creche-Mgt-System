@@ -48,11 +48,41 @@ export const CHILD_FIELDS: readonly TargetField[] = [
     aliases: ['primary parent/guardian', 'parent', 'guardian', 'primary guardian', 'parent name'] },
 ]
 
+/** Staff dataset — Phase 2. Maps onto the teachers table (+ custom_fields). */
+export const STAFF_FIELDS: readonly TargetField[] = [
+  { key: 'firstName', label: 'First name', required: true, type: 'text',
+    aliases: ['staff first name', 'first name', 'firstname', 'forename', 'first'] },
+  { key: 'lastName', label: 'Last name', required: true, type: 'text',
+    aliases: ['staff last name', 'last name', 'lastname', 'surname', 'last'] },
+  { key: 'email', label: 'Email', required: false, type: 'email',
+    aliases: ['email', 'e-mail', 'email address'] },
+  { key: 'role', label: 'Role', required: false, type: 'text',
+    aliases: ['role', 'job title', 'position', 'title'] },
+  { key: 'room', label: 'Assigned room', required: false, type: 'text',
+    aliases: ['assigned room', 'room', 'class', 'group'] },
+  { key: 'contractedHours', label: 'Contracted hours/week', required: false, type: 'text',
+    aliases: ['contracted hours/week', 'contracted hours', 'hours', 'weekly hours', 'hours/week'] },
+  { key: 'qualification', label: 'Qualification', required: false, type: 'text',
+    aliases: ['qualification', 'qqi', 'level', 'quals'] },
+  { key: 'gardaVettingExpiry', label: 'Garda vetting expiry', required: false, type: 'date',
+    aliases: ['garda vetting expiry', 'garda vetting', 'vetting expiry', 'vetting'] },
+  { key: 'startDate', label: 'Start date', required: false, type: 'date',
+    aliases: ['start date', 'joined', 'employment start'] },
+  { key: 'status', label: 'Status', required: false, type: 'enum',
+    options: ['Active', 'Inactive'],
+    aliases: ['status'] },
+]
+
 export const DATASET_FIELDS: Record<ImportDataset, readonly TargetField[]> = {
   child: CHILD_FIELDS,
-  // Phase 2:
-  parent: [],
-  staff: [],
+  staff: STAFF_FIELDS,
+  parent: [], // Phase 2b — needs the parent↔child link model
+}
+
+export const DATASET_LABELS: Record<ImportDataset, string> = {
+  child: 'Children',
+  staff: 'Staff',
+  parent: 'Parents/guardians',
 }
 
 /** Normalise a header for matching: lowercase, collapse whitespace/punctuation. */

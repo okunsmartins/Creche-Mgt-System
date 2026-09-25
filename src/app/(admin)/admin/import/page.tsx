@@ -14,13 +14,14 @@ export default async function ImportPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <Link href="/admin/students" className="text-sm text-primary hover:underline">
-          ← Children
+        <Link href="/admin/dashboard" className="text-sm text-primary hover:underline">
+          ← Dashboard
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-text-primary">Import children from a spreadsheet</h1>
+        <h1 className="mt-2 text-2xl font-bold text-text-primary">Import from a spreadsheet</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Bring your existing crèche spreadsheet straight in — upload it, map your columns to the
-          right fields, review, and import. We never save anything until you confirm.
+          Bring your existing crèche spreadsheets straight in — choose what you&apos;re importing
+          (children or staff), upload it, map your columns, review, and import. We never save
+          anything until you confirm.
         </p>
       </div>
 
