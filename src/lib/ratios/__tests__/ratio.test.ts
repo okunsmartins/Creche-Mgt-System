@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import { requiredStaff, assessRatio, ratioSeverity, ratioBandForAgeMonths } from '../ratio'
+import {
+  requiredStaff,
+  assessRatio,
+  ratioSeverity,
+  ratioBandForAgeMonths,
+  roomStaffingRequirement,
+} from '../ratio'
 
 describe('requiredStaff', () => {
   it('rounds up and handles zero', () => {
@@ -45,5 +51,30 @@ describe('ratioBandForAgeMonths (reference)', () => {
     expect(ratioBandForAgeMonths(18)?.childrenPerAdult).toBe(5)
     expect(ratioBandForAgeMonths(40)?.childrenPerAdult).toBe(8)
     expect(ratioBandForAgeMonths(200)).toBeNull()
+  })
+})
+
+describe('roomStaffingRequirement', () => {
+  it('groups by band and sums required staff per band', () => {
+    // 4 babies (0–1y, ratio 3) → 2 staff; 6 preschoolers (3–6y, ratio 8) → 1 staff.
+    const ages = [2, 5, 8, 11, 40, 42, 44, 46, 50, 60]
+    const r = roomStaffingRequirement(ages)
+    expect(r.totalPlaced).toBe(10)
+    expect(r.unknownAge).toBe(0)
+    expect(r.requiredStaff).toBe(3) // ceil(4/3)=2 + ceil(6/8)=1
+    expect(r.byBand).toHaveLength(2)
+  })
+
+  it('counts null and out-of-range ages as unknown (excluded from requirement)', () => {
+    const r = roomStaffingRequirement([null, 200, 30, 30])
+    expect(r.unknownAge).toBe(2) // null + 200 months (>6y)
+    expect(r.totalPlaced).toBe(2)
+    expect(r.requiredStaff).toBe(1) // ceil(2/6)=1
+  })
+
+  it('empty room needs no staff', () => {
+    const r = roomStaffingRequirement([])
+    expect(r.requiredStaff).toBe(0)
+    expect(r.byBand).toEqual([])
   })
 })

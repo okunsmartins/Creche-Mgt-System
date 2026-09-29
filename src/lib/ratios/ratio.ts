@@ -81,3 +81,45 @@ export const REFERENCE_EY_RATIOS: readonly EyRatioBand[] = [
 export function ratioBandForAgeMonths(months: number): EyRatioBand | null {
   return REFERENCE_EY_RATIOS.find((b) => months >= b.minMonths && months < b.maxMonths) ?? null
 }
+
+export interface RoomStaffing {
+  /** Children whose age maps to a ratio band. */
+  totalPlaced: number
+  /** Children with no DOB or an age outside the reference bands (can't ratio). */
+  unknownAge: number
+  /** Minimum staff needed, summed per age band (bands aren't shared). */
+  requiredStaff: number
+  byBand: { band: EyRatioBand; children: number; required: number }[]
+}
+
+/**
+ * Minimum staffing for a room from its children's ages (months). Groups by
+ * reference band and sums required staff per band — the safe reading when a child
+ * of one age band can't be covered by staff assigned to another. Ages that don't
+ * map to a band (null, or outside 0–72m) are counted as `unknownAge` and excluded
+ * from the requirement (the UI surfaces them so a human decides).
+ */
+export function roomStaffingRequirement(agesMonths: ReadonlyArray<number | null>): RoomStaffing {
+  const counts = new Map<string, { band: EyRatioBand; children: number }>()
+  let unknownAge = 0
+  for (const m of agesMonths) {
+    const band = m == null ? null : ratioBandForAgeMonths(m)
+    if (!band) {
+      unknownAge++
+      continue
+    }
+    const entry = counts.get(band.label) ?? { band, children: 0 }
+    entry.children++
+    counts.set(band.label, entry)
+  }
+  const byBand = REFERENCE_EY_RATIOS.filter((b) => counts.has(b.label)).map((b) => {
+    const c = counts.get(b.label)!.children
+    return { band: b, children: c, required: requiredStaff(c, b.childrenPerAdult) }
+  })
+  return {
+    totalPlaced: byBand.reduce((s, x) => s + x.children, 0),
+    unknownAge,
+    requiredStaff: byBand.reduce((s, x) => s + x.required, 0),
+    byBand,
+  }
+}
