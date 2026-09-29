@@ -17,17 +17,17 @@
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **753 passed / 58 files** |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **762 passed / 59 files** |
 | Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean |
 | Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
-| DB migrations 068–071 applied | verified via service-role script | ✅ all tables/grants/RPC/guard-trigger present |
+| DB migrations 068–072 applied | verified via service-role script | ✅ tables/grants/RPC/guard-trigger + DOB column & backfill present |
 | Manual browser E2E (import, hero, fees UI, nav) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **10/10** (scoping, RLS deny-by-default, dup invoice-number rejected) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
 | Security scans (SAST/SCA/DAST/SBOM) | — | ⬜ **not set up** (spec §11.4) |
 
-**Crèche-specific automated tests (87 of the 753):** subvention 18, funding-config 13, custom-fields 18,
+**Crèche-specific automated tests (96 of the 762):** subvention 18, funding-config 13, custom-fields 18, age 9,
 ratio 6, fee-schedule 8, invoice-generation 8 + 4 property/edge, import 12. Plus a DB-backed
 isolation/idempotency script (`scripts/verify-tenant-isolation.mjs`, run manually — CI has no DB).
 
@@ -94,10 +94,18 @@ Angels Nest) — scope every query by `school_id`.
 - **Home hero split:** Creche Wise platform landing → **5-slide carousel** (`src/components/marketing/HeroCarousel.tsx`);
   a signed-up crèche's portal → **static hero branded to its name** ("Welcome to {crèche}"). Both verified in-browser.
 
-### Domain rename — **primary surfaces only** (verified in browser)
-- Admin sidebar + Children/Staff/Rooms list pages + dashboard now say **Children / Staff / Rooms** (was Students/Teachers/Classes).
-- ⚠️ Routes, DB tables and code identifiers are **unchanged** (`/admin/students`, `students`, `classes`, `teachers`).
-- ⚠️ **Not renamed yet:** add/edit **forms**, reports, attendance copy, `TeacherSidebar`, and the home **features grid** (still school wording).
+### Domain rename — user-facing copy (verified in browser)
+- Sidebar, list pages, dashboard, **add/edit forms**, page titles/breadcrumbs, home **features grid**,
+  onboarding, permission-slip labels, **Crèche Settings**, and platform-owner views all use
+  **Children / Staff / Rooms / crèche**. ~200 strings across ~80 files; bulk prose sweep for
+  "your/the/a school" → crèche, "by/per class" → room, "roll call" → register, "report card" → development report.
+- ⚠️ Routes, DB tables and code identifiers are **unchanged** by design (`/admin/students`, `students`, `classes`, `teachers`).
+- Remaining school wording, if any, is incidental prose — grep `-i "school"` before go-live for a final pass.
+
+### DOB → real column + NCS age eligibility (migration 072, verified)
+- `students.date_of_birth` column + backfill (5/5 existing children); index. Import writes the column.
+- `src/lib/age/age.ts` — pure age helpers + `ncsAgeEligibility` (**age gate only**, not means-testing) — **9 tests**.
+- Child billing page shows **DOB · age · NCS age-eligible** (verified in-browser). Reference 24wk–15y, flagged CONFIRM.
 
 ---
 
@@ -135,11 +143,10 @@ Work for the **school** product; passes its own tests but **not verified for the
 FEE-10 arrears reminders + dashboard, FEE-11 attendance true-up + Pobal claim accrual ledger. Also: `service_rates`
 (FEE-01), `invoice_lines` + full state machine (FEE-04), parent invoice **payment** wiring.
 
-**P0 crèche scope (spec):** finish domain rename (forms/reports/attendance/features-grid); ratio **UI** (live counts);
+**P0 crèche scope (spec):** ratio **UI** (live counts using the tested ratio engine);
 NCS/ECCE Hive-prep reports + absence alerts (§7.7, no Hive API); enquiry/waiting-list CRM (§7.3); daily records
 (sleep/nappy/meal/incident/medication) (§7.6); compliance centre + inspection exports + retention (§7.7);
-commercial dashboard (occupancy, revenue by room) (§7.8). **Promote DOB to a real column** (NCS age eligibility;
-currently in `custom_fields` JSONB).
+commercial dashboard (occupancy, revenue by room) (§7.8).
 
 **DevSecOps (spec §11):**
 - ✅ GitHub remote + PR CI (lint/type/format/unit/build); ✅ secret scanning + push protection active.

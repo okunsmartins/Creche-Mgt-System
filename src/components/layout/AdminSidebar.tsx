@@ -105,7 +105,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Administration',
     items: [
-      { href: '/admin/settings', label: 'School Settings', icon: Settings },
+      { href: '/admin/settings', label: 'Crèche Settings', icon: Settings },
       { href: '/admin/subscription', label: 'Subscription', icon: Sparkles },
       { href: '/admin/reconciliation', label: 'Reconciliation', icon: GitMerge },
       { href: '/admin/audit', label: 'Audit Log', icon: ScrollText },

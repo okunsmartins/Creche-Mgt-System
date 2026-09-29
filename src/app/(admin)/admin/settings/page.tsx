@@ -10,7 +10,7 @@ import {
 } from '@/lib/schools/actions'
 import type { SchoolRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'School Settings' }
+export const metadata: Metadata = { title: 'Crèche Settings' }
 
 type SchoolSettingsRow = Pick<
   SchoolRow,
@@ -51,7 +51,7 @@ export default async function SchoolSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">School settings</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Crèche settings</h1>
         <p className="mt-1 text-sm text-text-secondary">
           These details appear on your portal, on receipts, and on the public Contact and Privacy
           pages.
