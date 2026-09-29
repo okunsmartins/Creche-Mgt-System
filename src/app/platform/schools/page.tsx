@@ -3,7 +3,7 @@ import { getSchoolsOverview, type SchoolOverviewRow } from '@/lib/platform/schoo
 import { SchoolRowActions } from '@/components/platform/SchoolRowActions'
 import { formatDate } from '@/lib/utils'
 
-export const metadata: Metadata = { title: 'Schools — Platform' }
+export const metadata: Metadata = { title: 'Crèches — Platform' }
 
 function euro(cents: number): string {
   return new Intl.NumberFormat('en-IE', {
@@ -37,7 +37,7 @@ export default async function PlatformSchoolsPage() {
   if (schools.length === 0) {
     return (
       <p className="rounded-xl border border-border bg-surface px-4 py-6 text-center text-sm text-text-muted">
-        No schools yet.
+        No crèches yet.
       </p>
     )
   }
@@ -47,9 +47,9 @@ export default async function PlatformSchoolsPage() {
       <table className="w-full min-w-[900px] text-left text-sm">
         <thead className="bg-surface text-xs font-semibold uppercase tracking-wider text-text-muted">
           <tr>
-            <th className="px-4 py-3">School</th>
+            <th className="px-4 py-3">Crèche</th>
             <th className="px-4 py-3">Subdomain</th>
-            <th className="px-4 py-3 text-right">Students</th>
+            <th className="px-4 py-3 text-right">Children</th>
             <th className="px-4 py-3 text-right">Revenue</th>
             <th className="px-4 py-3">Joined</th>
             <th className="px-4 py-3">Subscription</th>

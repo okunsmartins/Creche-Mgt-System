@@ -73,7 +73,7 @@ export default async function VerifyPortalPage({
               ) : (
                 <>
                   <p className="mt-2 text-sm text-text-secondary">
-                    Thanks — your email is verified. Next, create your account to set up your school
+                    Thanks — your email is verified. Next, create your account to set up your crèche
                     portal.
                   </p>
                   <Link

@@ -30,7 +30,7 @@ export default async function SubscriptionPage() {
   const isPro = hasProAccess(sub)
   const hasBilling = !!sub?.stripe_customer_id
 
-  // Pro + SMS add-on. Offer the switch to a school that has Pro access but not the
+  // Pro + SMS add-on. Offer the switch to a crèche that has Pro access but not the
   // SMS entitlement, provided the tier's prices are configured.
   const smsMonthlyPriceId = serverEnv.stripeProSmsMonthlyPriceId
   const smsAnnualPriceId = serverEnv.stripeProSmsAnnualPriceId
@@ -44,7 +44,7 @@ export default async function SubscriptionPage() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Subscription</h1>
-        <p className="mt-1 text-sm text-text-muted">Manage your school&apos;s plan and billing.</p>
+        <p className="mt-1 text-sm text-text-muted">Manage your crèche&apos;s plan and billing.</p>
       </div>
 
       <div className="card space-y-5 p-6">

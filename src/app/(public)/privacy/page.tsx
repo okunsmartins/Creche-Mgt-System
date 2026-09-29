@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 }
 
 export default async function PrivacyPage() {
-  // Tenant-aware: on a school's portal the SCHOOL is the data controller; on the
+  // Tenant-aware: on a crèche's portal the SCHOOL is the data controller; on the
   // apex (no tenant, nobody signed in) this is the platform-level notice.
   const school = await getViewerSchool()
   const controller = school?.name ?? null
@@ -44,26 +44,26 @@ export default async function PrivacyPage() {
             {controller ? (
               <p>
                 <strong>{controller}</strong> is the data controller for information collected
-                through this payment portal. The portal is operated on the school&apos;s behalf by
+                through this payment portal. The portal is operated on the crèche&apos;s behalf by
                 First Stack Solutions, which acts as a data processor.
                 {contactEmail ? (
                   <>
                     {' '}
-                    Contact the school at{' '}
+                    Contact the crèche at{' '}
                     <a href={`mailto:${contactEmail}`} className="text-primary underline">
                       {contactEmail}
                     </a>
                     .
                   </>
                 ) : (
-                  ' Contact your school office for data-protection queries.'
+                  ' Contact your crèche office for data-protection queries.'
                 )}
               </p>
             ) : (
               <p>
                 This portal is operated by <strong>First Stack Solutions</strong>, which acts as a
-                data processor for the schools that use it. Each school is the data controller for
-                its own pupils&apos; and parents&apos; data — open your school&apos;s portal to see
+                data processor for the crèches that use it. Each school is the data controller for
+                its own pupils&apos; and parents&apos; data — open your crèche&apos;s portal to see
                 its specific privacy notice and contact details.
               </p>
             )}

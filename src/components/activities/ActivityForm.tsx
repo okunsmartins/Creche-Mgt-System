@@ -57,7 +57,7 @@ export function ActivityForm({ action, classes, students, activity }: ActivityFo
     }
   }
 
-  // Group students by class for the pupil picker
+  // Group students by room for the pupil picker
   const studentsByClass = useMemo(() => {
     if (!students || students.length === 0) return []
     const classMap = new Map<string, { className: string; students: StudentOption[] }>()
@@ -71,7 +71,7 @@ export function ActivityForm({ action, classes, students, activity }: ActivityFo
         classMap.set(student.class_id, { className, students: [student] })
       }
     }
-    // Sort by class order (matches the classes array order)
+    // Sort by room order (matches the classes array order)
     return classes
       .map((c) => classMap.get(c.id))
       .filter((g): g is { className: string; students: StudentOption[] } => g !== undefined)

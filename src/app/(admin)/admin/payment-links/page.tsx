@@ -66,7 +66,7 @@ export default async function PaymentLinksPage() {
       {!isPro && (
         <UpgradePrompt
           title="Payment links are a Pro feature"
-          description="Create shareable payment links for trips, books and events. Upgrade to Pro to enable them for your school."
+          description="Create shareable payment links for trips, books and events. Upgrade to Pro to enable them for your crèche."
         />
       )}
 

@@ -23,7 +23,7 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
   return (
     <form action={formAction} className="space-y-5">
       {state.error && <Alert variant="error">{state.error}</Alert>}
-      {state.success && <Alert variant="success">Class updated successfully.</Alert>}
+      {state.success && <Alert variant="success">Room updated successfully.</Alert>}
 
       {/* Class name — read-only, not editable */}
       <div>
@@ -37,7 +37,7 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
       {/* Teacher assignment */}
       <div>
         <label htmlFor="teacherId" className="mb-1 block text-sm font-medium text-text-primary">
-          Assigned teacher
+          Assigned staff member
         </label>
         <select
           id="teacherId"

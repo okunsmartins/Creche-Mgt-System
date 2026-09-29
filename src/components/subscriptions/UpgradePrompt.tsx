@@ -16,7 +16,7 @@ interface UpgradePromptProps {
  */
 export function UpgradePrompt({
   title = 'This is a Pro feature',
-  description = 'Upgrade your plan to unlock this feature for your school.',
+  description = 'Upgrade your plan to unlock this feature for your crèche.',
   cta = 'Upgrade to Pro',
   href = '/pricing',
 }: UpgradePromptProps) {

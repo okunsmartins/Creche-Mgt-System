@@ -2,7 +2,7 @@ import { schoolInitials } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
 /**
- * The header crest, drawn from the school's initials so it is correct per tenant.
+ * The header crest, drawn from the crèche's initials so it is correct per tenant.
  *
  * Replaces the old static `branding/scoil-bhride-logo.svg`, which had "SCOIL DEMO"
  * baked in and therefore showed one school's identity on every school's portal.

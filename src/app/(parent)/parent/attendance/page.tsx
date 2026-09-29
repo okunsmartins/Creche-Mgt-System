@@ -107,7 +107,7 @@ export default async function ParentAttendancePage() {
                         Recent absences &amp; late marks
                       </h3>
                       <p className="mb-3 text-xs text-text-muted">
-                        Add a reason so the school knows why your child was out.
+                        Add a reason so the crèche knows why your child was out.
                       </p>
                       <ul className="space-y-3">
                         {c.recentFlags.map((f) => (

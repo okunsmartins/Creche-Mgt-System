@@ -7,7 +7,7 @@ import { MobileNav } from './MobileNav'
 import { SchoolCrest } from './SchoolCrest'
 import { signOutAction } from '@/lib/auth/actions'
 
-// School-facing nav — shown only inside a school's portal (a tenant is active).
+// School-facing nav — shown only inside a crèche's portal (a tenant is active).
 const schoolLinks = [
   { href: '/', label: 'Home' },
   { href: '/activities', label: 'Activities' },
@@ -46,8 +46,8 @@ export function SiteHeader({
   // school's. Must not duplicate the "Admin Portal" subtitle below.
   const brandName = schoolName ?? 'Creche Wise'
 
-  // Prefix a school link with the `/s/<school>` path when browsing via path (so
-  // clicking a link keeps the school in context). No-op for host/session tenants.
+  // Prefix a crèche link with the `/s/<school>` path when browsing via path (so
+  // clicking a link keeps the crèche in context). No-op for host/session tenants.
   const withTenant = (href: string) =>
     tenantSlug ? (href === '/' ? `/s/${tenantSlug}` : `/s/${tenantSlug}${href}`) : href
 
@@ -93,7 +93,7 @@ export function SiteHeader({
         <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex">
           {isTenant ? (
             <>
-              {/* Inside a school portal: school-facing links + Admin + Exit portal. */}
+              {/* Inside a crèche portal: school-facing links + Admin + Exit portal. */}
               {schoolLinks.map(({ href, label }) => (
                 <Link
                   key={href}
@@ -118,7 +118,7 @@ export function SiteHeader({
                 Admin
               </Link>
 
-              {/* Exit a school's portal → clears the tenant cookie (full nav so the
+              {/* Exit a crèche's portal → clears the tenant cookie (full nav so the
                   middleware response sets the cookie). */}
               <a
                 href="/s/reset"

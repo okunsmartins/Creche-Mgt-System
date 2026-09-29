@@ -32,8 +32,8 @@ export function PermissionSlipForm({ classes, allowSchool }: Props) {
   }, [state.success, allowSchool])
 
   const audienceOptions: SelectOption[] = [
-    ...(allowSchool ? [{ value: 'school', label: 'Whole school' }] : []),
-    { value: 'class', label: 'A class' },
+    ...(allowSchool ? [{ value: 'school', label: 'Whole crèche' }] : []),
+    { value: 'class', label: 'A room' },
   ]
 
   return (

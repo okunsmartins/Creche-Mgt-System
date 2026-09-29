@@ -19,10 +19,10 @@ export function CreateSchoolForm() {
   return (
     <form action={formAction} className="space-y-5" noValidate>
       <Input
-        label="School name"
+        label="Crèche name"
         name="name"
         type="text"
-        placeholder="e.g. St Mary's National School"
+        placeholder="e.g. Little Explorers Crèche"
         autoComplete="organization"
         required
         error={state?.fieldErrors?.name}
@@ -52,7 +52,7 @@ export function CreateSchoolForm() {
       {state?.error && <Alert variant="error">{state.error}</Alert>}
 
       <Button type="submit" className="w-full" loading={isPending}>
-        Create my school
+        Create my crèche
       </Button>
     </form>
   )

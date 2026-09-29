@@ -73,7 +73,7 @@ function PupilCodeForm() {
             disabled={isPending}
             autoComplete="off"
             className="font-mono uppercase"
-            hint="Find this on your child's payment letter from the school."
+            hint="Find this on your child's payment letter from the crèche."
           />
         </div>
         <Button type="submit" loading={isPending} className="shrink-0">
@@ -98,7 +98,7 @@ export function ChildSearchForm() {
       <div className="card p-6">
         <h2 className="mb-1 text-lg font-semibold text-text-primary">Find a child</h2>
         <p className="mb-5 text-sm text-text-muted">
-          Enter your child&apos;s first and last name to search the school register. The school will
+          Enter your child&apos;s first and last name to search the crèche register. The crèche will
           review and approve your link request before access is granted.
         </p>
 
@@ -202,7 +202,7 @@ export function ChildSearchForm() {
       {/* Fallback: pupil code */}
       <details className="group rounded-lg border border-border bg-surface">
         <summary className="flex cursor-pointer items-center justify-between px-5 py-4 text-sm font-medium text-text-secondary hover:text-text-primary">
-          Have a pupil payment code from a school letter?
+          Have a pupil payment code from a crèche letter?
           <span className="ml-2 text-xs text-text-muted transition-transform group-open:rotate-180">
             ▾
           </span>

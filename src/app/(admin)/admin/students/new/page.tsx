@@ -7,7 +7,7 @@ import { createStudentAction } from '@/lib/students/actions'
 import type { ClassRow } from '@/types/database'
 import type { SelectOption } from '@/types'
 
-export const metadata: Metadata = { title: 'Add Student' }
+export const metadata: Metadata = { title: 'Add Child' }
 
 type ClassOption = Pick<ClassRow, 'id' | 'name' | 'display_order'>
 
@@ -35,19 +35,19 @@ export default async function NewStudentPage() {
     <div className="mx-auto max-w-xl">
       <nav className="mb-6 text-sm text-text-muted">
         <Link href="/admin/students" className="hover:text-primary hover:underline">
-          Students
+          Children
         </Link>
         {' / '}
-        <span className="text-text-primary">Add student</span>
+        <span className="text-text-primary">Add child</span>
       </nav>
 
-      <h1 className="mb-6 text-2xl font-bold text-text-primary">Add student</h1>
+      <h1 className="mb-6 text-2xl font-bold text-text-primary">Add child</h1>
 
       {classOptions.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-6 text-center">
-          <p className="text-text-muted">No classes found.</p>
+          <p className="text-text-muted">No rooms found.</p>
           <p className="mt-1 text-sm text-text-muted">
-            Classes must be created in the database before adding students.
+            Rooms must be created before adding children.
           </p>
         </div>
       ) : (

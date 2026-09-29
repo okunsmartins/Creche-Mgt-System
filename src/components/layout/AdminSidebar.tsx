@@ -225,7 +225,7 @@ export function AdminSidebar({ user, logoUrl, isOwner = false }: AdminSidebarPro
           </div>
         ))}
 
-        {/* Owner-only: all-schools overview (lives outside the school portal). */}
+        {/* Owner-only: all-schools overview (lives outside the crèche portal). */}
         {isOwner && (
           <div className="mb-3 mt-1">
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/60">

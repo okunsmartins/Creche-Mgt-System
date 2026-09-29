@@ -50,7 +50,7 @@ export function ActivityAttendeesClient({ activityId, activityName, attendees }:
     }
   }, [state?.success])
 
-  // Group attendees by class, preserving server sort order (class_name, student_name)
+  // Group attendees by room, preserving server sort order (class_name, student_name)
   const groupedByClass = attendees.reduce<Map<string, AttendeeRow[]>>((acc, a) => {
     const existing = acc.get(a.class_name)
     if (existing) {
@@ -161,7 +161,7 @@ export function ActivityAttendeesClient({ activityId, activityName, attendees }:
         </div>
       ) : (
         <>
-          {/* Attendees table grouped by class */}
+          {/* Attendees table grouped by room */}
           <div>
             {attendeesWithEmail.length > 0 && (
               <p className="mb-2 text-xs text-text-muted">

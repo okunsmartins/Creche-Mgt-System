@@ -59,7 +59,7 @@ export default async function GuestConfirmationPage({
       <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
         <h1 className="mb-4 text-2xl font-bold text-text-primary">Order not found</h1>
         <p className="mb-6 text-text-secondary">
-          This order could not be found. If you believe this is an error, please contact the school.
+          This order could not be found. If you believe this is an error, please contact the crèche.
         </p>
         <Link href="/activities" className="text-primary hover:underline">
           View activities
@@ -150,8 +150,8 @@ export default async function GuestConfirmationPage({
             <div className="space-y-1 text-sm">
               <p className="font-medium text-amber-700">Manual reconciliation required</p>
               <p className="text-text-secondary">
-                Your payment has been recorded but requires manual review by the school. Please
-                bring a copy of this reference to the school office.
+                Your payment has been recorded but requires manual review by the crèche. Please
+                bring a copy of this reference to the crèche office.
               </p>
             </div>
           ) : order.status === 'paid' ? (
@@ -179,7 +179,7 @@ export default async function GuestConfirmationPage({
                 {order.status === 'expired' ? 'Order expired' : 'Order status updated'}
               </p>
               <p className="text-text-secondary">
-                Please contact the school if you have any questions about this order.
+                Please contact the crèche if you have any questions about this order.
               </p>
             </div>
           )}

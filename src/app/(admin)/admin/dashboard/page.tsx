@@ -25,7 +25,7 @@ export const metadata: Metadata = { title: 'Admin Dashboard' }
 export default async function AdminDashboardPage() {
   const admin = await requireAdmin()
   // The platform owner doesn't manage a single school — send them to the
-  // platform console instead of the school-principal dashboard. Other /admin
+  // platform console instead of the crèche-principal dashboard. Other /admin
   // pages stay reachable by URL (this only redirects the dashboard).
   if (isPlatformOwner(admin)) redirect('/platform')
   const adminClient = createSupabaseAdminClient()
@@ -180,7 +180,7 @@ export default async function AdminDashboardPage() {
           Good {getTimeOfDay()}, {firstName}
         </h1>
         <p className="mt-1 text-sm text-text-muted">
-          Here&apos;s what&apos;s happening at {admin.schoolName ?? 'your school'} today.
+          Here&apos;s what&apos;s happening at {admin.schoolName ?? 'your crèche'} today.
         </p>
       </div>
 

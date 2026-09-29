@@ -45,7 +45,7 @@ export default async function SchoolSettingsPage() {
 
   const school = data as SchoolSettingsRow | null
   if (!school) {
-    return <p className="text-error">Could not load your school details.</p>
+    return <p className="text-error">Could not load your crèche details.</p>
   }
 
   return (

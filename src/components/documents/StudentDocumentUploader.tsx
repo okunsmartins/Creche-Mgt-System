@@ -14,11 +14,11 @@ interface StudentDocumentUploaderProps {
   category: DocumentCategory
   titleLabel: string
   titlePlaceholder: string
-  /** Show a free-text term field (report cards). */
+  /** Show a free-text term field (development reports). */
   showTerm?: boolean
 }
 
-/** Staff form to upload one document (test result / report card) for a student. */
+/** Staff form to upload one document (test result / development report) for a student. */
 export function StudentDocumentUploader({
   studentId,
   category,

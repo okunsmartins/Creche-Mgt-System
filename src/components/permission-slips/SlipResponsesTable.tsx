@@ -21,8 +21,8 @@ export function SlipResponsesTable({ tally, students }: Pick<SlipDetail, 'tally'
         <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="bg-surface text-xs font-semibold uppercase tracking-wider text-text-muted">
             <tr>
-              <th className="px-4 py-3">Student</th>
-              <th className="px-4 py-3">Class</th>
+              <th className="px-4 py-3">Child</th>
+              <th className="px-4 py-3">Room</th>
               <th className="px-4 py-3">Response</th>
               <th className="px-4 py-3">Note</th>
             </tr>

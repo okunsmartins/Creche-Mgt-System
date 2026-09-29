@@ -27,7 +27,7 @@ const FEATURES: string[] = [
  * Card-at-signup billing step, shown right after a new school is created. The
  * owner adds a card to start a {TRIAL_PERIOD_DAYS}-day free trial via Stripe
  * Checkout; Stripe collects the card now, charges nothing until the trial ends,
- * then auto-charges — no return visit needed. If the school already has access
+ * then auto-charges — no return visit needed. If the crèche already has access
  * (trial already started, or webhook already landed), skip straight to the app.
  */
 export default async function OnboardingBillingPage() {
@@ -56,7 +56,7 @@ export default async function OnboardingBillingPage() {
             Start your <span className="text-primary">{TRIAL_PERIOD_DAYS}-day free trial</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Add a card to activate your school portal. You won&apos;t be charged for{' '}
+            Add a card to activate your crèche portal. You won&apos;t be charged for{' '}
             {TRIAL_PERIOD_DAYS} days — cancel anytime before then and you pay nothing.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default async function OnboardingBillingPage() {
           <div>
             <h2 className="text-lg font-semibold text-text-primary">Pro plan</h2>
             <p className="mt-1 text-sm text-text-muted">
-              Everything your school office needs. Free for {TRIAL_PERIOD_DAYS} days, then it renews
+              Everything your crèche office needs. Free for {TRIAL_PERIOD_DAYS} days, then it renews
               automatically.
             </p>
             <p className="mt-4 text-3xl font-bold text-text-primary">

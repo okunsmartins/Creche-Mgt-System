@@ -14,7 +14,7 @@ const highlights = [
   {
     icon: BarChart3,
     title: 'Attendance & insight',
-    body: 'Take attendance, track programmes, and see how your school is doing with built-in reporting — all in one place.',
+    body: 'Take attendance, track programmes, and see how your crèche is doing with built-in reporting — all in one place.',
   },
   {
     icon: ShieldCheck,
@@ -59,9 +59,9 @@ export default function AboutPage() {
         </div>
 
         <div className="mt-10 rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center">
-          <h2 className="text-lg font-semibold text-text-primary">Run a school?</h2>
+          <h2 className="text-lg font-semibold text-text-primary">Run a crèche?</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-            Set up your school&apos;s own portal in minutes.
+            Set up your crèche&apos;s own portal in minutes.
           </p>
           <Link
             href="/get-started"

@@ -14,7 +14,7 @@ export function RegisterForm({
   tenantSlug,
 }: {
   next?: string | undefined
-  /** School slug when registering within a school's context (`/s/<slug>/register`). */
+  /** School slug when registering within a crèche's context (`/s/<slug>/register`). */
   tenantSlug?: string | undefined
 }) {
   const [state, formAction, isPending] = useActionState<AuthActionState, FormData>(
@@ -22,11 +22,11 @@ export function RegisterForm({
     null,
   )
 
-  // Someone sent here from "Create your own portal" is setting up a school, not
+  // Someone sent here from "Create your own portal" is setting up a crèche, not
   // paying for a child — the default parent copy would read as the wrong product.
   const isCreatingPortal = next === '/onboarding'
 
-  // Preserve the school context on the "Sign in" link (see LoginForm).
+  // Preserve the crèche context on the "Sign in" link (see LoginForm).
   const withTenant = (href: string) => (tenantSlug ? `/s/${tenantSlug}${href}` : href)
 
   return (
@@ -36,7 +36,7 @@ export function RegisterForm({
       </h2>
       <p className="mb-6 text-sm text-text-muted">
         {isCreatingPortal
-          ? "First, create your account — then you'll set up your school portal."
+          ? "First, create your account — then you'll set up your crèche portal."
           : 'Register to manage school payments for your children.'}
       </p>
 
@@ -85,7 +85,7 @@ export function RegisterForm({
           type="tel"
           autoComplete="tel"
           placeholder="087 123 4567"
-          hint="Irish mobile — so your school can text you about your child."
+          hint="Irish mobile — so your crèche can text you about your child."
           error={state?.fieldErrors?.phone}
           disabled={isPending}
         />

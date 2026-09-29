@@ -18,7 +18,7 @@ const PLATFORM_CONTACTS: { title: string; email: string; description: string }[]
   {
     title: 'Schools & sales',
     email: 'contact@skoolbido.com',
-    description: 'Thinking of using Creche Wise for your school? Talk to us about setting it up.',
+    description: 'Thinking of using Creche Wise for your crèche? Talk to us about setting it up.',
   },
   {
     title: 'Support',
@@ -56,7 +56,7 @@ export default async function ContactPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
             {school
-              ? 'If you have a question about a payment or need assistance, please contact the school office.'
+              ? 'If you have a question about a payment or need assistance, please contact the crèche office.'
               : 'Get in touch with the Creche Wise team — pick the inbox that fits and we’ll be happy to help.'}
           </p>
         </div>
@@ -85,9 +85,9 @@ export default async function ContactPage() {
             <div className="card p-6 text-sm text-text-secondary">
               <p className="font-medium text-text-primary">Are you a parent?</p>
               <p className="mt-1">
-                To reach your child&apos;s school, open your school&apos;s portal or{' '}
+                To reach your child&apos;s school, open your crèche&apos;s portal or{' '}
                 <Link href="/activities" className="text-primary hover:underline">
-                  find your school
+                  find your crèche
                 </Link>
                 .
               </p>
@@ -130,7 +130,7 @@ export default async function ContactPage() {
           </div>
         ) : (
           <div className="card p-6 text-sm text-text-secondary">
-            <p className="font-medium text-text-primary">Contact the school office</p>
+            <p className="font-medium text-text-primary">Contact the crèche office</p>
             <p className="mt-1">
               {school.name} hasn&apos;t added contact details to the portal yet. Please reach the
               school office directly.
@@ -142,7 +142,7 @@ export default async function ContactPage() {
           <p className="font-medium text-text-primary">Data access requests</p>
           <p className="mt-1">
             To request access to, correction of, or deletion of your personal data held by{' '}
-            {school?.name ?? 'your school'}, please contact the school office
+            {school?.name ?? 'your crèche'}, please contact the crèche office
             {school?.email ? (
               <>
                 {' '}

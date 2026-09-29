@@ -32,7 +32,7 @@ export function ImportStudentsForm() {
           <p className="mt-2 text-xs text-text-muted">
             Header row required, with columns <strong>first name</strong>,{' '}
             <strong>last name</strong> and <strong>class</strong>. The class must exactly match one
-            of your school&apos;s classes. Up to 500 rows per import. Pupil payment codes are
+            of your crèche&apos;s classes. Up to 500 rows per import. Pupil payment codes are
             generated automatically.
           </p>
         </div>

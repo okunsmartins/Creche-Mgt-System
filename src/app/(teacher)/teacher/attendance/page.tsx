@@ -87,7 +87,7 @@ export default async function TeacherAttendancePage({
       {!assignedClass && (
         <div className="rounded-2xl bg-amber-500/10 px-5 py-4 ring-1 ring-amber-500/20">
           <p className="text-sm text-amber-300">
-            No class assigned. Contact the school administrator.
+            No class assigned. Contact the crèche administrator.
           </p>
         </div>
       )}

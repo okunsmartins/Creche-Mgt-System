@@ -201,7 +201,7 @@ export default async function AdminOrderDetailPage({ params }: PageProps) {
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Reference</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Child</th>
-                <th className="px-4 py-3 text-left font-medium text-text-muted">Class</th>
+                <th className="px-4 py-3 text-left font-medium text-text-muted">Room</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Activity</th>
                 <th className="px-4 py-3 text-left font-medium text-text-muted">Verification</th>
                 <th className="px-4 py-3 text-right font-medium text-text-muted">Amount</th>

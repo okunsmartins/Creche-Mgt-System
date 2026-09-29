@@ -110,7 +110,7 @@ export function SchoolRowActions({ schoolId, name, isActive }: SchoolRowActionsP
               </button>
             </div>
             <p className="text-sm text-text-secondary">
-              This deletes the school and <strong>all of its data</strong> — students, classes,
+              This deletes the crèche and <strong>all of its data</strong> — students, classes,
               orders, payments and subscriptions. This <strong>cannot be undone</strong>.
             </p>
             <label htmlFor={`confirm-${schoolId}`} className="mt-4 block text-xs text-text-muted">

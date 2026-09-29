@@ -18,7 +18,7 @@ export interface MessageStudentOption {
 }
 
 interface ParentMessageFormProps {
-  /** Whether to offer the school-wide audience (admins only). */
+  /** Whether to offer the crèche-wide audience (admins only). */
   allowSchoolWide?: boolean
   /** Classes the sender may target. */
   classes?: ClassOption[]
@@ -104,7 +104,7 @@ export function ParentMessageForm({
               onChange={(e) => setAudienceType(e.target.value as 'school' | 'class' | 'student')}
               className="w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              {allowSchoolWide && <option value="school">All parents in the school</option>}
+              {allowSchoolWide && <option value="school">All parents in the crèche</option>}
               <option value="class">Parents of a class</option>
               <option value="student">Parents of a specific pupil</option>
             </select>

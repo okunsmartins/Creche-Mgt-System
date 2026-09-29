@@ -73,7 +73,7 @@ export default async function AdminMessagesPage() {
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Message parents</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Email all parents in the school or the parents of a particular class.
+          Email all parents in the crèche or the parents of a particular class.
         </p>
       </div>
 

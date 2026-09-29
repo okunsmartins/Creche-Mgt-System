@@ -30,9 +30,9 @@ export default async function ImportStudentsPage() {
         <div className="text-sm">
           <p className="font-medium text-text-primary">New here? Start with the template.</p>
           <p className="mt-0.5 text-text-muted">
-            Download the CSV, fill in your pupils (opens in Excel or Google Sheets), then upload it
-            below. Keep the header row and make each <strong>Class</strong> match one of your
-            school&apos;s classes.
+            Download the CSV, fill in your children (opens in Excel or Google Sheets), then upload
+            it below. Keep the header row and make each <strong>Room</strong> match one of your
+            crèche&apos;s rooms.
           </p>
           <a
             href="/student-import-template.csv"

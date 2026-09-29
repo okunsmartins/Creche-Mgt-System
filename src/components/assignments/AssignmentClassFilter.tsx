@@ -16,7 +16,7 @@ export function AssignmentClassFilter({
   return (
     <div className="max-w-xs">
       <Select
-        label="Filter by class"
+        label="Filter by room"
         options={classes}
         value={selected}
         placeholder="All classes"

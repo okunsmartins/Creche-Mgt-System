@@ -86,8 +86,8 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
     ? `${user.profile.firstName[0] ?? ''}${user.profile.lastName[0] ?? ''}`.toUpperCase()
     : (user.email[0]?.toUpperCase() ?? '?')
   // Fall back to the product name (never "Admin Portal") so an unattached
-  // account never mislabels the crest. Once the school is attached this shows
-  // the school's own name + crest.
+  // account never mislabels the crest. Once the crèche is attached this shows
+  // the crèche's own name + crest.
   const brandName = user.schoolName ?? 'Creche Wise'
 
   return (

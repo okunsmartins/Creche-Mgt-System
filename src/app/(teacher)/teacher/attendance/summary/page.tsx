@@ -39,7 +39,7 @@ export default async function TeacherAttendanceSummaryPage({
         <h1 className="text-2xl font-bold text-text-primary">Attendance Summary</h1>
         <div className="rounded-2xl bg-amber-500/10 px-5 py-4 ring-1 ring-amber-500/20">
           <p className="text-sm text-amber-300">
-            No class assigned to your account. Contact the school administrator.
+            No class assigned to your account. Contact the crèche administrator.
           </p>
         </div>
       </div>

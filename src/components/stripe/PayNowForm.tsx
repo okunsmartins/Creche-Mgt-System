@@ -24,7 +24,7 @@ interface PayNowFormProps {
   orderId: string
   totalCents: number
   amountPaidCents: number
-  /** Whether the school's plan allows paying in instalments (Pro feature). */
+  /** Whether the crèche's plan allows paying in instalments (Pro feature). */
   instalmentsEnabled?: boolean
   /** Whether Revolut Pay is configured — shows the Card/Revolut selector. */
   revolutEnabled?: boolean

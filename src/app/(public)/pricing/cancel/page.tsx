@@ -10,7 +10,7 @@ export default function SubscriptionCancelPage() {
       <Info className="mx-auto h-12 w-12 text-text-muted" aria-hidden="true" />
       <h1 className="mt-4 text-2xl font-bold text-text-primary">Checkout cancelled</h1>
       <p className="mt-3 text-sm text-text-secondary">
-        No charge was made — your school is still on the free plan. You can subscribe any time.
+        No charge was made — your crèche is still on the free plan. You can subscribe any time.
       </p>
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
         <Link
