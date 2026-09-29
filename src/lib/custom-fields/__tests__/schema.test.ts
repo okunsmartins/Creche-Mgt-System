@@ -30,7 +30,15 @@ describe('slugifyKey', () => {
 
 describe('isSensitiveKey', () => {
   it('flags PPSN and other sensitive identifiers', () => {
-    for (const s of ['PPSN', 'pps number', 'Passport No', 'IBAN', 'Card CVV', 'Password', 'Sort Code']) {
+    for (const s of [
+      'PPSN',
+      'pps number',
+      'Passport No',
+      'IBAN',
+      'Card CVV',
+      'Password',
+      'Sort Code',
+    ]) {
       expect(isSensitiveKey(s)).toBe(true)
     }
   })
@@ -47,11 +55,17 @@ describe('validateCustomFieldValue', () => {
       ok: false,
       error: 'Field is required',
     })
-    expect(validateCustomFieldValue(def({ required: false }), '')).toEqual({ ok: true, value: null })
+    expect(validateCustomFieldValue(def({ required: false }), '')).toEqual({
+      ok: true,
+      value: null,
+    })
   })
 
   it('coerces numbers and rejects non-numbers', () => {
-    expect(validateCustomFieldValue(def({ fieldType: 'number' }), '12.5')).toEqual({ ok: true, value: 12.5 })
+    expect(validateCustomFieldValue(def({ fieldType: 'number' }), '12.5')).toEqual({
+      ok: true,
+      value: 12.5,
+    })
     expect(validateCustomFieldValue(def({ fieldType: 'number' }), 'abc').ok).toBe(false)
   })
 
@@ -62,8 +76,14 @@ describe('validateCustomFieldValue', () => {
   })
 
   it('parses checkbox truthy/falsey text', () => {
-    expect(validateCustomFieldValue(def({ fieldType: 'checkbox' }), 'Yes')).toEqual({ ok: true, value: true })
-    expect(validateCustomFieldValue(def({ fieldType: 'checkbox' }), 'no')).toEqual({ ok: true, value: false })
+    expect(validateCustomFieldValue(def({ fieldType: 'checkbox' }), 'Yes')).toEqual({
+      ok: true,
+      value: true,
+    })
+    expect(validateCustomFieldValue(def({ fieldType: 'checkbox' }), 'no')).toEqual({
+      ok: true,
+      value: false,
+    })
     expect(validateCustomFieldValue(def({ fieldType: 'checkbox' }), 'maybe').ok).toBe(false)
   })
 

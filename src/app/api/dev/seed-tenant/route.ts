@@ -41,7 +41,10 @@ export async function GET(req: Request): Promise<Response> {
     .eq('email', email)
     .maybeSingle()
   if (!profile) {
-    return NextResponse.json({ error: `no profile for ${email} — sign in once first` }, { status: 404 })
+    return NextResponse.json(
+      { error: `no profile for ${email} — sign in once first` },
+      { status: 404 },
+    )
   }
 
   const result = await provisionSchool(admin, {

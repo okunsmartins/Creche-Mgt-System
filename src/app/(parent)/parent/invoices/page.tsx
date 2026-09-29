@@ -68,7 +68,9 @@ export default async function ParentInvoicesPage() {
       {/* Outstanding summary */}
       <div className="rounded-xl border border-border bg-surface p-5">
         <p className="text-sm text-text-muted">Total outstanding</p>
-        <p className="mt-1 text-3xl font-bold text-text-primary">{formatCurrency(outstandingCents)}</p>
+        <p className="mt-1 text-3xl font-bold text-text-primary">
+          {formatCurrency(outstandingCents)}
+        </p>
         {outstandingCents > 0 && (
           <p className="mt-2 text-sm text-text-muted">
             To pay, contact your crèche or use the payment options they’ve shared. Online payment of
@@ -96,7 +98,9 @@ export default async function ParentInvoicesPage() {
             </thead>
             <tbody>
               {invoices.map((inv) => {
-                const child = inv.students ? `${inv.students.first_name} ${inv.students.last_name}` : '—'
+                const child = inv.students
+                  ? `${inv.students.first_name} ${inv.students.last_name}`
+                  : '—'
                 return (
                   <tr key={inv.id} className="border-b border-border/50">
                     <td className="px-4 py-3 font-medium">{child}</td>

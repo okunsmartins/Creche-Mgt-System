@@ -44,7 +44,11 @@ describe('autoMap', () => {
 describe('validateRows — staff', () => {
   it('validates a staff row and warns on a bad email', () => {
     const mapping = { firstName: 0, lastName: 1, email: 2, gardaVettingExpiry: 3 }
-    const res = validateRows([['Aoife', 'Kelly', 'not-an-email', '15/05/2027']], mapping, STAFF_FIELDS)
+    const res = validateRows(
+      [['Aoife', 'Kelly', 'not-an-email', '15/05/2027']],
+      mapping,
+      STAFF_FIELDS,
+    )
     expect(res.validCount).toBe(1) // email is a warning, not an error
     expect(res.rows[0]!.warnings.some((w) => w.toLowerCase().includes('email'))).toBe(true)
     expect(res.rows[0]!.values['gardaVettingExpiry']).toBe('2027-05-15')

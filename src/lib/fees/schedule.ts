@@ -46,7 +46,9 @@ function addMonths(iso: string, months: number): string {
   const d = toUtc(iso)
   const day = d.getUTCDate()
   const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1))
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate()
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate()
   target.setUTCDate(Math.min(day, lastDay))
   return fromUtc(target)
 }
@@ -56,7 +58,11 @@ function addMonths(iso: string, months: number): string {
  * Weekly/fortnightly step by days from the start; monthly steps by calendar
  * month (day clamped); annually yields one date per year.
  */
-export function generateDueDates(frequency: FeeFrequency, startISO: string, endISO: string): string[] {
+export function generateDueDates(
+  frequency: FeeFrequency,
+  startISO: string,
+  endISO: string,
+): string[] {
   if (toUtc(startISO) > toUtc(endISO)) return []
   const dates: string[] = []
   let cur = startISO

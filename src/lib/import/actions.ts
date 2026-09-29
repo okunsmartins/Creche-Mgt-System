@@ -26,7 +26,8 @@ export async function parseImportAction(
   const fields = DATASET_FIELDS[dataset] ?? CHILD_FIELDS
 
   const file = formData.get('file')
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: 'Choose a file to upload.' }
+  if (!(file instanceof File) || file.size === 0)
+    return { ok: false, error: 'Choose a file to upload.' }
   if (file.size > MAX_FILE_BYTES) return { ok: false, error: 'File is larger than 5 MB.' }
   const name = file.name.toLowerCase()
   if (!name.endsWith('.csv') && !name.endsWith('.xlsx')) {
@@ -64,7 +65,9 @@ export interface ImportChildrenResult {
 const CORE_KEYS = new Set(['firstName', 'lastName', 'room'])
 
 /** Step 2: validate server-side (authoritative) and insert the valid children. */
-export async function importChildrenAction(input: ImportChildrenInput): Promise<ImportChildrenResult> {
+export async function importChildrenAction(
+  input: ImportChildrenInput,
+): Promise<ImportChildrenResult> {
   const admin = await requireAdmin()
   await requireFeature('csv_import', admin.schoolId!)
   const schoolId = admin.schoolId!
@@ -72,7 +75,11 @@ export async function importChildrenAction(input: ImportChildrenInput): Promise<
   const rows = Array.isArray(input.rows) ? input.rows.slice(0, MAX_IMPORT_ROWS) : []
   const result = validateRows(rows, input.mapping, CHILD_FIELDS)
   if (result.missingRequired.length > 0) {
-    return { ok: false, missingRequired: result.missingRequired, error: 'Map all required fields first.' }
+    return {
+      ok: false,
+      missingRequired: result.missingRequired,
+      error: 'Map all required fields first.',
+    }
   }
 
   const adminClient = createSupabaseAdminClient()
@@ -189,7 +196,11 @@ export async function importStaffAction(input: ImportChildrenInput): Promise<Imp
   const rows = Array.isArray(input.rows) ? input.rows.slice(0, MAX_IMPORT_ROWS) : []
   const result = validateRows(rows, input.mapping, STAFF_FIELDS)
   if (result.missingRequired.length > 0) {
-    return { ok: false, missingRequired: result.missingRequired, error: 'Map all required fields first.' }
+    return {
+      ok: false,
+      missingRequired: result.missingRequired,
+      error: 'Map all required fields first.',
+    }
   }
 
   const adminClient = createSupabaseAdminClient()

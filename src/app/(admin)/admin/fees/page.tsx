@@ -24,7 +24,8 @@ interface ScheduleRow {
 
 export default async function AdminFeesPage() {
   const admin = await requireAdmin()
-  if (!admin.schoolId) return <p className="text-error">No crèche is associated with your account.</p>
+  if (!admin.schoolId)
+    return <p className="text-error">No crèche is associated with your account.</p>
   const db = createSupabaseAdminClient()
 
   const { data: studentsData } = await db
@@ -50,7 +51,8 @@ export default async function AdminFeesPage() {
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Fees &amp; invoices</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Set each child’s fee schedule, record their ECCE/NCS funding, and generate subvention-netted invoices.
+          Set each child’s fee schedule, record their ECCE/NCS funding, and generate
+          subvention-netted invoices.
         </p>
       </div>
 
@@ -97,7 +99,10 @@ export default async function AdminFeesPage() {
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Link href={`/admin/fees/${s.id}`} className="font-medium text-primary hover:underline">
+                    <Link
+                      href={`/admin/fees/${s.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
                       Manage billing →
                     </Link>
                   </td>
