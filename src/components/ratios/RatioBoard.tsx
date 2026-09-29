@@ -13,7 +13,10 @@ export interface RoomRatioBand {
 export interface RoomRatio {
   id: string
   name: string
+  /** Children present now (basis for the ratio). */
   childrenCount: number
+  /** Total enrolled in the room (context). */
+  enrolledCount: number
   unknownAge: number
   requiredStaff: number
   byBand: RoomRatioBand[]
@@ -25,7 +28,7 @@ export interface RoomRatio {
  * planning aid until a daily check-in feature records who's actually present.
  */
 export function RatioBoard({ rooms }: { rooms: RoomRatio[] }) {
-  const totalChildren = rooms.reduce((s, r) => s + r.childrenCount, 0)
+  const totalPresent = rooms.reduce((s, r) => s + r.childrenCount, 0)
   const totalRequired = rooms.reduce((s, r) => s + r.requiredStaff, 0)
 
   if (rooms.length === 0) {
@@ -40,7 +43,7 @@ export function RatioBoard({ rooms }: { rooms: RoomRatio[] }) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat label="Rooms" value={rooms.length} />
-        <Stat label="Children enrolled" value={totalChildren} />
+        <Stat label="Children present now" value={totalPresent} />
         <Stat label="Minimum staff required" value={totalRequired} />
       </div>
 
@@ -70,7 +73,7 @@ function RoomCard({ room }: { room: RoomRatio }) {
   const empty = room.childrenCount === 0
 
   const status = empty
-    ? { variant: 'default' as const, text: 'No children' }
+    ? { variant: 'default' as const, text: 'None present' }
     : met
       ? { variant: 'success' as const, text: 'Ratio met' }
       : { variant: 'error' as const, text: `Short ${shortfall} staff` }
@@ -82,7 +85,7 @@ function RoomCard({ room }: { room: RoomRatio }) {
         <Badge variant={status.variant}>{status.text}</Badge>
       </div>
       <p className="mt-1 text-sm text-text-muted">
-        {room.childrenCount} {room.childrenCount === 1 ? 'child' : 'children'} · needs{' '}
+        {room.childrenCount} present of {room.enrolledCount} enrolled · needs{' '}
         <strong>{room.requiredStaff}</strong> staff minimum
       </p>
 

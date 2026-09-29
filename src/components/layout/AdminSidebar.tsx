@@ -33,6 +33,7 @@ import {
   Banknote,
   Receipt,
   Scale,
+  LogIn,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -76,6 +77,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Attendance',
     items: [
+      { href: '/admin/check-in', label: 'Daily Check-in', icon: LogIn },
       { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck },
       { href: '/admin/attendance/summary', label: 'Summary', icon: BarChart2 },
     ],
