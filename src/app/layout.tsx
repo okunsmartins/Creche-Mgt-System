@@ -13,10 +13,10 @@ const sans = Nunito({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Skool Bido',
-    default: 'Skool Bido — online school payments',
+    template: '%s | Creche Wise',
+    default: 'Creche Wise — crèche management, made simple',
   },
-  description: 'Securely pay for school activities, trips, books and uniforms.',
+  description: 'Creche Wise gives every crèche its own portal for enrolments, fees, subvention (ECCE/NCS), attendance and parent payments.',
   robots: {
     index: false, // Payment portal should not be indexed
     follow: false,
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#8b6fe0',
+  themeColor: '#14b3ad',
 }
 
 export default function RootLayout({

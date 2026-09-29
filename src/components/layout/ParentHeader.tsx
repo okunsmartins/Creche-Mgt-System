@@ -55,8 +55,9 @@ const NAV: NavEntry[] = [
     ],
   },
   {
-    label: 'School',
+    label: 'Crèche',
     items: [
+      { href: '/parent/invoices', label: 'Fees & Invoices' },
       { href: '/parent/permission-slips', label: 'Permission Slips' },
       { href: '/parent/payments', label: 'Payments' },
     ],
@@ -87,7 +88,7 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
   // Fall back to the product name (never "Admin Portal") so an unattached
   // account never mislabels the crest. Once the school is attached this shows
   // the school's own name + crest.
-  const brandName = user.schoolName ?? 'Skool Bido'
+  const brandName = user.schoolName ?? 'Creche Wise'
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm">

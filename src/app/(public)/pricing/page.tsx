@@ -55,7 +55,7 @@ export default async function PricingPage({
       {/* Hero */}
       <section
         className="py-16 text-text-primary md:py-20"
-        style={{ background: 'radial-gradient(ellipse at top, #ece6fc 0%, #f3f0fb 62%)' }}
+        style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
       >
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">

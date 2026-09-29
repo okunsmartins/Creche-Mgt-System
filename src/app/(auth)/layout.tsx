@@ -27,14 +27,14 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         <div className="mb-8 flex flex-col items-center gap-3">
           <Link href={homeHref} aria-label="Back to home">
             <SchoolCrest
-              name={school?.name ?? 'Skool Bido'}
+              name={school?.name ?? 'Creche Wise'}
               size={56}
               className="text-lg"
               logoUrl={school?.logo_url ?? null}
             />
           </Link>
           <div className="text-center">
-            <h1 className="text-lg font-bold text-primary">{school?.name ?? 'Skool Bido'}</h1>
+            <h1 className="text-lg font-bold text-primary">{school?.name ?? 'Creche Wise'}</h1>
             <p className="text-xs text-text-muted">
               {school ? 'Online Admin Portal' : 'School payments made simple'}
             </p>

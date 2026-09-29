@@ -7,7 +7,7 @@ export default function GetStartedPage() {
   return (
     <section
       className="relative overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at top, #ece6fc 0%, #f3f0fb 62%)' }}
+      style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
     >
       <div className="mx-auto max-w-lg px-4 py-14 sm:px-6 lg:px-8">
         <div className="text-center">

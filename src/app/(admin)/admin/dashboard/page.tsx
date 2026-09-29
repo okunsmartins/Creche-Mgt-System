@@ -117,12 +117,12 @@ export default async function AdminDashboardPage() {
   // Row 2: financial health — Collected, Orders, Pending Review
   const stats = [
     {
-      label: 'Total Students',
+      label: 'Total Children',
       value: studentCount.toString(),
       href: '/admin/students',
       icon: Users,
       glow: 'card-glow-green',
-      cta: 'View students',
+      cta: 'View children',
     },
     {
       label: 'Live Activities',
@@ -167,9 +167,9 @@ export default async function AdminDashboardPage() {
   ]
 
   const quickLinks = [
-    { href: '/admin/students/new', label: 'Add Student' },
+    { href: '/admin/students/new', label: 'Add Child' },
     { href: '/admin/payment-links/new', label: 'Create Payment Link' },
-    { href: '/admin/teachers/new', label: 'Add Teacher' },
+    { href: '/admin/teachers/new', label: 'Add Staff' },
   ]
 
   return (

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Upload, Lock } from 'lucide-react'
 import type { StudentRow, ClassRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Students' }
+export const metadata: Metadata = { title: 'Children' }
 
 const PAGE_SIZE = 25
 
@@ -71,7 +71,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
   const students = rawStudents as StudentWithClass[] | null
 
   if (error) {
-    return <p className="text-error">Failed to load students. Please refresh.</p>
+    return <p className="text-error">Failed to load children. Please refresh.</p>
   }
 
   const hasMore = (students?.length ?? 0) === PAGE_SIZE
@@ -80,7 +80,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">Students</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Children</h1>
         <div className="flex items-center gap-2">
           {isPro ? (
             <Link
@@ -101,7 +101,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
             </Link>
           )}
           <Button asChild>
-            <Link href="/admin/students/new">Add student</Link>
+            <Link href="/admin/students/new">Add child</Link>
           </Button>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
       {/* Table */}
       {students?.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-8 text-center">
-          <p className="text-text-muted">No students found.</p>
+          <p className="text-text-muted">No children found.</p>
           {(q || classId || status !== 'active') && (
             <Link
               href="/admin/students"

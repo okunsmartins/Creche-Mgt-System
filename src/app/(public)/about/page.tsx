@@ -28,18 +28,18 @@ export default function AboutPage() {
     <>
       <section
         className="relative overflow-hidden border-b border-border"
-        style={{ background: 'radial-gradient(ellipse at top, #ece6fc 0%, #f3f0fb 62%)' }}
+        style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
       >
         <div className="mx-auto max-w-2xl px-4 py-14 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            About Skool Bido
+            About Creche Wise
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             Payments and admin, <span className="text-primary">built for schools</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Skool Bido gives every school its own portal to collect payments, manage activities and
+            Creche Wise gives every school its own portal to collect payments, manage activities and
             programmes, take attendance, and message parents — without the paperwork.
           </p>
         </div>

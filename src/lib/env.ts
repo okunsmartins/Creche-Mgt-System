@@ -87,7 +87,7 @@ export const serverEnv = {
     return requireEnv('EMAIL_FROM_ADDRESS')
   },
   get emailFromName(): string {
-    return optionalEnv('EMAIL_FROM_NAME', 'School Portal')
+    return optionalEnv('EMAIL_FROM_NAME', 'Creche Wise')
   },
   get schoolNotificationEmail(): string {
     return requireEnv('SCHOOL_NOTIFICATION_EMAIL')
