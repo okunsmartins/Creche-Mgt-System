@@ -5,154 +5,195 @@
 > Crèche Management Platform Master Specification. Design: [design/fee-subvention-engine.md](design/fee-subvention-engine.md),
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
-**Project:** Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-09-16
-**Honesty rule:** only features with passing automated tests in this repo are marked ✅. Inherited-but-unadapted
-code is marked 🔵 (reusable, NOT crèche-complete). Everything else is ⬜ outstanding.
+**Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
+**Last updated:** 2026-09-29
+**Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
+🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
+🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
 
 ---
 
-## Verification snapshot (2026-09-16)
+## Verification snapshot (2026-09-29)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **715 passed** / 53 files (incl. 18 FEE-05, 13 FEE-03/CFG-01, 18 CF-01) |
-| Type-check | `npm run type-check` | ✅ exit 0, clean |
-| Lint | `npm run lint` | ✅ exit 0, clean |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **749 passed / 57 files** |
+| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean |
+| Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
+| DB migrations 068–071 applied | verified via service-role script | ✅ all tables/grants/RPC/guard-trigger present |
+| Manual browser E2E (import, hero, fees UI, nav) | dev server + manager sign-in | ✅ see per-feature notes |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
 
-Branches: `feature/FEE-05-subvention-engine` (base `main`) → `feature/FEE-03-funding-config` → `feature/CFG-01-onboarding-settings` → `feature/CF-01-custom-fields` (current), each stacked on the previous. Not pushed — **no GitHub remote yet.**
+**Crèche-specific automated tests (83 of the 749):** subvention 18, funding-config 13, custom-fields 18,
+ratio 6, fee-schedule 8, invoice-generation 8, import 12.
+
+**Git:** branch `feat/import-wizard`, **no remote**. ⚠️ **Today's work (rebrand, fees UI, carousel, parent
+invoice view, domain rename, migration 071) is committed-quality but NOT yet committed** — working tree is dirty.
+Last commit `139b897`.
+
+**Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
+Migrations 001–071 applied. Test tenant: **Angels Nest Crèche** (`manager@angelsnest.ie`; password in the
+gitignored `creche-dev-credentials.local.txt`). Note: the DB currently holds **2 schools** rows (a default +
+Angels Nest) — scope every query by `school_id`.
 
 ---
 
-## ✅ Completed & verified in this repo (crèche-specific)
+## ✅ Completed & verified (crèche-specific)
 
-### FEE-05 — ECCE + NCS subvention calculation engine
-- **Files:** `src/lib/payments/subvention.ts`, `src/lib/payments/__tests__/subvention.test.ts`.
-- **What it does:** pure, server-authoritative netting — gross fee − ECCE (zero-rated) − NCS (hourly, capped) = parent net; plus provider Pobal receivables. Integer cents; deterministic ECCE→NCS→discount ordering; net never negative; subsidy never exceeds fee; ECCE 3h/day, 15h/week, term-time only; higher-capitation flag.
-- **Spec coverage:** §8 subvention math; supports §8.5 (fee projection) and §8.6 (state inputs) once the ledger (FEE-04) exists.
-- **Tests:** 18 passing incl. the design worked example (€150 gross → €96.50 net; €69 ECCE + €53.50 NCS receivable), single-scheme, caps, no-profit/never-negative, rounding, exact period sums, property loop.
-- **⚠️ Data caveat:** rate constants (`NCS_UNIVERSAL_HOURLY_RATE_CENTS`, `DEFAULT_ECCE_CONFIG`) are **2025/26 reference values flagged `CONFIRM`** — must be verified with a Pobal/finance SME before go-live and normally sourced from effective-dated config (FEE-03), not these fallbacks.
-- **Not yet:** not wired to any DB, invoice, or UI. It is a calculation library only.
+### FEE-05 — ECCE + NCS subvention engine
+- **Files:** `src/lib/payments/subvention.ts` (+ tests). **18 tests.**
+- Pure netting: gross − ECCE (zero-rated, ≤3h/day, ≤15h/wk, term-time) − NCS (hourly, capped, never below zero)
+  = parent net; plus provider Pobal receivables. Integer cents; ECCE→NCS→discount ordering; exact period sums.
+- **⚠️ Rate constants are 2025/26 reference values flagged `CONFIRM`** — must be confirmed with a Pobal/finance SME.
 
-### FEE-03 — Funding config (code + tests verified; migration NOT applied)
-- **Files:** `src/lib/payments/funding-config.ts`, `src/lib/payments/__tests__/funding-config.test.ts`, `supabase/migrations/068_funding_config.sql`.
-- **Verified (11 tests):** effective-dated `resolveSchemeVersion` (from-inclusive/to-exclusive, null-before, latest-on-overlap), `toIsoDate`, mappers to the FEE-05 `EcceConfig` + NCS rate, tenant-settings zod schema, and an **integration test** feeding the resolved reference config into FEE-05 to reproduce the €96.50 worked example.
-- **⚠️ Not complete:** migration `068_funding_config.sql` (tables `funding_scheme_versions`, `tenant_funding_settings`, grants, RLS, 2025/26 seed) is **written but NOT applied to any database** (no Supabase project yet) — so the DB schema, grants, RLS and cross-tenant behaviour are **unverified**. Seed rates flagged `CONFIRM`. No server actions/UI yet.
+### FEE-03 — Funding config (code + migration applied)
+- **Files:** `src/lib/payments/funding-config.ts` (+ tests); migration `068_funding_config.sql`. **13 tests.**
+- Migration **applied & verified** (`funding_scheme_versions` seeded with 2 reference rows; `tenant_funding_settings` present).
+- **Not done:** tenant settings **UI**; `term_calendar_id` not modelled.
 
-### CFG-01 — Onboarding config toggles (code + tests verified; migration NOT applied)
-- **Files:** `supabase/migrations/069_onboarding_settings.sql`, extends `src/lib/payments/funding-config.ts` + its test.
-- **What it does (Layer 2 of dynamic-onboarding-fields.md):** the finite "both ways" choices as per-tenant settings — `fee_model` (FLAT_PER_CHILD / PER_SESSION_TYPE), `gross_fee_basis` (BEFORE/AFTER_SUBSIDY), `deposits_enabled` — added to `tenant_funding_settings` with safe defaults (standard onboarding). Zod schema + defaults extended.
-- **Verified:** funding-config suite 13 tests (incl. new toggle accept/reject cases); type-check + lint clean.
-- **⚠️ Not complete:** migration 069 **written but NOT applied** (no DB) — schema/CHECKs unverified; **no settings UI yet** (the radio/dropdown screen is the remaining CFG-01 work, needs the app running).
+### CF-01 — Custom fields data layer
+- **Files:** `src/lib/custom-fields/schema.ts` (+ tests); migration `070_custom_fields.sql`. **18 tests.**
+- Migration **applied & verified** (`custom_field_definitions` + `custom_fields` JSONB on students/profiles/teachers/classes).
+- Pure logic: per-type validation, slug, sensitive-key blocking, promotion type-contract.
+- **Not done:** CF-02 form renderer, CF-03 import "create/map field", CF-04 promotion engine, CF-05 materialise.
 
-### CF-01 — Custom fields data layer (code + tests verified; migration NOT applied)
-- **Files:** `supabase/migrations/070_custom_fields.sql`, `src/lib/custom-fields/schema.ts`, `src/lib/custom-fields/__tests__/schema.test.ts`.
-- **What it does (Layer 3):** `custom_field_definitions` (tenant-scoped: entity child/parent/staff/room, type, options, required, `promoted_to`, `affects_billing`) + `custom_fields JSONB` on students/profiles/teachers/classes. Pure logic: value validation per type, slug generation, sensitive-key blocking (PPSN/IBAN/etc.), and the **promotion type-contract** (`canPromoteTo` — billing needs number, filter needs enum/checkbox, compliance needs date/enum; sensitive fields barred from messaging/reporting).
-- **Verified:** 18 tests; type-check + lint clean.
-- **⚠️ Not complete:** migration 070 **written but NOT applied** (no DB) — table/JSONB columns/grants/RLS unverified. **Remaining CF work:** CF-02 dynamic form renderer, CF-03 import-wizard "create/map custom field" + near-duplicate detection, CF-04 promotion engine (wire targets + audit), CF-05 materialise-to-core. No UI yet.
+### Room ratio engine (spec §7.4/7.5)
+- **Files:** `src/lib/ratios/ratio.ts` (+ tests). **6 tests.** Required-staff/shortfall/spare-capacity/severity;
+  reference Irish age-band ratios flagged **CONFIRM**. **Engine only — no UI, no live room counts.**
 
-### Project setup
-- Repo forked from Skool Bido (`scoil-bhride-portal`); secrets (`.env.local`, Revolut key) and artifacts excluded; fresh git history; planning/design docs added under `docs/{adr,design,backlog}`.
+### Fee-schedule generator (spec §8.5)
+- **Files:** `src/lib/fees/schedule.ts` (+ tests). **8 tests.** Dated obligations weekly/fortnightly/monthly/annually,
+  month-end clamp. Pure. (No "term" frequency yet — spec lists it.)
+
+### Invoice-generation engine (FEE-06 core)
+- **Files:** `src/lib/fees/invoice.ts` (+ tests). **8 tests.** Weekly subvention grouped into billing periods;
+  flat + hourly; ECCE zero-rate; NCS netting; term-calendar filter. Pure.
+
+### Guided import wizard (spec §5.4) — the validated wedge
+- **Files:** `src/lib/import/*` (parse/validate/fields/actions, **12 tests**), `src/components/import/ImportWizard.tsx`,
+  `src/app/(admin)/admin/import/page.tsx` (Pro-gated).
+- CSV + XLSX (SheetJS), auto-mapping, live preview, per-row validation, **downloadable error report**, Children **and** Staff datasets.
+- **✅ Manually verified end-to-end in the browser** (as `manager@angelsnest.ie`): imported children incl. the previously-failing
+  ambiguous DOB (Saoirse Kelly, `02/11/2022`), duplicates skipped, staff imported, error report downloaded with reasons.
+  **No automated E2E** — lib is unit-tested; the wizard flow is manually verified.
+
+### Migrations 068–071 applied & verified
+- `068` funding config, `069` onboarding settings, `070` custom fields, `071` fees/invoices — all present in the DB.
+- **071 verified via script:** table writes, the **partial-unique "one ACTIVE funding per scheme per child"**, the
+  `generate_invoice_number` RPC, and the **immutability guard trigger** (an issued invoice's financial fields cannot be edited).
+
+### Branding (Creche Wise) — verified in browser (no automated test)
+- Platform renamed **Skool Bido/"Crèche Management System" → "Creche Wise"** (`crechewise.com`); `PLATFORM_NAME` constant
+  (`src/lib/platform/brand.ts`); email from-name + metadata updated.
+- **Home hero split:** Creche Wise platform landing → **5-slide carousel** (`src/components/marketing/HeroCarousel.tsx`);
+  a signed-up crèche's portal → **static hero branded to its name** ("Welcome to {crèche}"). Both verified in-browser.
+
+### Domain rename — **primary surfaces only** (verified in browser)
+- Admin sidebar + Children/Staff/Rooms list pages + dashboard now say **Children / Staff / Rooms** (was Students/Teachers/Classes).
+- ⚠️ Routes, DB tables and code identifiers are **unchanged** (`/admin/students`, `students`, `classes`, `teachers`).
+- ⚠️ **Not renamed yet:** add/edit **forms**, reports, attendance copy, `TeacherSidebar`, and the home **features grid** (still school wording).
+
+---
+
+## 🟡 Built but NOT fully verified — do NOT report as complete
+
+| Item | Files | What's verified | What's NOT verified (gap to close) |
+|---|---|---|---|
+| **FEE-01** fee schedules (partial) | `fee_schedules` table (mig 071); `createFeeScheduleAction` | table applied; a row inserts via service-role script | **No `service_rates` table, no effective-dated rates, no overlap rejection, no "term" frequency.** Server action never exercised via UI; no automated test. |
+| **FEE-02** child funding registrations | `child_funding_registrations` (mig 071); `upsertFundingRegistrationAction` | table applied; partial-unique + PPSN encrypt used; verified via script | **No automated test** for the constraint, encryption round-trip, or "PPSN never in logs". Action not integration-tested. |
+| **FEE-04** invoice ledger (partial) | `invoices` (mig 071) + guard trigger | table + guard trigger verified via script | **State machine simplified** vs spec (`draft/issued/paid/part_paid/void` vs spec's 8 states); **no `invoice_lines` table**; not integration-tested. |
+| **FEE-06** generation action | `generateInvoicesForScheduleAction` | engine 8 tests; DB write path script-verified | Server action **not exercised via authenticated UI**; **no automated idempotency/isolation test**. |
+| Invoice **issue/void** lifecycle | `issue/voidInvoicesForScheduleAction` + buttons | actions built; guard trigger verified | Not integration-tested via UI. |
+| **FEE-07** parent invoice view | `/parent/invoices/page.tsx` | route compiles; auth guard redirects (HTTP 307) | **No data-render test** (needs a parent account linked to a child with issued invoices); **no parent-authz / a11y test**. |
+| Admin fees UI | `/admin/fees`, `ChildBillingPanel.tsx` | renders; lists children; forms display | **End-to-end create→generate→issue not completed via UI** (browser date-picker automation blocked; the flow itself is untested end-to-end). |
 
 ---
 
 ## 🔵 Inherited from the fork — reusable, NOT crèche-complete
 
-These work for the **school** product and pass their own tests, but are **not verified for the crèche** and mostly
-require the domain rename + fee wiring before they count. Do **not** report these as done for the crèche pilot.
+Work for the **school** product; passes its own tests but **not verified for the crèche**. Do not report as done.
 
 | Area | Where | Status for crèche |
 |---|---|---|
-| Multi-tenant core (subdomain/path, no default tenant) | `lib/tenant/*`; migs 003/033/034/054 | 🔵 reuse as-is (rename `school`→`tenant`) |
-| Auth / RBAC / sessions | `lib/auth/*`; migs 004/009/036 | 🔵 reuse; map roles to spec role matrix |
-| RLS + service-role/anon grants | migs 010/019–021/035 | 🔵 reuse; **new tables need their own grants + RLS** |
-| Stripe Connect (per-tenant, Standard, direct charge) | `lib/stripe/connect*`; mig 066 | 🔵 code complete; needs KYC activation + fee wiring (FEE-08) |
-| Revolut per-tenant + webhook signature | `lib/revolut/*`; mig 067 | 🔵 code complete; needs KYC + wiring |
-| Twilio SMS (E.164, delivery webhook, credits) | `lib/sms/*`; migs 055–057 | 🔵 code complete; needs ComReg/A2P activation |
-| Email (Resend, templates, from/reply-to) | `lib/email/*` | 🔵 reuse; needs sender-domain verification |
-| Parent messaging, orders, payment-links, refunds, reconciliation, subscriptions, onboarding, documents, crypto | `lib/*`; migs 007/008/014/023/038–045/063/065 | 🔵 reuse; adapt to crèche fee flows |
+| Multi-tenant core, Auth/RBAC, RLS + grants | `lib/tenant/*`, `lib/auth/*`; migs 003/004/009–021/033–036 | 🔵 reuse; new tables need own grants + RLS |
+| Stripe Connect (per-tenant) / Revolut / Twilio SMS / Resend email | `lib/stripe|revolut|sms|email/*`; migs 055–057/066/067 | 🔵 code complete; need KYC/ComReg/domain activation + fee wiring |
+| Orders, payment-links, refunds, reconciliation, subscriptions, documents, crypto | `lib/*` | 🔵 reuse; adapt to crèche fee flows |
 | Attendance (per class session) | `lib/attendance/*`; migs 031/032/062 | 🔵 base reusable; reshape to daily check-in + ratios |
-| Instalment math | `lib/payments/instalments.ts`; mig 023 | 🔵 math reusable; **rules diverge from spec — see FEE-09 below** |
+| Instalment math | `lib/payments/instalments.ts`; mig 023 | 🔵 math reusable; **rules diverge — see FEE-09** |
 
 ---
 
-## ⬜ Outstanding work (not started / not built)
+## ⬜ Outstanding (not started)
 
-**P3 fee & subvention (remaining tickets — see backlog):**
-- ⬜ FEE-01 service rates & fee schedules (schema)
-- ⬜ FEE-02 child funding registrations (CHICK, PPSN encrypted)
-- 🟡 FEE-03 effective-dated funding config + tenant settings — **code + 11 tests done; migration 068 written but NOT applied/verified against a DB; no server actions/UI**
-- ⬜ FEE-04 invoice + line ledger + state machine
-- ⬜ FEE-06 invoice generation job
-- ⬜ FEE-07 parent transparent breakdown view
-- ⬜ FEE-08 pay invoice via Connect (needs KYC)
-- ⬜ FEE-09 instalment reshape — **spec §8.4/§12.1 require `>€20` (€20.00 excluded) + configurable 2/3/4 + frequency + first date**; current inherited code is `≥€20` fixed-4. Known divergence; not changed yet (school relies on current behaviour).
-- ⬜ FEE-10 arrears reminders + outstanding-balance dashboard
-- ⬜ FEE-11 attendance true-up + Pobal claim accrual ledger
+**Fee/subvention:** FEE-08 pay invoice via Connect (needs KYC), FEE-09 instalment reshape (`>€20`, configurable 2/3/4),
+FEE-10 arrears reminders + dashboard, FEE-11 attendance true-up + Pobal claim accrual ledger. Also: `service_rates`
+(FEE-01), `invoice_lines` + full state machine (FEE-04), parent invoice **payment** wiring.
 
-**Other P0 crèche scope (spec):**
-- ⬜ Domain reshape: `classes/students`→`rooms/children`, `teachers`→`staff` (~65 files) — blocks clean naming of all fee tables
-- ⬜ Room ratio calculations + staffing forecast (§7.4/7.5)
-- ⬜ NCS/ECCE Hive-prep reports + absence/under-attendance alerts (§7.7; no Hive API)
-- ⬜ Enquiry/waiting-list CRM crèche-adaptation (§7.3)
-- ⬜ Daily records (sleep/nappy/meal/incident/medication) (§7.6)
-- ⬜ Guided XLSX/CSV import wizard (§5.4) — extend existing CSV upload
-- ⬜ Compliance centre + inspection exports + retention (§7.7)
-- ⬜ Commercial dashboard: occupancy, revenue by room/session (§7.8)
+**P0 crèche scope (spec):** finish domain rename (forms/reports/attendance/features-grid); ratio **UI** (live counts);
+NCS/ECCE Hive-prep reports + absence alerts (§7.7, no Hive API); enquiry/waiting-list CRM (§7.3); daily records
+(sleep/nappy/meal/incident/medication) (§7.6); compliance centre + inspection exports + retention (§7.7);
+commercial dashboard (occupancy, revenue by room) (§7.8). **Promote DOB to a real column** (NCS age eligibility;
+currently in `custom_fields` JSONB).
 
-**Delivery/DevSecOps (spec §11):**
-- ⬜ GitHub remote + branch protection + PR pipeline
-- ⬜ CI gates: SAST/Semgrep, SCA/Dependabot, Gitleaks, Trivy, DAST/ZAP, SBOM
-- ⬜ DPIA + threat model sign-off (children's special-category data)
+**DevSecOps (spec §11):** GitHub remote + branch protection + PR CI; SAST/Semgrep, SCA/Dependabot, Gitleaks, Trivy,
+DAST/ZAP, SBOM; DPIA + threat model sign-off (children's special-category data).
 
 ---
 
-## Manual configuration steps (before the app runs / before pilot)
+## Manual configuration steps
 
-1. **Install deps:** `npm ci` (Windows: slow, ~10 min — this is normal).
-2. **New Supabase project** — do NOT reuse the school prod DB (`jywkpenzhzzptsrntobf`). Apply migrations 001–067 to the new project, then crèche migrations as built.
-3. **`.env.local`** — copy from `.env.example`, fill new Supabase URL/keys and provider keys. Never commit (gitignored).
-4. **Rename** `package.json` name from `scoil-bhride-portal`.
-5. **New GitHub repo** (not `Primary-School-Mgt-System`); `git remote add origin …`; push `main` + feature branch; enable branch protection.
-6. **Day-0 external long poles** (see [backlog/day-0-action-pack.md](backlog/day-0-action-pack.md)): Stripe Connect application, Revolut Business KYC, ComReg/Twilio A2P, email sender-domain (SPF/DKIM/DMARC), DPIA.
-7. **Confirm NCS/ECCE rates** with a Pobal/finance SME (fee-subvention-engine.md §7) and load into FEE-03 config; swap out the `CONFIRM` fallback constants.
+1. **Deps:** `npm ci` (Windows: slow first run, ~10 min — normal).
+2. **`.env.local`** is present and filled for the dev Supabase (`xpbavfutfejlfbmnntyl`) + `ENCRYPTION_KEY` + `CRON_SECRET`;
+   Stripe/Resend/Twilio are placeholders. Never commit (gitignored).
+3. **Applying future migrations:** no `SUPABASE_DB_URL`/psql/management token is configured here, so DDL is applied by
+   **pasting the migration into the Supabase SQL editor** (that is how 068–071 were applied). To automate later, set a
+   connection string and use `npm run db:migrate` (`supabase db push`).
+4. **Confirm NCS/ECCE rates** with a Pobal/finance SME and load into FEE-03 config; replace the `CONFIRM` fallbacks.
+5. **Confirm the reference Irish room ratios** in `src/lib/ratios/ratio.ts` (flagged CONFIRM) before any ratio UI ships.
+6. **⚠️ Remove `src/app/api/dev/` before production** (dev-only seed/Pro-unlock route).
+7. **Before pilot / go-live:** new GitHub repo + remote + branch protection; Stripe Connect + Revolut KYC; ComReg/Twilio A2P;
+   email sender-domain (SPF/DKIM/DMARC); DPIA. See [backlog/day-0-action-pack.md](backlog/day-0-action-pack.md).
 
 ---
 
-## Security considerations (carry forward — spec §10, and fork lessons)
+## Security considerations (spec §10 + fork lessons)
 
-- **Service-role bypasses RLS** — every query via the admin client must include its own `tenant/school` filter. RLS is a second boundary, not the only one.
-- **New tenant-owned tables** need explicit `service_role` (+ `authenticated` SELECT) grants and RLS policies, and a **cross-tenant negative test in the same PR** (release-blocking).
-- **PPSN + health/allergy/medical** are special-category — encrypt at rest (`lib/crypto`), never log, never echo into error telemetry.
-- **No sequential public IDs** (use UUID/ULID) to prevent enumeration.
-- **Financial ops idempotent + audited**; verify provider webhook signatures before state changes.
-- **Never log** secrets, card data, health details, or full payment/message payloads.
-- FEE-05 itself touches no DB, so it has no tenant-isolation surface; isolation tests attach to FEE-01/02/04.
+- **Service-role bypasses RLS** — every admin-client query must include its own `school_id` filter (RLS is a second boundary,
+  not the only one). The DB has **2 schools**, so cross-tenant leakage is testable right now.
+- **New tenant-owned tables need their own grants + RLS + a cross-tenant negative test in the same PR** (release-blocking).
+  `fee_schedules`/`invoices`/`child_funding_registrations` have grants + RLS but **no automated isolation test yet** (gap).
+- **`child_funding_registrations` holds PPSN (special-category)** — stored encrypted (`src/lib/crypto`), **not granted to
+  `authenticated`** (service-role only). Add an automated "PPSN never in logs/telemetry" test (currently missing).
+- Invoices are **immutable once issued** (DB guard trigger verified); financial changes are reversed by **voiding**, not editing.
+- No sequential public IDs; invoice numbers via race-safe `generate_invoice_number` RPC.
+- Never log secrets, card data, health/allergy details, or full payment/message payloads.
 
 ---
 
 ## Exact commands to continue
 
 ```bash
-# from the repo root: E:\First Stack Solutions\Creche_Mgt_System
-npm ci                                   # install deps (first time)
-npm run test -- run                      # full unit/integration suite (vitest)
-npm run test -- run src/lib/payments/__tests__/subvention.test.ts   # FEE-05 only
-npm run type-check                       # tsc --noEmit
-npm run lint                             # eslint src
-npm run test:e2e                         # Playwright (needs app running + env)
+# repo root: E:\First Stack Solutions\Creche_Mgt_System
+npm ci                          # install deps (first time)
+npm run test -- run             # full vitest suite (749 tests)
+npm run type-check              # tsc --noEmit
+npm run lint                    # eslint src
+npm run test:e2e                # Playwright (needs app running + env) — not yet run
 
-# git (already on the feature branch)
+# run the app (this session used a background dev server on :3000)
+npm run dev                     # http://localhost:3000  (first compile ~55s on Windows)
+
+# run one crèche suite
+npm run test -- run src/lib/fees/__tests__/invoice.test.ts
+npm run test -- run src/lib/payments/__tests__/subvention.test.ts
+
+# git — commit today's uncommitted work, then set up a remote
 git status
-git log --oneline -5
-
-# once a GitHub remote exists:
-# git remote add origin <new-repo-url>
-# git push -u origin main
-# git push -u origin feature/FEE-05-subvention-engine   # then open the PR
+git add -A && git commit -m "feat: Creche Wise rebrand, fees UI + invoice lifecycle, parent invoices, domain rename (primary surfaces)"
+# git remote add origin <new-repo-url> && git push -u origin feat/import-wizard
 ```
 
-**Recommended next ticket:** FEE-03 (effective-dated funding config) — no external blocker, feeds real ECCE/NCS
-rates into FEE-05, and is the natural precursor to the FEE-01/02/04 schema spine.
+**Recommended next:** close a 🟡 to ✅ — add an **automated cross-tenant isolation + idempotency test** for
+`generateInvoicesForScheduleAction` (uses the 2-schools DB), then wire **FEE-08** (pay invoice via the existing Connect rail)
+so the parent invoice view becomes payable.

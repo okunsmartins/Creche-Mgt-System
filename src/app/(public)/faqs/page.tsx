@@ -8,20 +8,20 @@ export const metadata: Metadata = { title: 'FAQs' }
 // channels/hours, exact hosting region) should be confirmed before publishing.
 const faqs = [
   {
-    q: 'How do schools get started with Crèche Management System?',
+    q: 'How do schools get started with Creche Wise?',
     a: 'Getting started is quick. Create your school’s own portal, add your classes, activities and programmes, and share your portal link with parents. Setup takes minutes rather than weeks, and our step-by-step guides walk you through each stage — most schools are up and running in a matter of hours.',
   },
   {
-    q: 'Is Crèche Management System compliant with Irish data protection law (GDPR)?',
-    a: 'Protecting your school’s data is a priority. Crèche Management System is built with GDPR in mind: data is hosted with reputable cloud infrastructure providers, all connections are encrypted in transit (HTTPS/TLS), and every payment is handled by regulated payment providers — we never see or store card details. Access is strictly role-based, so staff only see information relevant to their role. See our Privacy Policy for the full detail.',
+    q: 'Is Creche Wise compliant with Irish data protection law (GDPR)?',
+    a: 'Protecting your school’s data is a priority. Creche Wise is built with GDPR in mind: data is hosted with reputable cloud infrastructure providers, all connections are encrypted in transit (HTTPS/TLS), and every payment is handled by regulated payment providers — we never see or store card details. Access is strictly role-based, so staff only see information relevant to their role. See our Privacy Policy for the full detail.',
   },
   {
-    q: 'How does Crèche Management System work — is it difficult to use?',
-    a: 'Crèche Management System is a secure, cloud-based system, so there’s nothing to install and updates happen automatically. Sign in from any device with an internet connection — laptop, phone or tablet — and your data is always there; if a device fails, just sign in from another one and nothing is lost. It’s designed to be intuitive: if you can use everyday web apps, you’ll find your way around it easily.',
+    q: 'How does Creche Wise work — is it difficult to use?',
+    a: 'Creche Wise is a secure, cloud-based system, so there’s nothing to install and updates happen automatically. Sign in from any device with an internet connection — laptop, phone or tablet — and your data is always there; if a device fails, just sign in from another one and nothing is lost. It’s designed to be intuitive: if you can use everyday web apps, you’ll find your way around it easily.',
   },
   {
     q: 'Is it suitable for all sizes and types of primary school?',
-    a: 'Yes. Crèche Management System works for primary schools of every size and type — urban and rural, DEIS schools, special schools, Gaelscoileanna, national schools and community national schools. Each school gets its own private, branded portal.',
+    a: 'Yes. Creche Wise works for primary schools of every size and type — urban and rural, DEIS schools, special schools, Gaelscoileanna, national schools and community national schools. Each school gets its own private, branded portal.',
   },
   {
     q: 'How does my school set up payments and get paid?',
@@ -44,12 +44,12 @@ const faqs = [
     a: 'No — you can pay as a guest with no account. Open the payment link your school sent, or your school’s portal link (skoolbido.com/s/your-school), and pay securely by card; your receipt is emailed to you. Creating an account is optional but recommended, as it lets you see all your children, orders, receipts and any instalments in one place. Whether you pay as a guest or sign in, always start from the link your school gives you so you reach the correct school.',
   },
   {
-    q: 'Who can see what on Crèche Management System?',
+    q: 'Who can see what on Creche Wise?',
     a: 'Access is controlled by role. Principals and school administrators can see school-wide information and manage settings and payments; class teachers see only the pupils in their own classes; and parents only ever see their own children. Your school controls each staff member’s level of access, so everyone sees exactly what they need — and nothing they don’t.',
   },
   {
     q: 'What support is available for schools?',
-    a: 'We’re here to help. Schools get guided setup, help articles, and responsive email support to get the most out of Crèche Management System, so there’s always someone to turn to when you have a question.',
+    a: 'We’re here to help. Schools get guided setup, help articles, and responsive email support to get the most out of Creche Wise, so there’s always someone to turn to when you have a question.',
   },
 ]
 

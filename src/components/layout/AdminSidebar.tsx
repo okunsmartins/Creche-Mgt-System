@@ -31,6 +31,7 @@ import {
   Building2,
   FileText,
   Banknote,
+  Receipt,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -53,9 +54,9 @@ const NAV_SECTIONS: NavSection[] = [
     items: [{ href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
   },
   {
-    title: 'Students',
+    title: 'Children',
     items: [
-      { href: '/admin/students', label: 'Students', icon: Users },
+      { href: '/admin/students', label: 'Children', icon: Users },
       { href: '/admin/import', label: 'Import', icon: Upload },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
@@ -65,8 +66,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Staff',
     items: [
-      { href: '/admin/teachers', label: 'Teachers', icon: GraduationCap },
-      { href: '/admin/classes', label: 'Classes', icon: BookOpen },
+      { href: '/admin/teachers', label: 'Staff', icon: GraduationCap },
+      { href: '/admin/classes', label: 'Rooms', icon: BookOpen },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
     ],
   },
@@ -80,6 +81,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Payments',
     items: [
+      { href: '/admin/fees', label: 'Fees & Invoices', icon: Receipt },
       { href: '/admin/activities', label: 'Activities', icon: Calendar },
       { href: '/admin/programmes', label: 'Programmes', icon: Repeat },
       { href: '/admin/payment-links', label: 'Payment Links', icon: Link2 },
@@ -132,7 +134,7 @@ export function AdminSidebar({ user, logoUrl, isOwner = false }: AdminSidebarPro
     !allHrefs.some((other) => other !== href && other.startsWith(`${href}/`) && matchesPath(other))
   const platformActive = matchesPath('/platform')
 
-  const brandName = user.schoolName ?? 'Crèche Management System'
+  const brandName = user.schoolName ?? 'Creche Wise'
   const firstName = user.profile?.firstName ?? ''
   const lastName = user.profile?.lastName ?? ''
   const displayName = firstName && lastName ? `${firstName} ${lastName}` : user.email

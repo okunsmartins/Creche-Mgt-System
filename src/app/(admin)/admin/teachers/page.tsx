@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { TeacherStatusToggle } from '@/components/teachers/TeacherStatusToggle'
 import type { TeacherRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Teachers | Admin' }
+export const metadata: Metadata = { title: 'Staff | Admin' }
 
 export default async function TeachersPage() {
   const admin = await requireAdmin()
@@ -24,7 +24,7 @@ export default async function TeachersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Teachers</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Staff</h1>
           <p className="mt-1 text-sm text-text-muted">
             {active} active · {teachers.length} total
           </p>
@@ -33,13 +33,13 @@ export default async function TeachersPage() {
           href="/admin/teachers/new"
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
         >
-          Add teacher
+          Add staff member
         </Link>
       </div>
 
       {teachers.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-text-muted">No teachers have been added yet.</p>
+          <p className="text-text-muted">No staff have been added yet.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">

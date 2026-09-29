@@ -7,23 +7,23 @@ export const metadata: Metadata = {
   title: 'Contact',
 }
 
-// Crèche Management System platform contact addresses (shown on the public site, not inside a
+// Creche Wise platform contact addresses (shown on the public site, not inside a
 // school's portal). All three forward to the team inbox.
 const PLATFORM_CONTACTS: { title: string; email: string; description: string }[] = [
   {
     title: 'General enquiries',
     email: 'info@skoolbido.com',
-    description: 'Questions about Crèche Management System, how it works, or getting started.',
+    description: 'Questions about Creche Wise, how it works, or getting started.',
   },
   {
     title: 'Schools & sales',
     email: 'contact@skoolbido.com',
-    description: 'Thinking of using Crèche Management System for your school? Talk to us about setting it up.',
+    description: 'Thinking of using Creche Wise for your school? Talk to us about setting it up.',
   },
   {
     title: 'Support',
     email: 'support@skoolbido.com',
-    description: 'Already using Crèche Management System? Get help with your portal or report an issue.',
+    description: 'Already using Creche Wise? Get help with your portal or report an issue.',
   },
 ]
 
@@ -49,7 +49,7 @@ export default async function ContactPage() {
         <div className="mx-auto max-w-2xl px-4 py-14 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            {school?.name ?? 'Crèche Management System'}
+            {school?.name ?? 'Creche Wise'}
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             Contact <span className="text-primary">us</span>
@@ -57,7 +57,7 @@ export default async function ContactPage() {
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
             {school
               ? 'If you have a question about a payment or need assistance, please contact the school office.'
-              : 'Get in touch with the Crèche Management System team — pick the inbox that fits and we’ll be happy to help.'}
+              : 'Get in touch with the Creche Wise team — pick the inbox that fits and we’ll be happy to help.'}
           </p>
         </div>
       </section>

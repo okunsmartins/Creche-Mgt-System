@@ -4,7 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 // isolation without a full env. Values mirror the real shape.
 vi.mock('@/lib/env', () => ({
   serverEnv: {
-    emailFromName: 'Crèche Management System',
+    emailFromName: 'Creche Wise',
     emailFromAddress: 'noreply@send.skoolbido.com',
   },
 }))
@@ -51,12 +51,12 @@ describe('buildEmailFrom', () => {
   })
 
   it('falls back to EMAIL_FROM_NAME when no school name is given', () => {
-    expect(buildEmailFrom()).toBe('"Crèche Management System" <noreply@send.skoolbido.com>')
-    expect(buildEmailFrom(null)).toBe('"Crèche Management System" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom()).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom(null)).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
   })
 
   it('falls back when the school name is blank or whitespace-only', () => {
-    expect(buildEmailFrom('   ')).toBe('"Crèche Management System" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom('   ')).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
   })
 
   it('trims surrounding whitespace from the school name', () => {

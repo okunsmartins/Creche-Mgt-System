@@ -46,3 +46,7 @@ next-env.d.ts
 
 # Local Claude Code preview/dev config
 .claude/launch.json
+creche-dev-credentials.local.txt
+
+# Local dev credentials (never commit)
+Password/

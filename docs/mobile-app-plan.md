@@ -1,106 +1,119 @@
-# Mobile App Plan (Skool Bido)
+# Creche Wise — Mobile App Plan (parent app)
 
-_Last updated: 2026-09-12 · Status: **planned, not started**_
+*Drafted 2026-09-29. Companion to the web build. This is the plan for the **parent-facing mobile app** that ships to Google Play (and later the App Store), letting a parent interact with the crèche(s) their child attends.*
 
-Give parents a downloadable **Skool Bido** app on the **App Store** and **Google Play**, on top of
-the existing Next.js + Supabase web platform — without rebuilding the product.
+---
 
-## Guiding decision: web-first
+## 1. The one question first: can we build the app and the web app at the same time?
 
-The mobile app is a **distribution channel on the same backend**, not a rewrite. Marketing the web
-app proceeds on schedule (week of **2026-09-15**); the app is built in parallel and ships weeks
-later. **Nothing about the web launch waits on the app.** Parents can already use the responsive site
-in a mobile browser today.
+**Short answer: partly — and you should *not* try to build them fully in parallel.**
 
-## Recommended path (in order)
+The mobile app is not a separate product. The smart way to ship it (see §3) is to **wrap the existing web app**, so the app *reuses* the web app's screens, auth, database and business logic. That means:
 
-1. **PWA now (~2–4 days)** — web app manifest + service worker + install prompt so parents can "Add
-   to Home Screen" on iOS/Android immediately. Bridges the gap before the stores.
-2. **Capacitor wrapper (~3–5 weeks total)** — wrap the **existing** web front-end in a native shell
-   (a WebView) to produce real App Store + Google Play apps. Reuses ~95% of the current code: one
-   codebase, one backend (Supabase + Next.js API routes + Stripe/Revolut).
-3. **Do not** attempt a React Native rewrite now — 3–4+ months for little near-term gain while a
-   working web app already exists. Revisit only if native UX demands it later.
+- **The app depends on the parent-facing web flows being stable.** If we build the native shell around parent screens that are still changing every day, we create constant rework (deep links, layouts, native gestures all break as the web changes).
+- **But the *setup* work for mobile has long lead times and can start now in parallel** — it doesn't touch the web code:
+  - Google Play Console account + identity verification (Google now requires verified developer identity; this can take days).
+  - Apple Developer Program enrolment (if we also want iOS) — review + enrolment can take a week+.
+  - Firebase project for push notifications (FCM).
+  - App icon, splash screen, store listing copy, screenshots, privacy policy URL.
 
-## How the mobile app and web app interact (Capacitor model)
+**Recommendation:**
+1. **Now → in parallel:** open the store/developer accounts, set up Firebase, prepare store assets. (No web code touched.)
+2. **Finish the web app to a "parent-usable" milestone** (see §2) — this is the critical path.
+3. **Then wrap it** into the mobile app (≈2–4 weeks, §4).
 
-One codebase, one backend, two delivery surfaces:
+So: **do the paperwork/accounts in parallel today, but finish the web parent experience before doing the real app engineering.** Trying to do both engineering efforts at once would roughly double the work and the bugs.
 
-```
-   [ Web browser ]              [ iOS / Android app ]
-   skoolbido.com                native shell (Capacitor)
-        │                          │  (WebView runs the same UI)
-        └──────────┬───────────────┘
-                   ▼
-     Same backend: Next.js API routes + Supabase + Stripe/Revolut
-```
+---
 
-- **UI** — the app renders the *same* React front-end; screens are not rewritten.
-- **Auth / data** — the app uses the same Supabase auth and the same APIs. A parent signs in with
-  their account, which is already tied to a school, so **the app resolves the school from the parent's
-  profile** — no subdomains inside the app (cleaner than the web's per-school subdomain routing).
-- **One app for all schools** — parents find/select their school on first use. **Never** build
-  per-school apps (unmaintainable).
-- **Payments** — Stripe/Revolut hosted checkout opens in an in-app browser and deep-links back on
-  success. School fees/activities are **real-world services**, so **Apple does not require its 30%
-  in-app-purchase system** (IAP applies to digital content only); external Stripe/Revolut payment is
-  allowed.
-- **Content strategy** — bundle the app shell and call the live APIs (feels native, some offline
-  resilience, avoids the "it's just a website" rejection), rather than loading the remote URL raw.
+## 2. The "parent-usable" web milestone the app depends on
 
-## Step-by-step
+The app is only worth wrapping once a parent can actually *do their business* on the web. That means these web flows must be built and stable first:
 
-### Phase 0 — PWA (~2–4 days)
+- [ ] Parent sign-in (magic-link / password) + link to their child(ren)
+- [ ] View child profile, room, key info
+- [ ] **See fees / invoices** (net after ECCE/NCS subvention) — *depends on the FEE-06 invoice work in progress*
+- [ ] **Pay an invoice** (Stripe/Revolut) + payment history / receipts
+- [ ] Notifications feed (messages from the crèche) + attendance visibility
+- [ ] Permission slips / consents (already partly built)
 
-1. Add a web app manifest (name, icons, theme colour, `display: standalone`).
-2. Add a service worker (offline shell + caching).
-3. Add an "Install app" prompt.
-   → Parents can "Add to Home Screen" immediately.
+Everything above is being built for the web anyway. The app adds **native packaging + push + deep links** on top — not new features.
 
-### Phase 1 — Capacitor foundation (~1 week)
+---
 
-4. Add Capacitor; generate the iOS + Android projects.
-5. Bundle the app shell; point API calls at the live backend.
-6. App icons, splash screens, and a deep-link scheme (so payment redirects return into the app).
-7. Run on simulator/emulator, then a real device.
+## 3. Architecture decision: how to build it
 
-### Phase 2 — Native features (~1 week)
+### Recommended: **Capacitor wrapper of the existing web app** ✅
 
-8. **Push notifications** — APNs (iOS) + FCM (Android) + backend to store device tokens and send on
-   events (new message, payment due, report ready). _This is the main net-new backend work._
-9. Camera / file picker for homework uploads.
-10. Biometric / secure token storage for fast login.
-11. Handle Stripe/Revolut checkout in the in-app browser with return deep-links.
+[Capacitor](https://capacitorjs.com) packages our existing Next.js web app as a native Android/iOS app. It gives us a real, installable Play Store app while **reusing ~100% of the web code, auth, and backend**.
 
-### Phase 3 — Store prep & submission (~1–2 weeks, mostly waiting)
+| | **Capacitor (recommended)** | React Native / Expo | PWA only |
+|---|---|---|---|
+| Reuses existing web app | ✅ Almost entirely | ❌ Rebuild all UI | ✅ |
+| On Google Play / App Store | ✅ | ✅ | ❌ (no store presence) |
+| Push notifications | ✅ (FCM plugin) | ✅ | ⚠️ limited on iOS |
+| Native feel | Good (web UI, native shell) | Best | Web |
+| Effort to ship | **Low (2–4 wks)** | High (2–3 months) | Very low |
+| Extra codebase to maintain | Thin shell only | Full second app | None |
 
-12. Enroll: **Apple Developer Program ($99/yr)** + **Google Play ($25 one-time)**.
-13. Store listings: screenshots, descriptions, **privacy policy**, data-safety / privacy-nutrition
-    forms, and **in-app account deletion** (Apple requires it when sign-up exists).
-14. Build signing; upload to **TestFlight** (iOS) / **internal testing** (Android).
-15. Submit for review — Google: hours–2 days; Apple: 1–3 days and can bounce.
+Given the whole strategy is "fork a proven web stack and move fast," **Capacitor is the clear fit** and matches the earlier Skool Bido mobile decision. React Native would only be worth it if we needed heavy native features (offline-first, complex camera/AR, etc.) — a parent fees/notifications app does not.
 
-**Total: ~3–5 weeks** of focused effort to be live in both stores. The long pole is Apple review +
-account setup, not development. The PWA covers the gap meanwhile.
+### What Capacitor needs from us
+- The app points at the deployed web app (crechewise.com), OR bundles the parent web UI and calls the Supabase API directly. Start with the hosted-URL approach for speed.
+- **Supabase auth in a native shell:** magic-link sign-in must return to the app via a **deep link** (`crechewise://auth/callback`) — a known, solved pattern.
+- **Push:** Firebase Cloud Messaging (Android) + APNs (iOS) via the Capacitor Push plugin; a small `device_tokens` table + a send path from our existing notification code.
 
-## Gotchas to plan for
+---
 
-- **Apple Guideline 4.2 ("minimum functionality")** rejects bare web wrappers — the Phase-2 native
-  features (push, camera, biometric, offline) are what make it pass. Do not skip them.
-- **In-app account deletion** is mandatory for Apple if users can register.
-- **Push notifications** are the one genuine piece of new backend work; everything else reuses what
-  already exists.
+## 4. Phased delivery (after the web milestone)
 
-## Costs
+**Phase M0 — Accounts & assets (can start NOW, parallel, ~a few hrs of your time + waiting):**
+- Google Play Console account + identity verification; (optional) Apple Developer enrolment.
+- Firebase project (FCM). App icon + splash + store listing + screenshots.
 
-| Item | Cost |
-| --- | --- |
-| Apple Developer Program | $99 / year |
-| Google Play Developer | $25 one-time |
-| Development | ~3–5 weeks focused effort |
+**Phase M1 — Capacitor shell (~3–5 days):**
+- Add Capacitor to the project; Android build wrapping the deployed parent web app.
+- App icon/splash, status-bar theming (Creche Wise colours), back-button handling.
+- Runs on a real Android device loading the live site.
 
-## Related
+**Phase M2 — Native auth + deep links (~3–5 days):**
+- `crechewise://` deep-link scheme; Supabase magic-link redirect back into the app.
+- Persistent sign-in (secure storage), sign-out.
 
-- Per-school subdomain routing (web): see the domain-setup notes.
-- Payments architecture (Stripe Connect direct charges, Revolut) — see
-  [implementation-status.md](implementation-status.md).
+**Phase M3 — Push notifications (~4–6 days):**
+- FCM/APNs registration; `device_tokens` table; wire crèche → parent messages + "invoice due" + "payment received" to push.
+- Tapping a push deep-links to the right screen (invoice, message).
+
+**Phase M4 — Store submission (~2–4 days + review wait):**
+- Data-safety form, privacy policy, content rating, closed testing track → production.
+- Google review is usually 1–3 days for a first submission (can be longer for new accounts).
+
+**Total engineering: ≈2–4 weeks** once the web parent flows are stable, plus store-review waiting time.
+
+---
+
+## 5. The multi-crèche design point (important, decide early)
+
+You said parents should "interact with the different crèches" via the app. That implies **one parent account that can span more than one crèche** (e.g. siblings in different settings, or a family that moves crèche).
+
+- Our data already links **parent → child → school** (`parent_student_links` carries `school_id`), so a single parent identity *can* be linked to children across multiple crèches.
+- The app then needs a **crèche switcher** (or a combined feed) so the parent sees each child under the right crèche's branding, fees and notifications.
+- **Decision to make:** is the parent app **per-crèche** (parent installs and it's tied to one crèche, like the current per-tenant portal) or **account-first** (parent logs in once, sees all their crèches)? The account-first model is the better product and the data already supports it, but it needs the parent web experience to be built account-first too — so **this should be decided before we build the parent web flows in §2**, because the app just mirrors them.
+
+**Recommendation:** build the parent web experience **account-first** (parent logs in → sees all their children across all their crèches), so the app inherits multi-crèche for free.
+
+---
+
+## 6. Costs / prerequisites to be aware of
+- Google Play: one-time **$25** developer registration + identity verification.
+- Apple (if iOS): **$99/year**.
+- Firebase: free tier is fine at launch.
+- A verified **privacy policy URL** and **data-safety** disclosure are mandatory for Play (we have a privacy page already).
+
+---
+
+## 7. Bottom line
+- **Don't split engineering effort now.** Finish the parent-facing web app first (it's the critical path and the app reuses it).
+- **Do start the store accounts + Firebase + assets in parallel today** — they have lead times and don't touch code.
+- **Build with Capacitor**, not a separate native app — 2–4 weeks to Play Store after the web milestone.
+- **Decide the multi-crèche model (account-first) before building the parent web flows**, so the app gets multi-crèche support automatically.

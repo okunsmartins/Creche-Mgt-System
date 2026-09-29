@@ -22,7 +22,7 @@ export default async function PrivacyPage() {
         <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
             <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            {controller ?? 'Crèche Management System'}
+            {controller ?? 'Creche Wise'}
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             Privacy <span className="text-primary">Notice</span>

@@ -11,13 +11,15 @@ import {
   CreditCard,
   ReceiptText,
   GraduationCap,
-  Sparkles,
   CalendarCheck,
   Upload,
   ClipboardList,
+  Baby,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import { getPublicViewerContext } from '@/lib/tenant/server'
+import { HeroCarousel } from '@/components/marketing/HeroCarousel'
 
 export const metadata: Metadata = { title: 'Home' }
 
@@ -152,40 +154,33 @@ export default async function HomePage() {
     tenantSlug ? (href === '/' ? `/s/${tenantSlug}` : `/s/${tenantSlug}${href}`) : href
   return (
     <>
-      {/* Hero */}
-      <section className="px-4 pb-10 pt-8 sm:px-6 md:pb-14 md:pt-12 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div
-            className="relative flex flex-col justify-center overflow-hidden rounded-3xl px-6 py-10 shadow-card sm:px-10 md:min-h-[466px] md:px-14 md:py-14"
-            style={{ background: 'linear-gradient(135deg, #3fc5c0 0%, #14b3ad 52%, #0f9b96 100%)' }}
-          >
-            {/* Soft decorative blobs */}
+      {/* Hero — the 5-slide carousel is the Creche Wise PLATFORM landing only.
+          A signed-up crèche's own portal gets a static hero branded to its name. */}
+      {isMainLanding ? (
+        <HeroCarousel />
+      ) : (
+        <section className="px-4 pb-10 pt-8 sm:px-6 md:pb-14 md:pt-12 lg:px-8">
+          <div className="mx-auto max-w-6xl">
             <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl"
-            />
+              className="relative flex flex-col justify-center overflow-hidden rounded-3xl px-6 py-10 shadow-card sm:px-10 md:min-h-[466px] md:px-14 md:py-14"
+              style={{ background: 'linear-gradient(135deg, #3fc5c0 0%, #14b3ad 52%, #0f9b96 100%)' }}
+            >
+              <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
+              <div aria-hidden className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
 
-            <div className="relative grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
-              {/* Copy */}
-              <div className="text-center md:text-left">
-                <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                  {school ? `${school.name} Online Admin Portal` : 'Online school payments'}
-                </div>
-                <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
-                  School administration, <span className="text-[#ffd98a]">made simple</span> 🎓
-                </h1>
-                <p className="mx-auto mt-5 max-w-lg text-lg text-white/85 md:mx-0">
-                  Payments, parent communication, attendance and more — everything your school
-                  office needs, in one secure portal.
-                </p>
-                {/* Parent/guest/staff sign-in CTAs are school actions — only shown
-                    inside a school's portal, not on the platform landing. */}
-                {!isMainLanding && (
+              <div className="relative grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
+                <div className="text-center md:text-left">
+                  <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                    {school?.name} Online Portal
+                  </div>
+                  <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
+                    Welcome to <span className="text-[#ffd98a]">{school?.name}</span> 👋
+                  </h1>
+                  <p className="mx-auto mt-5 max-w-lg text-lg text-white/85 md:mx-0">
+                    Pay fees, keep up with your child’s day, and stay in touch with the team — all in
+                    one secure place.
+                  </p>
                   <div className="mx-auto mt-8 w-full max-w-md space-y-3 md:mx-0">
                     <div className="flex flex-col gap-3 sm:flex-row">
                       <Link
@@ -210,62 +205,44 @@ export default async function HomePage() {
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </Link>
                   </div>
-                )}
-                {isMainLanding && (
-                  <div className="mx-auto mt-6 flex w-full max-w-md flex-wrap items-center justify-center gap-x-3 gap-y-2 border-t border-white/15 pt-5 md:mx-0 md:justify-start">
-                    <span className="text-sm text-white/70">Run a school?</span>
-                    <Link
-                      href="/get-started"
-                      className="inline-flex items-center justify-center gap-1.5 rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    >
-                      Create your own portal
-                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    </Link>
-                  </div>
-                )}
-              </div>
+                </div>
 
-              {/* Playful illustration — floating "sticker" tiles */}
-              <div
-                aria-hidden="true"
-                className="relative mx-auto hidden h-[300px] w-full max-w-sm md:block"
-              >
-                {/* Central emblem */}
-                <div className="absolute left-1/2 top-1/2 flex h-44 w-44 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[2rem] bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur-sm">
-                  <GraduationCap className="h-24 w-24 text-white" strokeWidth={1.5} />
+                {/* Playful illustration */}
+                <div aria-hidden="true" className="relative mx-auto hidden h-[300px] w-full max-w-sm md:block">
+                  <div className="absolute left-1/2 top-1/2 flex h-44 w-44 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[2rem] bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur-sm">
+                    <Baby className="h-24 w-24 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div className="absolute left-2 top-6 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
+                    <CreditCard className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="absolute right-3 top-2 flex h-16 w-16 rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
+                    <Mail className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="absolute bottom-6 left-6 flex h-16 w-16 rotate-3 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
+                    <CalendarDays className="h-7 w-7 text-white" />
+                  </div>
+                  <div className="absolute bottom-3 right-4 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
+                    <ClipboardCheck className="h-7 w-7 text-white" />
+                  </div>
+                  <Sparkles className="absolute right-10 top-1/2 h-6 w-6 text-[#ffd98a]" />
+                  <span className="absolute left-10 top-1/2 h-2.5 w-2.5 rounded-full bg-white/50" />
+                  <span className="absolute bottom-8 right-1/3 h-2 w-2 rounded-full bg-white/40" />
                 </div>
-                {/* Floating tiles */}
-                <div className="absolute left-2 top-6 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
-                  <CreditCard className="h-7 w-7 text-white" />
-                </div>
-                <div className="absolute right-3 top-2 flex h-16 w-16 rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
-                  <Mail className="h-7 w-7 text-white" />
-                </div>
-                <div className="absolute bottom-6 left-6 flex h-16 w-16 rotate-3 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
-                  <CalendarDays className="h-7 w-7 text-white" />
-                </div>
-                <div className="absolute bottom-3 right-4 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
-                  <ClipboardCheck className="h-7 w-7 text-white" />
-                </div>
-                {/* Sparkles + dots */}
-                <Sparkles className="absolute right-10 top-1/2 h-6 w-6 text-[#ffd98a]" />
-                <span className="absolute left-10 top-1/2 h-2.5 w-2.5 rounded-full bg-white/50" />
-                <span className="absolute bottom-8 right-1/3 h-2 w-2 rounded-full bg-white/40" />
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Features */}
       <section className="pb-16 pt-6">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-bold text-text-primary sm:text-3xl">
-              Everything your school needs
+              Everything your crèche needs
             </h2>
             <p className="mt-2 text-sm text-text-muted">
-              Payments, communication and day-to-day admin — all in one portal.
+              Fees, subvention, payments, communication and day-to-day admin — all in one portal.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -367,7 +344,7 @@ export default async function HomePage() {
           </h2>
           <p className="mt-3 text-sm text-text-muted">
             {isMainLanding
-              ? 'Set up your school’s own portal to collect payments and manage your office in one place.'
+              ? 'Set up your crèche’s own portal to collect payments, handle subvention and manage your service in one place.'
               : 'Create a parent account to manage payments for all your children in one place.'}
           </p>
           <Link

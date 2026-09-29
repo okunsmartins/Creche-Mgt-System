@@ -44,7 +44,7 @@ export function SiteHeader({
   const pathname = usePathname()
   // No school identified (apex host, signed out) → platform branding, not a
   // school's. Must not duplicate the "Admin Portal" subtitle below.
-  const brandName = schoolName ?? 'Crèche Management System'
+  const brandName = schoolName ?? 'Creche Wise'
 
   // Prefix a school link with the `/s/<school>` path when browsing via path (so
   // clicking a link keeps the school in context). No-op for host/session tenants.

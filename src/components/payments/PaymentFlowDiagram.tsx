@@ -3,7 +3,7 @@ import { Users, ShieldCheck, Landmark, ArrowRight } from 'lucide-react'
 /**
  * Illustrated "how payments reach your school" flow, shown on the Payment Setup
  * page. Static (no client JS). Parent pays → Stripe processes → the money lands
- * in the SCHOOL's own bank, with Crèche Management System taking 0%.
+ * in the SCHOOL's own bank, with Creche Wise taking 0%.
  */
 
 const STEPS: { icon: typeof Users; title: string; caption: string }[] = [
@@ -58,7 +58,7 @@ export function PaymentFlowDiagram() {
 
       <p className="mt-4 text-xs text-text-muted">
         Your school is the merchant of record: you manage payouts, receipts, refunds and any
-        disputes from your own Stripe dashboard. Crèche Management System never holds your money.
+        disputes from your own Stripe dashboard. Creche Wise never holds your money.
       </p>
     </div>
   )

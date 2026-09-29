@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { StatusBadge } from '@/components/ui/Badge'
 import type { ClassRow, TeacherRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Classes | Admin' }
+export const metadata: Metadata = { title: 'Rooms | Admin' }
 
 type ClassWithTeacher = Pick<
   ClassRow,
@@ -31,16 +31,16 @@ export default async function ClassesPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Classes</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Rooms</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Assign teachers and manage class status for the current academic year.
+            Assign staff and manage room status for the current year.
           </p>
         </div>
       </div>
 
       {classes.length === 0 ? (
         <div className="py-16 text-center">
-          <p className="text-text-muted">No classes found.</p>
+          <p className="text-text-muted">No rooms found.</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
@@ -48,13 +48,13 @@ export default async function ClassesPage() {
             <thead className="border-b border-border bg-surface">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted">
-                  Class
+                  Room
                 </th>
                 <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted sm:table-cell">
                   Academic year
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted">
-                  Teacher
+                  Lead staff
                 </th>
                 <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-text-muted md:table-cell">
                   Status
