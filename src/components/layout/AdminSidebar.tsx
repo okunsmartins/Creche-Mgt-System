@@ -35,6 +35,7 @@ import {
   Scale,
   AlertCircle,
   LogIn,
+  UserPlus,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -60,6 +61,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Children',
     items: [
       { href: '/admin/students', label: 'Children', icon: Users },
+      { href: '/admin/enquiries', label: 'Enquiries', icon: UserPlus },
       { href: '/admin/import', label: 'Import', icon: Upload },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
