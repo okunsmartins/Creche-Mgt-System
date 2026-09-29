@@ -62,7 +62,7 @@ export interface ImportChildrenResult {
 }
 
 // Fields that map to their own students columns; everything else rides in custom_fields.
-const CORE_KEYS = new Set(['firstName', 'lastName', 'room'])
+const CORE_KEYS = new Set(['firstName', 'lastName', 'room', 'dateOfBirth'])
 
 /** Step 2: validate server-side (authoritative) and insert the valid children. */
 export async function importChildrenAction(
@@ -168,6 +168,8 @@ export async function importChildrenAction(
       class_id: classId,
       pupil_payment_code: pupilCode,
       is_active: true,
+      // DOB is a first-class column (migration 072); validated to YYYY-MM-DD upstream.
+      date_of_birth: r.values['dateOfBirth'] ?? null,
       custom_fields: customFields,
     })
     if (ins.error) {
