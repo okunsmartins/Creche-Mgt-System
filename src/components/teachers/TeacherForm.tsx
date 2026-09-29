@@ -15,7 +15,11 @@ interface TeacherFormProps {
   submitLabel?: string
 }
 
-export function TeacherForm({ action, teacher, submitLabel = 'Save teacher' }: TeacherFormProps) {
+export function TeacherForm({
+  action,
+  teacher,
+  submitLabel = 'Save staff member',
+}: TeacherFormProps) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState<TeacherActionState, FormData>(action, null)
 

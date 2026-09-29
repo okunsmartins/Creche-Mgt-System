@@ -1,7 +1,7 @@
 import { Users, ShieldCheck, Landmark, ArrowRight } from 'lucide-react'
 
 /**
- * Illustrated "how payments reach your school" flow, shown on the Payment Setup
+ * Illustrated "how payments reach your crèche" flow, shown on the Payment Setup
  * page. Static (no client JS). Parent pays → Stripe processes → the money lands
  * in the SCHOOL's own bank, with Creche Wise taking 0%.
  */
@@ -15,12 +15,12 @@ const STEPS: { icon: typeof Users; title: string; caption: string }[] = [
   {
     icon: ShieldCheck,
     title: 'Stripe processes it',
-    caption: 'Secure card handling — card details never touch your school or us.',
+    caption: 'Secure card handling — card details never touch your crèche or us.',
   },
   {
     icon: Landmark,
-    title: 'Your school gets paid',
-    caption: 'Funds land in your school’s own bank account in a few days.',
+    title: 'Your crèche gets paid',
+    caption: 'Funds land in your crèche’s own bank account in a few days.',
   },
 ]
 
@@ -28,7 +28,7 @@ export function PaymentFlowDiagram() {
   return (
     <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-text-primary">How payments reach your school</h2>
+        <h2 className="text-sm font-semibold text-text-primary">How payments reach your crèche</h2>
         <span className="inline-flex items-center rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">
           You keep 100% — we take 0%
         </span>
@@ -57,7 +57,7 @@ export function PaymentFlowDiagram() {
       </div>
 
       <p className="mt-4 text-xs text-text-muted">
-        Your school is the merchant of record: you manage payouts, receipts, refunds and any
+        Your crèche is the merchant of record: you manage payouts, receipts, refunds and any
         disputes from your own Stripe dashboard. Creche Wise never holds your money.
       </p>
     </div>

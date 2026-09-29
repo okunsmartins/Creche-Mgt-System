@@ -8,7 +8,7 @@ import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
 
 export const metadata: Metadata = { title: 'Pricing' }
 
-// Everything a school gets on Pro. The card-at-signup free trial (started via
+// Everything a crèche gets on Pro. The card-at-signup free trial (started via
 // Stripe Checkout at onboarding) is a FULL Pro trial, so this same list applies
 // during the trial — there is no reduced free tier.
 const FEATURES: string[] = [
@@ -43,13 +43,13 @@ export default async function PricingPage({
       )}
       {reason === 'trial_ended' && (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-          Your school&apos;s <strong>{TRIAL_PERIOD_DAYS}-day free trial has ended</strong>.
+          Your crèche&apos;s <strong>{TRIAL_PERIOD_DAYS}-day free trial has ended</strong>.
           Subscribe to Pro below to continue using the portal.
         </div>
       )}
       {locked && (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-          That&apos;s a <strong>Pro</strong> feature. Subscribe below to unlock it for your school.
+          That&apos;s a <strong>Pro</strong> feature. Subscribe below to unlock it for your crèche.
         </div>
       )}
       {/* Hero */}
@@ -63,7 +63,7 @@ export default async function PricingPage({
             Plans &amp; pricing
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Simple pricing for <span className="text-primary">your school</span>
+            Simple pricing for <span className="text-primary">your crèche</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
             Try every feature free for {TRIAL_PERIOD_DAYS} days. Add a card to start — you
@@ -109,7 +109,7 @@ export default async function PricingPage({
             </div>
             <h2 className="text-lg font-semibold text-text-primary">Pro</h2>
             <p className="mt-1 text-sm text-text-muted">
-              Everything your school office needs, after your trial.
+              Everything your crèche office needs, after your trial.
             </p>
             <p className="mt-4 text-3xl font-bold text-text-primary">
               {prices.monthly ?? '€—'}

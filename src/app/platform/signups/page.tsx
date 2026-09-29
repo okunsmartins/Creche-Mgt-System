@@ -36,7 +36,7 @@ export default async function PlatformSignupsPage() {
             <tr>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">School</th>
+              <th className="px-4 py-3">Crèche</th>
               <th className="px-4 py-3">Requested</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>

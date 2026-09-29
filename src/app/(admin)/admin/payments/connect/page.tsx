@@ -41,7 +41,7 @@ export default async function ConnectPaymentsPage({
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Payment setup</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Connect your school&apos;s own Stripe account so parent payments go straight to you.
+          Connect your crèche&apos;s own Stripe account so parent payments go straight to you.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default async function ConnectPaymentsPage({
             <div>
               <p className="text-sm font-semibold text-text-primary">Stripe account</p>
               <p className="text-xs text-text-muted">
-                Direct payments to your school — no fee from us.
+                Direct payments to your crèche — no fee from us.
               </p>
             </div>
           </div>
@@ -102,15 +102,15 @@ export default async function ConnectPaymentsPage({
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-text-secondary">
-                To collect payments from parents, connect your school&apos;s Stripe account. Money
-                goes <strong>directly to your school</strong> — we don&apos;t take a cut.
+                To collect payments from parents, connect your crèche&apos;s Stripe account. Money
+                goes <strong>directly to your crèche</strong> — we don&apos;t take a cut.
                 You&apos;ll add your bank details and verify your identity with Stripe (about 5
                 minutes), then you&apos;re ready to get paid.
               </p>
               <ol className="ml-4 list-decimal space-y-1.5 text-sm text-text-secondary">
                 <li>Click “Connect Stripe” below.</li>
                 <li>
-                  Sign in to Stripe (or create an account) and enter your school&apos;s details.
+                  Sign in to Stripe (or create an account) and enter your crèche&apos;s details.
                 </li>
                 <li>Add the bank account where you want payments to land.</li>
                 <li>
@@ -128,7 +128,7 @@ export default async function ConnectPaymentsPage({
       <p className="flex items-center justify-center gap-1.5 text-center text-xs text-text-muted">
         Payments are processed securely by Stripe.
         <ArrowRight className="h-3 w-3" aria-hidden="true" />
-        Your school is the merchant of record.
+        Your crèche is the merchant of record.
       </p>
     </div>
   )

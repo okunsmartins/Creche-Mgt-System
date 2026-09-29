@@ -8,7 +8,7 @@ import { TeacherForm } from '@/components/teachers/TeacherForm'
 import { TeacherLoginPanel } from '@/components/teachers/TeacherLoginPanel'
 import type { TeacherRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Edit Teacher | Admin' }
+export const metadata: Metadata = { title: 'Edit Staff | Admin' }
 
 export default async function EditTeacherPage({ params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin()
@@ -31,7 +31,7 @@ export default async function EditTeacherPage({ params }: { params: Promise<{ id
     <div className="mx-auto max-w-lg space-y-6">
       <div>
         <Link href="/admin/teachers" className="text-sm text-primary hover:underline">
-          ← Teachers
+          ← Staff
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-text-primary">
           Edit {teacher.first_name} {teacher.last_name}

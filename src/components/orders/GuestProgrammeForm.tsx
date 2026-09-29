@@ -218,7 +218,7 @@ export function GuestProgrammeForm({
             name="pupilCode"
             required
             placeholder="e.g. SPP-AB12CD34"
-            hint="This code is printed on the school communication letter."
+            hint="This code is printed on the crèche communication letter."
             error={lookupState?.error ?? undefined}
             disabled={isLookupPending}
             className="uppercase"
@@ -277,7 +277,7 @@ export function GuestProgrammeForm({
           noValidate={false}
         >
           <Alert variant="info">
-            Enrolments entered manually are flagged for review and reconciliation by the school
+            Enrolments entered manually are flagged for review and reconciliation by the crèche
             office.
           </Alert>
 

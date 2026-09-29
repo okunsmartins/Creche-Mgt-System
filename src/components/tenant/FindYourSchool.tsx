@@ -9,7 +9,7 @@ import { School, ArrowRight } from 'lucide-react'
  * Deliberately does NOT list schools. Enumerating every active school here would
  * publish the full customer list to anyone who visits the apex. Instead we point
  * visitors at the link their school shared with them: parents reach their school
- * through its own subdomain or the pay/portal link the school sends — there is no
+ * through its own subdomain or the pay/portal link the crèche sends — there is no
  * public school directory.
  */
 export function FindYourSchool() {
@@ -17,11 +17,11 @@ export function FindYourSchool() {
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
       <div className="text-center">
         <School className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
-        <h1 className="mt-4 text-2xl font-bold text-text-primary">Looking for your school?</h1>
+        <h1 className="mt-4 text-2xl font-bold text-text-primary">Looking for your crèche?</h1>
         <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-          Open your school&apos;s portal using the link they shared with you — usually your
-          school&apos;s own web address, or the payment link in a message from the school. If
-          you&apos;re not sure, ask your school office for their Creche Wise link.
+          Open your crèche&apos;s portal using the link they shared with you — usually your
+          school&apos;s own web address, or the payment link in a message from the crèche. If
+          you&apos;re not sure, ask your crèche office for their Creche Wise link.
         </p>
       </div>
 
@@ -30,11 +30,11 @@ export function FindYourSchool() {
         <Link href="/login" className="font-semibold text-primary hover:underline">
           Sign in
         </Link>{' '}
-        to reach your school&apos;s portal.
+        to reach your crèche&apos;s portal.
       </div>
 
       <p className="mt-8 text-center text-xs text-text-muted">
-        Run a school?{' '}
+        Run a crèche?{' '}
         <Link
           href="/get-started"
           className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"

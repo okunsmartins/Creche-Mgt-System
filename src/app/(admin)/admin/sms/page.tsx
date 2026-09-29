@@ -63,7 +63,7 @@ export default async function AdminSmsPage() {
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Text parents</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Text all parents in the school or the parents of a particular class.
+          Text all parents in the crèche or the parents of a particular class.
         </p>
       </div>
 

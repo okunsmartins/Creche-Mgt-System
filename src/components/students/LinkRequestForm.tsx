@@ -43,7 +43,7 @@ export function LinkRequestForm() {
               disabled={isPending}
               autoComplete="off"
               className="font-mono uppercase"
-              hint="Find this on your child's payment letter from the school."
+              hint="Find this on your child's payment letter from the crèche."
             />
           </div>
           <Button type="submit" loading={isPending} className="shrink-0">

@@ -23,7 +23,7 @@ function senderLabel(row: InboxRow): string {
   const p = row.parent_messages?.profiles
   const name = [p?.first_name, p?.last_name].filter(Boolean).join(' ').trim()
   if (name) return name
-  return row.parent_messages?.sender_role === 'teacher' ? 'Your teacher' : 'The school'
+  return row.parent_messages?.sender_role === 'teacher' ? 'Your teacher' : 'The crèche'
 }
 
 export default async function ParentMessagesPage() {
@@ -60,7 +60,7 @@ export default async function ParentMessagesPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary">Messages</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Messages from your school and your child&apos;s teacher.
+          Messages from your crèche and your child&apos;s teacher.
           {unread > 0 ? ` You have ${unread} unread.` : ''}
         </p>
       </div>

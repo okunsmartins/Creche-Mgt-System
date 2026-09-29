@@ -45,7 +45,7 @@ export default async function AdminAssignmentsPage({
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Assignments</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Work parents have uploaded for pupils across the school
+          Work parents have uploaded for pupils across the crèche
           {students.length > 0 ? ', newest first' : ''}.
         </p>
       </div>

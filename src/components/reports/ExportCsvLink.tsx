@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Lock } from 'lucide-react'
 
 /**
- * Pro-gated "Export CSV" control. Renders a real download link when the school
+ * Pro-gated "Export CSV" control. Renders a real download link when the crèche
  * has Pro access, otherwise a locked link to the pricing page. CSV export is the
  * `advanced_reports` Pro feature; the report API routes also enforce this (403),
  * this is the matching UI affordance.

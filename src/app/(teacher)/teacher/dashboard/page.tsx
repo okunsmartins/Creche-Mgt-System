@@ -147,7 +147,7 @@ export default async function TeacherDashboardPage({
       {!assignedClass && (
         <div className="rounded-2xl bg-amber-500/10 px-5 py-4 ring-1 ring-amber-500/20">
           <p className="text-sm text-amber-300">
-            No class is assigned to your teacher account yet. Contact the school administrator.
+            No class is assigned to your teacher account yet. Contact the crèche administrator.
           </p>
         </div>
       )}

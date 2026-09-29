@@ -18,7 +18,7 @@ export default async function PayByTokenPage({ params }: { params: Promise<{ tok
 
   const adminClient = createSupabaseAdminClient()
 
-  // Resolve the payment link from the TOKEN alone, then take the school FROM the
+  // Resolve the payment link from the TOKEN alone, then take the crèche FROM the
   // link. The token is a 64-char unguessable secret, so scoping the lookup by the
   // request's tenant added no security — it only meant a link could not be opened
   // from another school's host (and, with no default school, could not be opened

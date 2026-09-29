@@ -29,7 +29,7 @@ export default async function TeacherSmsPage() {
         </div>
         <UpgradePrompt
           title="Texting parents is a Pro + SMS feature"
-          description="Your school needs the Pro + SMS plan to text parents. Ask your administrator to upgrade."
+          description="Your crèche needs the Pro + SMS plan to text parents. Ask your administrator to upgrade."
           cta="See plans"
         />
       </div>
@@ -70,7 +70,7 @@ export default async function TeacherSmsPage() {
       {!getSmsConfig() && (
         <div className="rounded-md border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
           Texting isn&apos;t fully set up yet. You can draft a message, but sending is disabled
-          until your school&apos;s SMS provider is configured.
+          until your crèche&apos;s SMS provider is configured.
         </div>
       )}
 

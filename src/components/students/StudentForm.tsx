@@ -59,11 +59,11 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
       </div>
 
       <Select
-        label="Class"
+        label="Room"
         name="classId"
         required
         options={classes}
-        placeholder="Select a class…"
+        placeholder="Select a room…"
         defaultValue={student?.classId ?? ''}
         error={state?.fieldErrors?.classId}
         disabled={isPending}
@@ -106,7 +106,7 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
 
       <div className="flex gap-3">
         <Button type="submit" loading={isPending}>
-          {isEdit ? 'Save changes' : 'Create student'}
+          {isEdit ? 'Save changes' : 'Create child'}
         </Button>
         <Button type="button" variant="outline" onClick={() => history.back()} disabled={isPending}>
           Cancel

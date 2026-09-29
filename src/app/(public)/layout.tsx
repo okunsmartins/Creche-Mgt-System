@@ -7,12 +7,12 @@ export default async function PublicLayout({ children }: { children: React.React
   // Viewer-aware, and may be null: with no tenant and nobody signed in there is
   // no school to brand with — SiteHeader falls back to platform branding. The
   // platform owner on the bare apex is treated as a platform visitor (see
-  // getPublicViewerContext), so they get the platform nav, not a school portal.
+  // getPublicViewerContext), so they get the platform nav, not a crèche portal.
   const [{ school, tenantSlug }, user] = await Promise.all([
     getPublicViewerContext(),
     getSessionUser(),
   ])
-  // "In a school context" = a school is resolved for this viewer (subdomain,
+  // "In a crèche context" = a crèche is resolved for this viewer (subdomain,
   // /s/<school> path, OR a signed-in school user's own school). Keeps the nav
   // consistent with the branding.
   const isTenant = school !== null

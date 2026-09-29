@@ -40,7 +40,7 @@ const features: Feature[] = [
   {
     icon: Mail,
     title: 'Email parents',
-    label: 'Teachers & admins message parents',
+    label: 'Staff & admins message parents',
     href: '/login',
     cta: 'Staff sign in',
     glow: 'card-glow-green',
@@ -65,7 +65,7 @@ const features: Feature[] = [
   },
   {
     icon: CalendarOff,
-    title: 'Teacher time off',
+    title: 'Staff time off',
     label: 'Request & approve staff leave',
     href: '/login',
     cta: 'Staff sign in',
@@ -74,7 +74,7 @@ const features: Feature[] = [
   {
     icon: ClipboardCheck,
     title: 'Mark attendance',
-    label: 'Daily roll call by class',
+    label: 'Daily register by room',
     href: '/login',
     cta: 'Staff sign in',
     glow: 'card-glow-teal',
@@ -89,16 +89,16 @@ const features: Feature[] = [
   },
   {
     icon: Upload,
-    title: 'Homework uploads',
-    label: "Parents snap a photo of their child's work",
+    title: 'Learning journal',
+    label: "Photos and notes from your child's day",
     href: '/login',
     cta: 'Parent login',
     glow: 'card-glow-green',
   },
   {
     icon: GraduationCap,
-    title: 'Reports & results',
-    label: 'Test results and report cards shared with parents',
+    title: 'Development reports',
+    label: 'Progress and observations shared with parents',
     href: '/login',
     cta: 'Parent login',
     glow: 'card-glow-amber',
@@ -145,11 +145,11 @@ export default async function HomePage() {
   const { school, tenantSlug } = await getPublicViewerContext()
   // Main landing = no school resolved for this viewer (anonymous apex). A
   // signed-in school user (even on the apex) is in their school's context, so
-  // they get the school hero, not the "create your own portal" marketing — this
+  // they get the crèche hero, not the "create your own portal" marketing — this
   // matches the header nav decided in (public)/layout.tsx.
   const isMainLanding = school === null
   // When browsing via a `/s/<school>` path, keep that prefix on school links so
-  // navigation stays in the school (no sticky cookie carries it).
+  // navigation stays in the crèche (no sticky cookie carries it).
   const withTenant = (href: string) =>
     tenantSlug ? (href === '/' ? `/s/${tenantSlug}` : `/s/${tenantSlug}${href}`) : href
   return (
@@ -259,7 +259,7 @@ export default async function HomePage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map(({ icon: Icon, title, label, href, cta, comingSoon }, index) => {
               // On the platform landing every card funnels schools to sign-up; inside
-              // a school's portal the original parent/staff CTAs are kept.
+              // a crèche's portal the original parent/staff CTAs are kept.
               const cardHref = isMainLanding ? '/get-started' : withTenant(href ?? '#')
               const cardCta = isMainLanding ? 'Create your portal' : cta
               // Evenly distribute the four card tints (diagonal): each colour
@@ -346,7 +346,7 @@ export default async function HomePage() {
       </section>
 
       {/* CTA — viewer-aware, matching the hero/cards: the platform landing funnels
-          schools to create their own portal, while inside a school's portal it
+          schools to create their own portal, while inside a crèche's portal it
           invites parents to register (keeping the tenant prefix on /s/ paths). */}
       <section className="border-t border-border py-16">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">

@@ -26,7 +26,7 @@ import type {
 } from '@/types/database'
 import type { SelectOption } from '@/types'
 
-export const metadata: Metadata = { title: 'Edit Student' }
+export const metadata: Metadata = { title: 'Edit Child' }
 
 type StudentDetail = Pick<
   StudentRow,
@@ -126,7 +126,7 @@ export default async function EditStudentPage({ params }: PageProps) {
     <div className="mx-auto max-w-xl">
       <nav className="mb-6 text-sm text-text-muted">
         <Link href="/admin/students" className="hover:text-primary hover:underline">
-          Students
+          Children
         </Link>
         {' / '}
         <span className="text-text-primary">
@@ -134,7 +134,7 @@ export default async function EditStudentPage({ params }: PageProps) {
         </span>
       </nav>
 
-      <h1 className="mb-1 text-2xl font-bold text-text-primary">Edit student</h1>
+      <h1 className="mb-1 text-2xl font-bold text-text-primary">Edit child</h1>
       <p className="mb-6 font-mono text-sm text-text-muted">{student.pupil_payment_code}</p>
 
       <StudentForm
@@ -368,8 +368,8 @@ export default async function EditStudentPage({ params }: PageProps) {
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-text-primary">Report cards</h2>
         <p className="text-sm text-text-muted">
-          Upload an end-of-term report card (PDF or image). The pupil&apos;s linked parents can view
-          it.
+          Upload an end-of-term development report (PDF or image). The pupil&apos;s linked parents
+          can view it.
         </p>
         {reportCards.length > 0 && (
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">

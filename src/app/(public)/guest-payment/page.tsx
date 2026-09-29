@@ -84,7 +84,7 @@ export default async function GuestPaymentPage({
           {activities.length === 0 ? (
             <div className="rounded-2xl border border-border bg-surface py-16 text-center">
               <p className="text-text-muted">No activities are available at the moment.</p>
-              <p className="mt-1 text-sm text-text-muted">Check back soon or contact the school.</p>
+              <p className="mt-1 text-sm text-text-muted">Check back soon or contact the crèche.</p>
             </div>
           ) : (
             <div className="space-y-4">

@@ -200,7 +200,7 @@ export default async function ParentOrderDetailPage({
         {(order.status === 'expired' || order.status === 'cancelled') && (
           <div className="bg-surface p-5">
             <p className="text-sm text-text-secondary">
-              This order is no longer payable. Please contact the school if you need assistance.
+              This order is no longer payable. Please contact the crèche if you need assistance.
             </p>
           </div>
         )}

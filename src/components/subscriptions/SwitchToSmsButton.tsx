@@ -21,7 +21,7 @@ interface SwitchToSmsButtonProps {
  * Upgrades an existing school to the Pro + SMS tier. For a live subscription the
  * action swaps the price in place (no redirect) and returns success → we show a
  * confirmation and refresh so the page re-reads the now-enabled SMS features. For
- * a school with no live subscription it returns a Checkout URL to redirect to.
+ * a crèche with no live subscription it returns a Checkout URL to redirect to.
  */
 export function SwitchToSmsButton({
   priceId,

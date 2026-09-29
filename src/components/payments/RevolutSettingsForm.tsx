@@ -12,7 +12,7 @@ import {
 
 /**
  * Lets an admin store their school's own Revolut Merchant API key (+ webhook
- * secret), so Revolut parent payments go to the school. Keys are write-only:
+ * secret), so Revolut parent payments go to the crèche. Keys are write-only:
  * saved encrypted, never shown back.
  */
 export function RevolutSettingsForm({ configured }: { configured: boolean }) {
@@ -31,7 +31,7 @@ export function RevolutSettingsForm({ configured }: { configured: boolean }) {
         <div>
           <h2 className="text-lg font-semibold text-text-primary">Revolut (optional)</h2>
           <p className="mt-0.5 text-sm text-text-muted">
-            Prefer Revolut? Add your school&apos;s Revolut Merchant API key so those payments go
+            Prefer Revolut? Add your crèche&apos;s Revolut Merchant API key so those payments go
             straight to your Revolut account.
           </p>
         </div>

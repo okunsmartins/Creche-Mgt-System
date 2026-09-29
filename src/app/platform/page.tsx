@@ -40,12 +40,12 @@ export default async function PlatformOverviewPage() {
     cta?: string
   }[] = [
     {
-      label: 'Active schools',
+      label: 'Active crèches',
       value: String(o.schools.total),
       icon: Building2,
       glow: 'card-glow-blue',
       href: '/platform/schools',
-      cta: 'View schools',
+      cta: 'View crèches',
     },
     {
       label: 'Paid / trialing',
@@ -74,7 +74,7 @@ export default async function PlatformOverviewPage() {
       cta: 'View revenue',
     },
     {
-      label: 'SMS-enabled schools',
+      label: 'SMS-enabled crèches',
       value: String(o.sms.enabledSchools),
       icon: MessageSquare,
       glow: 'card-glow-teal',

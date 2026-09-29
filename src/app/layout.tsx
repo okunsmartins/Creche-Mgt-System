@@ -3,7 +3,7 @@ import { Nunito } from 'next/font/google'
 import { NavigationProgress } from '@/components/ui/NavigationProgress'
 import './globals.css'
 
-// Rounded, friendly typeface — warm and approachable for a school audience.
+// Rounded, friendly typeface — warm and approachable for a crèche audience.
 const sans = Nunito({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],

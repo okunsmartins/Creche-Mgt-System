@@ -173,7 +173,7 @@ export default async function ParentActivitiesPage() {
       }))
     })
 
-    // Students eligible individually but not already covered by class eligibility
+    // Students eligible individually but not already covered by room eligibility
     const classEligibleIds = new Set(classEligibleStudents.map((s) => s.id))
     const individualStudents = linkedStudents
       .filter((s) => pupilEligMap.get(activity.id)?.has(s.id) && !classEligibleIds.has(s.id))

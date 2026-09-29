@@ -20,7 +20,7 @@ const REASON_MESSAGES: Record<string, string> = {
 interface LoginFormProps {
   next?: string | undefined
   reason?: string | undefined
-  /** School slug when signing in within a school's context (`/s/<slug>/login`). */
+  /** School slug when signing in within a crèche's context (`/s/<slug>/login`). */
   tenantSlug?: string | undefined
 }
 
@@ -32,7 +32,7 @@ export function LoginForm({ next, reason, tenantSlug }: LoginFormProps) {
 
   const reasonMessage = reason ? (REASON_MESSAGES[reason] ?? null) : null
 
-  // Keep the school in the URL so a parent who came via /s/<school> stays in that
+  // Keep the crèche in the URL so a parent who came via /s/<school> stays in that
   // school's context — otherwise "Register" drops them onto the bare apex, which
   // is the owner "create a portal" flow, not parent sign-up.
   const withTenant = (href: string) => (tenantSlug ? `/s/${tenantSlug}${href}` : href)

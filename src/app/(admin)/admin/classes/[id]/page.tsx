@@ -7,7 +7,7 @@ import { updateClassAction } from '@/lib/classes/actions'
 import { ClassEditForm } from '@/components/classes/ClassEditForm'
 import type { ClassRow, TeacherRow } from '@/types/database'
 
-export const metadata: Metadata = { title: 'Edit Class | Admin' }
+export const metadata: Metadata = { title: 'Edit Room | Admin' }
 
 export default async function EditClassPage({ params }: { params: Promise<{ id: string }> }) {
   const admin = await requireAdmin()
@@ -46,11 +46,11 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
     <div className="mx-auto max-w-lg space-y-6">
       <div>
         <Link href="/admin/classes" className="text-sm text-primary hover:underline">
-          ← Classes
+          ← Rooms
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-text-primary">Edit {cls.name}</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Update the teacher assignment and status for this class.
+          Update the staff assignment and status for this room.
         </p>
       </div>
 

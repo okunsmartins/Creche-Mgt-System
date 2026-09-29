@@ -20,7 +20,7 @@ export interface SmsStudentOption {
 }
 
 interface ParentSmsFormProps {
-  /** Whether to offer the school-wide audience (admins only). */
+  /** Whether to offer the crèche-wide audience (admins only). */
   allowSchoolWide?: boolean
   /** Classes the sender may target. */
   classes?: SmsClassOption[]
@@ -28,7 +28,7 @@ interface ParentSmsFormProps {
   students?: SmsStudentOption[]
   /** Current SMS balance (allowance + credits) for the cost panel. */
   balance: SmsBalanceView
-  /** Parents in the school who have opted out of SMS (informational). */
+  /** Parents in the crèche who have opted out of SMS (informational). */
   optedOutCount: number
 }
 
@@ -122,7 +122,7 @@ export function ParentSmsForm({
           onChange={(e) => setAudienceType(e.target.value as 'school' | 'class' | 'student')}
           className="w-full rounded-xl border border-border bg-surface-raised px-3 py-2 text-sm text-text-primary focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
-          {allowSchoolWide && <option value="school">All parents in the school</option>}
+          {allowSchoolWide && <option value="school">All parents in the crèche</option>}
           <option value="class">Parents of a class</option>
           <option value="student">Parents of a specific pupil</option>
         </select>
@@ -192,7 +192,7 @@ export function ParentSmsForm({
           </span>
         </div>
         <p className="mt-1.5 text-xs text-text-muted">
-          Parents receive this individually from your school. Sent to valid Irish mobiles only;
+          Parents receive this individually from your crèche. Sent to valid Irish mobiles only;
           opted-out parents are skipped. One-way — parents can&apos;t reply.
         </p>
       </div>

@@ -55,8 +55,8 @@ export default async function TeacherReportsPage({
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Reports</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Upload test results and report cards for pupils in your class. Their parents can view
-          them.
+          Upload test results and development reports for pupils in your class. Their parents can
+          view them.
         </p>
       </div>
 
