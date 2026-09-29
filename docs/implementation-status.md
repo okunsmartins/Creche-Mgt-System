@@ -22,11 +22,13 @@
 | Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
 | DB migrations 068–071 applied | verified via service-role script | ✅ all tables/grants/RPC/guard-trigger present |
 | Manual browser E2E (import, hero, fees UI, nav) | dev server + manager sign-in | ✅ see per-feature notes |
+| Tenant isolation + idempotency (fee tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **10/10** (scoping, RLS deny-by-default, dup invoice-number rejected) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
 
 **Crèche-specific automated tests (83 of the 749):** subvention 18, funding-config 13, custom-fields 18,
-ratio 6, fee-schedule 8, invoice-generation 8, import 12.
+ratio 6, fee-schedule 8, invoice-generation 8 + 4 property/edge, import 12. Plus a DB-backed
+isolation/idempotency script (`scripts/verify-tenant-isolation.mjs`, run manually — CI has no DB).
 
 **Git:** branch `feat/import-wizard`, **no remote**. ⚠️ **Today's work (rebrand, fees UI, carousel, parent
 invoice view, domain rename, migration 071) is committed-quality but NOT yet committed** — working tree is dirty.
@@ -103,7 +105,7 @@ Angels Nest) — scope every query by `school_id`.
 | **FEE-01** fee schedules (partial) | `fee_schedules` table (mig 071); `createFeeScheduleAction` | table applied; a row inserts via service-role script | **No `service_rates` table, no effective-dated rates, no overlap rejection, no "term" frequency.** Server action never exercised via UI; no automated test. |
 | **FEE-02** child funding registrations | `child_funding_registrations` (mig 071); `upsertFundingRegistrationAction` | table applied; partial-unique + PPSN encrypt used; verified via script | **No automated test** for the constraint, encryption round-trip, or "PPSN never in logs". Action not integration-tested. |
 | **FEE-04** invoice ledger (partial) | `invoices` (mig 071) + guard trigger | table + guard trigger verified via script | **State machine simplified** vs spec (`draft/issued/paid/part_paid/void` vs spec's 8 states); **no `invoice_lines` table**; not integration-tested. |
-| **FEE-06** generation action | `generateInvoicesForScheduleAction` | engine 8 tests; DB write path script-verified | Server action **not exercised via authenticated UI**; **no automated idempotency/isolation test**. |
+| **FEE-06** generation action | `generateInvoicesForScheduleAction` | engine 8 + 4 property tests; DB write path script-verified; **isolation + idempotency verified** via `scripts/verify-tenant-isolation.mjs` | Server action still **not exercised via authenticated UI**; isolation check is a manual script, not a CI job. |
 | Invoice **issue/void** lifecycle | `issue/voidInvoicesForScheduleAction` + buttons | actions built; guard trigger verified | Not integration-tested via UI. |
 | **FEE-07** parent invoice view | `/parent/invoices/page.tsx` | route compiles; auth guard redirects (HTTP 307) | **No data-render test** (needs a parent account linked to a child with issued invoices); **no parent-authz / a11y test**. |
 | Admin fees UI | `/admin/fees`, `ChildBillingPanel.tsx` | renders; lists children; forms display | **End-to-end create→generate→issue not completed via UI** (browser date-picker automation blocked; the flow itself is untested end-to-end). |
@@ -162,7 +164,9 @@ DAST/ZAP, SBOM; DPIA + threat model sign-off (children's special-category data).
 - **Service-role bypasses RLS** — every admin-client query must include its own `school_id` filter (RLS is a second boundary,
   not the only one). The DB has **2 schools**, so cross-tenant leakage is testable right now.
 - **New tenant-owned tables need their own grants + RLS + a cross-tenant negative test in the same PR** (release-blocking).
-  `fee_schedules`/`invoices`/`child_funding_registrations` have grants + RLS but **no automated isolation test yet** (gap).
+  `fee_schedules`/`invoices`/`child_funding_registrations` have grants + RLS, and **isolation is verified** by
+  `scripts/verify-tenant-isolation.mjs` (app-layer scoping + RLS deny-by-default; run manually against a DB, not in CI).
+  Wiring this into a DB-enabled CI job is still outstanding.
 - **`child_funding_registrations` holds PPSN (special-category)** — stored encrypted (`src/lib/crypto`), **not granted to
   `authenticated`** (service-role only). Add an automated "PPSN never in logs/telemetry" test (currently missing).
 - Invoices are **immutable once issued** (DB guard trigger verified); financial changes are reversed by **voiding**, not editing.
