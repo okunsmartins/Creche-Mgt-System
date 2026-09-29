@@ -17,22 +17,25 @@
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **749 passed / 57 files** |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **753 passed / 58 files** |
 | Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean |
 | Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
 | DB migrations 068–071 applied | verified via service-role script | ✅ all tables/grants/RPC/guard-trigger present |
 | Manual browser E2E (import, hero, fees UI, nav) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **10/10** (scoping, RLS deny-by-default, dup invoice-number rejected) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
-| Security scans (SAST/SCA/secrets/DAST) | — | ⬜ **not set up** (spec §11.4) |
+| Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
+| Security scans (SAST/SCA/DAST/SBOM) | — | ⬜ **not set up** (spec §11.4) |
 
-**Crèche-specific automated tests (83 of the 749):** subvention 18, funding-config 13, custom-fields 18,
+**Crèche-specific automated tests (87 of the 753):** subvention 18, funding-config 13, custom-fields 18,
 ratio 6, fee-schedule 8, invoice-generation 8 + 4 property/edge, import 12. Plus a DB-backed
 isolation/idempotency script (`scripts/verify-tenant-isolation.mjs`, run manually — CI has no DB).
 
-**Git:** branch `feat/import-wizard`, **no remote**. ⚠️ **Today's work (rebrand, fees UI, carousel, parent
-invoice view, domain rename, migration 071) is committed-quality but NOT yet committed** — working tree is dirty.
-Last commit `139b897`.
+**Git:** remote `origin` = `github.com/okunsmartins/Creche-Mgt-System`. All work is committed and pushed;
+`main` has PRs #1 (crèche build), #2 (Prettier/CI fix), #3 (isolation tests + branch-protection checklist) merged.
+**CI** (`.github/workflows/ci.yml`) runs Lint & Type Check (type-check + lint + `format:check`), Unit Tests, Production
+Build on every PR; E2E job defined but not passing yet. ⚠️ **No branch protection** — PRs #1 and #3 merged before/while
+CI ran, so red or unchecked merges are currently possible (see `docs/setup/github-branch-protection.md`).
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
 Migrations 001–071 applied. Test tenant: **Angels Nest Crèche** (`manager@angelsnest.ie`; password in the
@@ -138,8 +141,11 @@ NCS/ECCE Hive-prep reports + absence alerts (§7.7, no Hive API); enquiry/waitin
 commercial dashboard (occupancy, revenue by room) (§7.8). **Promote DOB to a real column** (NCS age eligibility;
 currently in `custom_fields` JSONB).
 
-**DevSecOps (spec §11):** GitHub remote + branch protection + PR CI; SAST/Semgrep, SCA/Dependabot, Gitleaks, Trivy,
-DAST/ZAP, SBOM; DPIA + threat model sign-off (children's special-category data).
+**DevSecOps (spec §11):**
+- ✅ GitHub remote + PR CI (lint/type/format/unit/build); ✅ secret scanning + push protection active.
+- ⬜ **Branch protection** on `main` (required checks, no bypass) — checklist ready in `docs/setup/github-branch-protection.md`.
+- ⬜ Wire `scripts/verify-tenant-isolation.mjs` into a DB-enabled CI job; get the E2E job actually passing.
+- ⬜ SAST/Semgrep, SCA/Dependabot updates, Trivy, DAST/ZAP, SBOM; DPIA + threat-model sign-off (children's special-category data).
 
 ---
 
@@ -154,7 +160,8 @@ DAST/ZAP, SBOM; DPIA + threat model sign-off (children's special-category data).
 4. **Confirm NCS/ECCE rates** with a Pobal/finance SME and load into FEE-03 config; replace the `CONFIRM` fallbacks.
 5. **Confirm the reference Irish room ratios** in `src/lib/ratios/ratio.ts` (flagged CONFIRM) before any ratio UI ships.
 6. **⚠️ Remove `src/app/api/dev/` before production** (dev-only seed/Pro-unlock route).
-7. **Before pilot / go-live:** new GitHub repo + remote + branch protection; Stripe Connect + Revolut KYC; ComReg/Twilio A2P;
+7. **Enable branch protection on `main`** now (repo exists + CI runs): `docs/setup/github-branch-protection.md`.
+8. **Before pilot / go-live:** Stripe Connect + Revolut KYC; ComReg/Twilio A2P;
    email sender-domain (SPF/DKIM/DMARC); DPIA. See [backlog/day-0-action-pack.md](backlog/day-0-action-pack.md).
 
 ---
@@ -192,12 +199,16 @@ npm run dev                     # http://localhost:3000  (first compile ~55s on 
 npm run test -- run src/lib/fees/__tests__/invoice.test.ts
 npm run test -- run src/lib/payments/__tests__/subvention.test.ts
 
-# git — commit today's uncommitted work, then set up a remote
-git status
-git add -A && git commit -m "feat: Creche Wise rebrand, fees UI + invoice lifecycle, parent invoices, domain rename (primary surfaces)"
-# git remote add origin <new-repo-url> && git push -u origin feat/import-wizard
+# tenant isolation + idempotency (needs .env.local with the dev DB)
+node scripts/verify-tenant-isolation.mjs
+
+# git — remote is set; work on a branch and open a PR
+git checkout -b feat/<name>
+git add -A && git commit -m "..."
+git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
-**Recommended next:** close a 🟡 to ✅ — add an **automated cross-tenant isolation + idempotency test** for
-`generateInvoicesForScheduleAction` (uses the 2-schools DB), then wire **FEE-08** (pay invoice via the existing Connect rail)
-so the parent invoice view becomes payable.
+**Recommended next:**
+1. **Enable branch protection** on `main` (checklist in `docs/setup/github-branch-protection.md`) so red PRs stop merging.
+2. **Unblock FEE-08:** onboard a test-mode Stripe Connect account (manager → Payment Setup), then wire + verify invoice payment in sandbox.
+3. Finish the **domain rename** (forms/reports/features grid) and **promote DOB** to a real column (NCS age eligibility, migration 072).
