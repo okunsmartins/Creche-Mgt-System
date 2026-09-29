@@ -33,6 +33,7 @@ import {
   Banknote,
   Receipt,
   Scale,
+  AlertCircle,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -84,6 +85,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Payments',
     items: [
       { href: '/admin/fees', label: 'Fees & Invoices', icon: Receipt },
+      { href: '/admin/arrears', label: 'Arrears', icon: AlertCircle },
       { href: '/admin/activities', label: 'Activities', icon: Calendar },
       { href: '/admin/programmes', label: 'Programmes', icon: Repeat },
       { href: '/admin/payment-links', label: 'Payment Links', icon: Link2 },
