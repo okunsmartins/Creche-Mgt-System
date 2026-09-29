@@ -10,6 +10,9 @@ import {
   type InvoiceView,
 } from '@/components/fees/ChildBillingPanel'
 import { ageLabel, ncsAgeEligibility } from '@/lib/age/age'
+import { generateDueDates } from '@/lib/fees/schedule'
+import { summariseFeeYear, type ProjectionInvoice } from '@/lib/fees/projection'
+import { formatCurrency } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Child billing' }
 
@@ -71,12 +74,29 @@ export default async function ChildBillingPage({ params }: PageProps) {
   const { data: invData } = await db
     .from('invoices')
     .select(
-      'id, invoice_number, period_start, period_end, due_date, gross_parent_cents, ncs_subsidy_cents, net_parent_cents, status',
+      'id, invoice_number, period_start, period_end, due_date, gross_parent_cents, ncs_subsidy_cents, net_parent_cents, amount_paid_cents, status',
     )
     .eq('school_id', admin.schoolId)
     .eq('student_id', studentId)
     .order('due_date')
-  const invoices = (invData ?? []) as InvoiceView[]
+  const invoices = (invData ?? []) as (InvoiceView & { amount_paid_cents: number })[]
+
+  // Full-year projection (§8.5): schedule's due dates vs invoices generated/paid.
+  const projection =
+    schedule && schedule.status !== 'ended'
+      ? summariseFeeYear({
+          dueDates: generateDueDates(schedule.frequency, schedule.start_date, schedule.end_date),
+          invoices: invoices.map(
+            (i): ProjectionInvoice => ({
+              dueDate: i.due_date,
+              netParentCents: i.net_parent_cents,
+              amountPaidCents: i.amount_paid_cents,
+              status: i.status,
+            }),
+          ),
+          todayISO,
+        })
+      : null
 
   return (
     <div className="space-y-6">
@@ -101,6 +121,25 @@ export default async function ChildBillingPage({ params }: PageProps) {
           </p>
         )}
       </div>
+      {projection && (
+        <section className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="text-base font-semibold text-text-primary">Year projection</h2>
+          <p className="mt-1 text-sm text-text-muted">
+            {projection.invoicedPeriods} of {projection.totalPeriods} periods invoiced ·{' '}
+            {projection.projectedPeriods} still to come
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-4">
+            <Stat label="Invoiced" value={formatCurrency(projection.invoicedCents)} />
+            <Stat label="Paid" value={formatCurrency(projection.paidCents)} />
+            <Stat
+              label="Outstanding"
+              value={formatCurrency(projection.outstandingCents)}
+              highlight={projection.outstandingCents > 0}
+            />
+            <Stat label="Next due" value={projection.nextDueDate ?? '—'} />
+          </div>
+        </section>
+      )}
       <ChildBillingPanel
         studentId={studentId}
         studentName={studentName}
@@ -108,6 +147,17 @@ export default async function ChildBillingPage({ params }: PageProps) {
         registrations={registrations}
         invoices={invoices}
       />
+    </div>
+  )
+}
+
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface-raised/40 p-3">
+      <p className="text-xs text-text-muted">{label}</p>
+      <p className={`mt-0.5 text-lg font-bold ${highlight ? 'text-error' : 'text-text-primary'}`}>
+        {value}
+      </p>
     </div>
   )
 }
