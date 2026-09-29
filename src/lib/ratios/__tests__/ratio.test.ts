@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  requiredStaff,
-  assessRatio,
-  ratioSeverity,
-  ratioBandForAgeMonths,
-} from '../ratio'
+import { requiredStaff, assessRatio, ratioSeverity, ratioBandForAgeMonths } from '../ratio'
 
 describe('requiredStaff', () => {
   it('rounds up and handles zero', () => {

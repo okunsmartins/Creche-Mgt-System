@@ -101,7 +101,9 @@ function isBlank(raw: unknown): boolean {
  */
 export function validateCustomFieldValue(def: CustomFieldDefinition, raw: unknown): ValueResult {
   if (isBlank(raw)) {
-    return def.required ? { ok: false, error: `${def.label} is required` } : { ok: true, value: null }
+    return def.required
+      ? { ok: false, error: `${def.label} is required` }
+      : { ok: true, value: null }
   }
   const options = def.options ?? []
 
@@ -203,7 +205,8 @@ export const customFieldDefinitionSchema = z
     affectsBilling: z.boolean().optional(),
   })
   .refine((d) => !isSensitiveKey(d.label), {
-    message: 'This looks like sensitive data (e.g. PPSN) — use a secure core field, not a custom field',
+    message:
+      'This looks like sensitive data (e.g. PPSN) — use a secure core field, not a custom field',
     path: ['label'],
   })
   .refine((d) => !isOptionType(d.fieldType) || (d.options?.length ?? 0) > 0, {

@@ -18,7 +18,12 @@ describe('buildInvoiceDrafts — flat fee (no subvention)', () => {
 
   it('empty when the window is inverted', () => {
     expect(
-      buildInvoiceDrafts({ frequency: 'weekly', startISO: '2026-02-01', endISO: '2026-01-01', flatAmountCents: 1000 }),
+      buildInvoiceDrafts({
+        frequency: 'weekly',
+        startISO: '2026-02-01',
+        endISO: '2026-01-01',
+        flatAmountCents: 1000,
+      }),
     ).toEqual([])
   })
 })

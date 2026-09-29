@@ -97,7 +97,8 @@ export function validateRows(
         }
         case 'email': {
           values[field.key] = raw
-          if (!EMAIL_RE.test(raw)) warnings.push(`${field.label} "${raw}" doesn't look like an email`)
+          if (!EMAIL_RE.test(raw))
+            warnings.push(`${field.label} "${raw}" doesn't look like an email`)
           break
         }
         case 'enum': {

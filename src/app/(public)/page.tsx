@@ -163,10 +163,18 @@ export default async function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div
               className="relative flex flex-col justify-center overflow-hidden rounded-3xl px-6 py-10 shadow-card sm:px-10 md:min-h-[466px] md:px-14 md:py-14"
-              style={{ background: 'linear-gradient(135deg, #3fc5c0 0%, #14b3ad 52%, #0f9b96 100%)' }}
+              style={{
+                background: 'linear-gradient(135deg, #3fc5c0 0%, #14b3ad 52%, #0f9b96 100%)',
+              }}
             >
-              <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-              <div aria-hidden className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl"
+              />
 
               <div className="relative grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
                 <div className="text-center md:text-left">
@@ -178,8 +186,8 @@ export default async function HomePage() {
                     Welcome to <span className="text-[#ffd98a]">{school?.name}</span> 👋
                   </h1>
                   <p className="mx-auto mt-5 max-w-lg text-lg text-white/85 md:mx-0">
-                    Pay fees, keep up with your child’s day, and stay in touch with the team — all in
-                    one secure place.
+                    Pay fees, keep up with your child’s day, and stay in touch with the team — all
+                    in one secure place.
                   </p>
                   <div className="mx-auto mt-8 w-full max-w-md space-y-3 md:mx-0">
                     <div className="flex flex-col gap-3 sm:flex-row">
@@ -208,7 +216,10 @@ export default async function HomePage() {
                 </div>
 
                 {/* Playful illustration */}
-                <div aria-hidden="true" className="relative mx-auto hidden h-[300px] w-full max-w-sm md:block">
+                <div
+                  aria-hidden="true"
+                  className="relative mx-auto hidden h-[300px] w-full max-w-sm md:block"
+                >
                   <div className="absolute left-1/2 top-1/2 flex h-44 w-44 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[2rem] bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur-sm">
                     <Baby className="h-24 w-24 text-white" strokeWidth={1.5} />
                   </div>

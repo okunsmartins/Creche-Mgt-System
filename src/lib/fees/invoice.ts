@@ -96,7 +96,12 @@ function weekStarts(startISO: string, endISO: string): string[] {
 }
 
 /** The period-bucket key for a given week-start under a frequency. */
-function bucketIndex(frequency: FeeFrequency, weekIdx: number, weekStart: string, firstWeek: string): string {
+function bucketIndex(
+  frequency: FeeFrequency,
+  weekIdx: number,
+  weekStart: string,
+  firstWeek: string,
+): string {
   switch (frequency) {
     case 'weekly':
       return String(weekIdx)
@@ -110,7 +115,8 @@ function bucketIndex(frequency: FeeFrequency, weekIdx: number, weekStart: string
       // Group by 12-month blocks from the first week.
       const start = toUtc(firstWeek)
       const d = toUtc(weekStart)
-      const months = (d.getUTCFullYear() - start.getUTCFullYear()) * 12 + (d.getUTCMonth() - start.getUTCMonth())
+      const months =
+        (d.getUTCFullYear() - start.getUTCFullYear()) * 12 + (d.getUTCMonth() - start.getUTCMonth())
       return String(Math.floor(months / 12))
     }
   }

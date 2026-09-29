@@ -56,7 +56,11 @@ describe('resolveSchemeVersion', () => {
 
   it('picks the latest start when windows overlap (defensive)', () => {
     const a: FundingSchemeVersion = { ...ecceOld, effectiveFrom: '2025-01-01', effectiveTo: null }
-    const b: FundingSchemeVersion = { ...ecceCurrent, effectiveFrom: '2025-06-01', effectiveTo: null }
+    const b: FundingSchemeVersion = {
+      ...ecceCurrent,
+      effectiveFrom: '2025-06-01',
+      effectiveTo: null,
+    }
     expect(resolveSchemeVersion([a, b], 'ECCE', '2025-12-01')).toBe(b)
   })
 })
@@ -114,7 +118,9 @@ describe('reference config feeds the FEE-05 engine (integration)', () => {
 
 describe('tenantFundingSettingsSchema', () => {
   it('accepts the defaults', () => {
-    expect(tenantFundingSettingsSchema.safeParse(DEFAULT_TENANT_FUNDING_SETTINGS).success).toBe(true)
+    expect(tenantFundingSettingsSchema.safeParse(DEFAULT_TENANT_FUNDING_SETTINGS).success).toBe(
+      true,
+    )
   })
 
   it('rejects an unknown billing model', () => {
@@ -134,10 +140,16 @@ describe('tenantFundingSettingsSchema', () => {
 
   it('rejects unknown fee model and gross-fee basis', () => {
     expect(
-      tenantFundingSettingsSchema.safeParse({ ...DEFAULT_TENANT_FUNDING_SETTINGS, feeModel: 'PER_HOUR' }).success,
+      tenantFundingSettingsSchema.safeParse({
+        ...DEFAULT_TENANT_FUNDING_SETTINGS,
+        feeModel: 'PER_HOUR',
+      }).success,
     ).toBe(false)
     expect(
-      tenantFundingSettingsSchema.safeParse({ ...DEFAULT_TENANT_FUNDING_SETTINGS, grossFeeBasis: 'MIDWAY' }).success,
+      tenantFundingSettingsSchema.safeParse({
+        ...DEFAULT_TENANT_FUNDING_SETTINGS,
+        grossFeeBasis: 'MIDWAY',
+      }).success,
     ).toBe(false)
   })
 })

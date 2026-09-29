@@ -72,7 +72,13 @@ function eurosToCents(v: string): number | null {
   return Math.round(n * 100)
 }
 
-export function ChildBillingPanel({ studentId, studentName, schedule, registrations, invoices }: Props) {
+export function ChildBillingPanel({
+  studentId,
+  studentName,
+  schedule,
+  registrations,
+  invoices,
+}: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -130,7 +136,9 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
         ? {
             ...base,
             chickCode: (fd.get('chick') as string) || null,
-            ncsSubsidyType: ((fd.get('ncsType') as string) || 'UNIVERSAL') as 'UNIVERSAL' | 'INCOME_ASSESSED',
+            ncsSubsidyType: ((fd.get('ncsType') as string) || 'UNIVERSAL') as
+              | 'UNIVERSAL'
+              | 'INCOME_ASSESSED',
             awardedHourlyRateCents: eurosToCents((fd.get('rate') as string) || ''),
             awardedWeeklyHours: Number.parseFloat((fd.get('hours') as string) || '0') || null,
             ppsNumber: (fd.get('ppsn') as string) || null,
@@ -154,7 +162,9 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
       const res = await generateInvoicesForScheduleAction(schedule.id)
       if (!res.ok) setError(res.error)
       else {
-        setNotice(`Generated ${res.created} invoice(s), total due ${formatCurrency(res.totalNetCents)}.`)
+        setNotice(
+          `Generated ${res.created} invoice(s), total due ${formatCurrency(res.totalNetCents)}.`,
+        )
         router.refresh()
       }
     })
@@ -212,7 +222,9 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
             </span>
           </div>
         ) : (
-          <p className="mt-1 text-sm text-text-muted">No fee schedule yet for {studentName}. Add one below.</p>
+          <p className="mt-1 text-sm text-text-muted">
+            No fee schedule yet for {studentName}. Add one below.
+          </p>
         )}
 
         {!schedule && (
@@ -224,7 +236,7 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
               value={frequency}
               onChange={(e) => setFrequency(e.target.value as FeeFrequency)}
             />
-            <div className="sm:col-span-2 flex gap-2">
+            <div className="flex gap-2 sm:col-span-2">
               <Button
                 type="button"
                 variant={mode === 'hourly' ? 'primary' : 'secondary'}
@@ -276,8 +288,20 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
                 required
               />
             )}
-            <Input label="Start date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
-            <Input label="End date" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+            <Input
+              label="Start date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+            />
+            <Input
+              label="End date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              required
+            />
             <div className="sm:col-span-2">
               <Button type="button" onClick={saveSchedule} disabled={isPending}>
                 Save fee schedule
@@ -291,8 +315,8 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
       <section className="rounded-xl border border-border bg-surface p-5">
         <h2 className="text-base font-semibold text-text-primary">Funding (ECCE / NCS)</h2>
         <p className="mt-1 text-sm text-text-muted">
-          Enter the authoritative award data from the child’s CHICK / ECCE registration. These feed the subvention
-          netting on generated invoices.
+          Enter the authoritative award data from the child’s CHICK / ECCE registration. These feed
+          the subvention netting on generated invoices.
         </p>
         <div className="mt-4 grid gap-6 md:grid-cols-2">
           {/* ECCE */}
@@ -338,7 +362,8 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
             {ncs ? (
               <p className="text-sm text-text-muted">
                 {ncs.chick_code ? `CHICK ${ncs.chick_code} · ` : ''}
-                {formatCurrency(ncs.awarded_hourly_rate_cents ?? 0)}/hr · {ncs.awarded_weekly_hours ?? 0} hrs/wk
+                {formatCurrency(ncs.awarded_hourly_rate_cents ?? 0)}/hr ·{' '}
+                {ncs.awarded_weekly_hours ?? 0} hrs/wk
               </p>
             ) : (
               <>
@@ -355,7 +380,11 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
                   <Input label="Awarded rate (€/hr)" name="rate" type="number" step="0.01" />
                   <Input label="Band hours/wk" name="hours" type="number" step="0.5" />
                 </div>
-                <Input label="PPSN (stored encrypted)" name="ppsn" hint="Special-category data — encrypted at rest." />
+                <Input
+                  label="PPSN (stored encrypted)"
+                  name="ppsn"
+                  hint="Special-category data — encrypted at rest."
+                />
                 <Button type="submit" variant="secondary" disabled={isPending}>
                   Add NCS registration
                 </Button>
@@ -413,11 +442,19 @@ export function ChildBillingPanel({ studentId, studentName, schedule, registrati
                       {inv.period_start} → {inv.period_end}
                     </td>
                     <td className="py-2 pr-3">{inv.due_date}</td>
-                    <td className="py-2 pr-3 text-right">{formatCurrency(inv.gross_parent_cents)}</td>
-                    <td className="py-2 pr-3 text-right text-success">−{formatCurrency(inv.ncs_subsidy_cents)}</td>
-                    <td className="py-2 pr-3 text-right font-semibold">{formatCurrency(inv.net_parent_cents)}</td>
+                    <td className="py-2 pr-3 text-right">
+                      {formatCurrency(inv.gross_parent_cents)}
+                    </td>
+                    <td className="py-2 pr-3 text-right text-success">
+                      −{formatCurrency(inv.ncs_subsidy_cents)}
+                    </td>
+                    <td className="py-2 pr-3 text-right font-semibold">
+                      {formatCurrency(inv.net_parent_cents)}
+                    </td>
                     <td className="py-2">
-                      <Badge variant={inv.status === 'draft' ? 'default' : 'success'}>{inv.status}</Badge>
+                      <Badge variant={inv.status === 'draft' ? 'default' : 'success'}>
+                        {inv.status}
+                      </Badge>
                     </td>
                   </tr>
                 ))}

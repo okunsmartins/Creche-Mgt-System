@@ -19,7 +19,8 @@ interface PageProps {
 export default async function ChildBillingPage({ params }: PageProps) {
   const { studentId } = await params
   const admin = await requireAdmin()
-  if (!admin.schoolId) return <p className="text-error">No crèche is associated with your account.</p>
+  if (!admin.schoolId)
+    return <p className="text-error">No crèche is associated with your account.</p>
   const db = createSupabaseAdminClient()
 
   const { data: student } = await db
@@ -34,7 +35,9 @@ export default async function ChildBillingPage({ params }: PageProps) {
 
   const { data: scheduleData } = await db
     .from('fee_schedules')
-    .select('id, name, frequency, provider_hourly_rate_cents, flat_amount_cents, contracted_day_hours, start_date, end_date, status')
+    .select(
+      'id, name, frequency, provider_hourly_rate_cents, flat_amount_cents, contracted_day_hours, start_date, end_date, status',
+    )
     .eq('school_id', admin.schoolId)
     .eq('student_id', studentId)
     .order('created_at', { ascending: false })
@@ -44,7 +47,9 @@ export default async function ChildBillingPage({ params }: PageProps) {
 
   const { data: regData } = await db
     .from('child_funding_registrations')
-    .select('id, scheme, status, chick_code, awarded_hourly_rate_cents, awarded_weekly_hours, higher_capitation')
+    .select(
+      'id, scheme, status, chick_code, awarded_hourly_rate_cents, awarded_weekly_hours, higher_capitation',
+    )
     .eq('school_id', admin.schoolId)
     .eq('student_id', studentId)
     .eq('status', 'ACTIVE')
@@ -52,7 +57,9 @@ export default async function ChildBillingPage({ params }: PageProps) {
 
   const { data: invData } = await db
     .from('invoices')
-    .select('id, invoice_number, period_start, period_end, due_date, gross_parent_cents, ncs_subsidy_cents, net_parent_cents, status')
+    .select(
+      'id, invoice_number, period_start, period_end, due_date, gross_parent_cents, ncs_subsidy_cents, net_parent_cents, status',
+    )
     .eq('school_id', admin.schoolId)
     .eq('student_id', studentId)
     .order('due_date')

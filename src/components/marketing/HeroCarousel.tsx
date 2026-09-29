@@ -81,7 +81,10 @@ export function HeroCarousel() {
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }, [])
 
-  const go = useCallback((n: number) => setIndex(((n % SLIDES.length) + SLIDES.length) % SLIDES.length), [])
+  const go = useCallback(
+    (n: number) => setIndex(((n % SLIDES.length) + SLIDES.length) % SLIDES.length),
+    [],
+  )
 
   useEffect(() => {
     if (paused || reducedMotion.current) return
@@ -105,8 +108,14 @@ export function HeroCarousel() {
           aria-label="What Creche Wise does"
         >
           {/* Soft decorative blobs */}
-          <div aria-hidden className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-          <div aria-hidden className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-white/10 blur-2xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-28 left-1/4 h-64 w-64 rounded-full bg-white/10 blur-2xl"
+          />
 
           <div className="relative grid items-center gap-10 md:grid-cols-[1.05fr_0.95fr]">
             {/* Rotating copy */}
@@ -115,8 +124,12 @@ export function HeroCarousel() {
                 <span className="h-1.5 w-1.5 rounded-full bg-white" />
                 {slide.badge}
               </div>
-              <h1 key={index} className="hero-slide-in text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl">
-                {slide.headline} <span className="text-[#ffd98a]">{slide.highlight}</span> <span aria-hidden>{slide.emoji}</span>
+              <h1
+                key={index}
+                className="hero-slide-in text-4xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl"
+              >
+                {slide.headline} <span className="text-[#ffd98a]">{slide.highlight}</span>{' '}
+                <span aria-hidden>{slide.emoji}</span>
               </h1>
               <p className="mx-auto mt-5 max-w-lg text-lg text-white/85 md:mx-0">{slide.sub}</p>
 
@@ -141,7 +154,11 @@ export function HeroCarousel() {
             {/* Illustration — central emblem swaps per slide */}
             <div aria-hidden className="relative mx-auto hidden h-[300px] w-full max-w-sm md:block">
               <div className="absolute left-1/2 top-1/2 flex h-44 w-44 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[2rem] bg-white/15 shadow-lg ring-1 ring-white/25 backdrop-blur-sm">
-                <Icon key={index} className="hero-emblem-in h-24 w-24 text-white" strokeWidth={1.5} />
+                <Icon
+                  key={index}
+                  className="hero-emblem-in h-24 w-24 text-white"
+                  strokeWidth={1.5}
+                />
               </div>
               <div className="absolute left-2 top-6 flex h-16 w-16 -rotate-6 items-center justify-center rounded-2xl bg-white/20 shadow-md ring-1 ring-white/30 backdrop-blur-sm">
                 <CreditCard className="h-7 w-7 text-white" />

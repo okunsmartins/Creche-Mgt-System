@@ -90,7 +90,9 @@ export function ecceConfigFromVersion(version: FundingSchemeVersion): EcceConfig
 /** The NCS universal hourly rate from a resolved NCS version, cents. */
 export function ncsUniversalRateCentsFromVersion(version: FundingSchemeVersion): number {
   if (version.scheme !== 'NCS_UNIVERSAL') {
-    throw new Error(`ncsUniversalRateCentsFromVersion: expected NCS_UNIVERSAL, got ${version.scheme}`)
+    throw new Error(
+      `ncsUniversalRateCentsFromVersion: expected NCS_UNIVERSAL, got ${version.scheme}`,
+    )
   }
   return (version.params as NcsUniversalParams).hourly_rate_cents
 }

@@ -28,16 +28,20 @@ export type ActionResult<T = undefined> =
   | { ok: false; error: string }
 
 /** Create a recurring fee plan for a child. */
-export async function createFeeScheduleAction(input: FeeScheduleInput): Promise<ActionResult<{ id: string }>> {
+export async function createFeeScheduleAction(
+  input: FeeScheduleInput,
+): Promise<ActionResult<{ id: string }>> {
   const admin = await requireAdmin()
   const schoolId = admin.schoolId!
   const db = createSupabaseAdminClient()
 
-  if (!input.studentId || !input.name?.trim()) return { ok: false, error: 'A child and a name are required.' }
+  if (!input.studentId || !input.name?.trim())
+    return { ok: false, error: 'A child and a name are required.' }
   if (input.flatAmountCents == null && input.providerHourlyRateCents == null) {
     return { ok: false, error: 'Provide either a flat amount or an hourly rate.' }
   }
-  if (input.endDate < input.startDate) return { ok: false, error: 'End date must be on or after the start date.' }
+  if (input.endDate < input.startDate)
+    return { ok: false, error: 'End date must be on or after the start date.' }
 
   // Confirm the child belongs to this tenant (service-role bypasses RLS).
   const { data: child } = await db
@@ -212,7 +216,10 @@ export async function generateInvoicesForScheduleAction(
     .eq('fee_schedule_id', feeScheduleId)
     .neq('status', 'void')
   if ((existingCount ?? 0) > 0) {
-    return { ok: false, error: 'Invoices already exist for this schedule. Void them before regenerating.' }
+    return {
+      ok: false,
+      error: 'Invoices already exist for this schedule. Void them before regenerating.',
+    }
   }
 
   // Active funding for this child.
@@ -226,7 +233,9 @@ export async function generateInvoicesForScheduleAction(
 
   const ecceRow = rows.find((r) => r.scheme === 'ECCE')
   const ncsRow = rows.find((r) => r.scheme === 'NCS')
-  const ecce: EcceAward | null = ecceRow ? { active: true, higherCapitation: ecceRow.higher_capitation } : null
+  const ecce: EcceAward | null = ecceRow
+    ? { active: true, higherCapitation: ecceRow.higher_capitation }
+    : null
   const ncs: NcsAward | null = ncsRow
     ? {
         active: true,
@@ -242,11 +251,13 @@ export async function generateInvoicesForScheduleAction(
     ecce,
     ncs,
   }
-  if (s.provider_hourly_rate_cents != null) buildParams.providerHourlyRateCents = s.provider_hourly_rate_cents
+  if (s.provider_hourly_rate_cents != null)
+    buildParams.providerHourlyRateCents = s.provider_hourly_rate_cents
   if (s.contracted_day_hours != null) buildParams.contractedDayHours = s.contracted_day_hours
   if (s.flat_amount_cents != null) buildParams.flatAmountCents = s.flat_amount_cents
   const drafts = buildInvoiceDrafts(buildParams)
-  if (drafts.length === 0) return { ok: false, error: 'No billing periods fall in this schedule’s window.' }
+  if (drafts.length === 0)
+    return { ok: false, error: 'No billing periods fall in this schedule’s window.' }
 
   let created = 0
   for (const d of drafts) {

@@ -19,58 +19,167 @@ export type ImportDataset = 'child' | 'parent' | 'staff'
 
 /** Children dataset — Phase 1. Mirrors the onboarding template's Children sheet. */
 export const CHILD_FIELDS: readonly TargetField[] = [
-  { key: 'firstName', label: 'Child first name', required: true, type: 'text',
-    aliases: ['child first name', 'first name', 'firstname', 'forename', 'given name', 'first'] },
-  { key: 'lastName', label: 'Child last name', required: true, type: 'text',
-    aliases: ['child last name', 'last name', 'lastname', 'surname', 'family name', 'last'] },
-  { key: 'preferredName', label: 'Preferred name', required: false, type: 'text',
-    aliases: ['preferred name', 'known as', 'nickname'] },
-  { key: 'dateOfBirth', label: 'Date of birth', required: true, type: 'date',
-    aliases: ['date of birth', 'dob', 'd.o.b', 'birth date', 'birthdate', 'born'] },
-  { key: 'gender', label: 'Gender', required: false, type: 'text',
-    aliases: ['gender', 'sex'] },
-  { key: 'startDate', label: 'Start date', required: false, type: 'date',
-    aliases: ['start date', 'enrolment date', 'enrollment date', 'joined'] },
-  { key: 'room', label: 'Room', required: false, type: 'text',
-    aliases: ['current room', 'room', 'class', 'group', 'session'] },
-  { key: 'status', label: 'Status', required: false, type: 'enum',
+  {
+    key: 'firstName',
+    label: 'Child first name',
+    required: true,
+    type: 'text',
+    aliases: ['child first name', 'first name', 'firstname', 'forename', 'given name', 'first'],
+  },
+  {
+    key: 'lastName',
+    label: 'Child last name',
+    required: true,
+    type: 'text',
+    aliases: ['child last name', 'last name', 'lastname', 'surname', 'family name', 'last'],
+  },
+  {
+    key: 'preferredName',
+    label: 'Preferred name',
+    required: false,
+    type: 'text',
+    aliases: ['preferred name', 'known as', 'nickname'],
+  },
+  {
+    key: 'dateOfBirth',
+    label: 'Date of birth',
+    required: true,
+    type: 'date',
+    aliases: ['date of birth', 'dob', 'd.o.b', 'birth date', 'birthdate', 'born'],
+  },
+  { key: 'gender', label: 'Gender', required: false, type: 'text', aliases: ['gender', 'sex'] },
+  {
+    key: 'startDate',
+    label: 'Start date',
+    required: false,
+    type: 'date',
+    aliases: ['start date', 'enrolment date', 'enrollment date', 'joined'],
+  },
+  {
+    key: 'room',
+    label: 'Room',
+    required: false,
+    type: 'text',
+    aliases: ['current room', 'room', 'class', 'group', 'session'],
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    required: false,
+    type: 'enum',
     options: ['Enrolled', 'Waiting', 'Left'],
-    aliases: ['status', 'enrolment status'] },
-  { key: 'allergies', label: 'Allergies', required: false, type: 'text',
-    aliases: ['allergies', 'allergy'] },
-  { key: 'dietaryNeeds', label: 'Dietary needs', required: false, type: 'text',
-    aliases: ['dietary needs', 'dietary', 'diet'] },
-  { key: 'medicalConditions', label: 'Medical conditions', required: false, type: 'text',
-    aliases: ['medical conditions', 'medical', 'conditions'] },
-  { key: 'notes', label: 'Notes', required: false, type: 'text',
-    aliases: ['additional needs / notes', 'notes', 'additional needs', 'comments'] },
-  { key: 'primaryGuardian', label: 'Primary parent/guardian', required: false, type: 'text',
-    aliases: ['primary parent/guardian', 'parent', 'guardian', 'primary guardian', 'parent name'] },
+    aliases: ['status', 'enrolment status'],
+  },
+  {
+    key: 'allergies',
+    label: 'Allergies',
+    required: false,
+    type: 'text',
+    aliases: ['allergies', 'allergy'],
+  },
+  {
+    key: 'dietaryNeeds',
+    label: 'Dietary needs',
+    required: false,
+    type: 'text',
+    aliases: ['dietary needs', 'dietary', 'diet'],
+  },
+  {
+    key: 'medicalConditions',
+    label: 'Medical conditions',
+    required: false,
+    type: 'text',
+    aliases: ['medical conditions', 'medical', 'conditions'],
+  },
+  {
+    key: 'notes',
+    label: 'Notes',
+    required: false,
+    type: 'text',
+    aliases: ['additional needs / notes', 'notes', 'additional needs', 'comments'],
+  },
+  {
+    key: 'primaryGuardian',
+    label: 'Primary parent/guardian',
+    required: false,
+    type: 'text',
+    aliases: ['primary parent/guardian', 'parent', 'guardian', 'primary guardian', 'parent name'],
+  },
 ]
 
 /** Staff dataset — Phase 2. Maps onto the teachers table (+ custom_fields). */
 export const STAFF_FIELDS: readonly TargetField[] = [
-  { key: 'firstName', label: 'First name', required: true, type: 'text',
-    aliases: ['staff first name', 'first name', 'firstname', 'forename', 'first'] },
-  { key: 'lastName', label: 'Last name', required: true, type: 'text',
-    aliases: ['staff last name', 'last name', 'lastname', 'surname', 'last'] },
-  { key: 'email', label: 'Email', required: false, type: 'email',
-    aliases: ['email', 'e-mail', 'email address'] },
-  { key: 'role', label: 'Role', required: false, type: 'text',
-    aliases: ['role', 'job title', 'position', 'title'] },
-  { key: 'room', label: 'Assigned room', required: false, type: 'text',
-    aliases: ['assigned room', 'room', 'class', 'group'] },
-  { key: 'contractedHours', label: 'Contracted hours/week', required: false, type: 'text',
-    aliases: ['contracted hours/week', 'contracted hours', 'hours', 'weekly hours', 'hours/week'] },
-  { key: 'qualification', label: 'Qualification', required: false, type: 'text',
-    aliases: ['qualification', 'qqi', 'level', 'quals'] },
-  { key: 'gardaVettingExpiry', label: 'Garda vetting expiry', required: false, type: 'date',
-    aliases: ['garda vetting expiry', 'garda vetting', 'vetting expiry', 'vetting'] },
-  { key: 'startDate', label: 'Start date', required: false, type: 'date',
-    aliases: ['start date', 'joined', 'employment start'] },
-  { key: 'status', label: 'Status', required: false, type: 'enum',
+  {
+    key: 'firstName',
+    label: 'First name',
+    required: true,
+    type: 'text',
+    aliases: ['staff first name', 'first name', 'firstname', 'forename', 'first'],
+  },
+  {
+    key: 'lastName',
+    label: 'Last name',
+    required: true,
+    type: 'text',
+    aliases: ['staff last name', 'last name', 'lastname', 'surname', 'last'],
+  },
+  {
+    key: 'email',
+    label: 'Email',
+    required: false,
+    type: 'email',
+    aliases: ['email', 'e-mail', 'email address'],
+  },
+  {
+    key: 'role',
+    label: 'Role',
+    required: false,
+    type: 'text',
+    aliases: ['role', 'job title', 'position', 'title'],
+  },
+  {
+    key: 'room',
+    label: 'Assigned room',
+    required: false,
+    type: 'text',
+    aliases: ['assigned room', 'room', 'class', 'group'],
+  },
+  {
+    key: 'contractedHours',
+    label: 'Contracted hours/week',
+    required: false,
+    type: 'text',
+    aliases: ['contracted hours/week', 'contracted hours', 'hours', 'weekly hours', 'hours/week'],
+  },
+  {
+    key: 'qualification',
+    label: 'Qualification',
+    required: false,
+    type: 'text',
+    aliases: ['qualification', 'qqi', 'level', 'quals'],
+  },
+  {
+    key: 'gardaVettingExpiry',
+    label: 'Garda vetting expiry',
+    required: false,
+    type: 'date',
+    aliases: ['garda vetting expiry', 'garda vetting', 'vetting expiry', 'vetting'],
+  },
+  {
+    key: 'startDate',
+    label: 'Start date',
+    required: false,
+    type: 'date',
+    aliases: ['start date', 'joined', 'employment start'],
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    required: false,
+    type: 'enum',
     options: ['Active', 'Inactive'],
-    aliases: ['status'] },
+    aliases: ['status'],
+  },
 ]
 
 export const DATASET_FIELDS: Record<ImportDataset, readonly TargetField[]> = {
@@ -87,7 +196,13 @@ export const DATASET_LABELS: Record<ImportDataset, string> = {
 
 /** Normalise a header for matching: lowercase, collapse whitespace/punctuation. */
 export function normaliseHeader(h: string): string {
-  return h.trim().toLowerCase().replace(/[_/]+/g, ' ').replace(/\s+/g, ' ').replace(/[?:.]+$/g, '').trim()
+  return h
+    .trim()
+    .toLowerCase()
+    .replace(/[_/]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/[?:.]+$/g, '')
+    .trim()
 }
 
 /**
@@ -96,7 +211,10 @@ export function normaliseHeader(h: string): string {
  * matches the field key words. Returns { fieldKey: columnIndex | null }.
  * A source column is used at most once.
  */
-export function autoMap(headers: string[], fields: readonly TargetField[]): Record<string, number | null> {
+export function autoMap(
+  headers: string[],
+  fields: readonly TargetField[],
+): Record<string, number | null> {
   const norm = headers.map(normaliseHeader)
   const used = new Set<number>()
   const result: Record<string, number | null> = {}

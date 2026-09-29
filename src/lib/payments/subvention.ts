@@ -139,7 +139,9 @@ export function computeWeekSubvention(input: WeekInput): WeekSubvention {
   let ncsSubsidyCents = 0
   if (input.ncs?.active) {
     ncsSubsidisedHours = Math.min(billableHours, Math.max(0, input.ncs.awardedWeeklyHours))
-    const rawSubsidy = roundCents(Math.max(0, input.ncs.awardedHourlyRateCents) * ncsSubsidisedHours)
+    const rawSubsidy = roundCents(
+      Math.max(0, input.ncs.awardedHourlyRateCents) * ncsSubsidisedHours,
+    )
     const feeForSubsidisedHours = roundCents(rate * ncsSubsidisedHours)
     ncsSubsidyCents = Math.min(rawSubsidy, feeForSubsidisedHours, grossParentCents)
   }

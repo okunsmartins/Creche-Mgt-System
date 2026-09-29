@@ -75,7 +75,9 @@ export function ImportWizard() {
     const lines = [[...headers, 'Import errors'].map(esc).join(',')]
     for (const re of failed) {
       const orig = rows[re.rowNumber - 1] ?? []
-      lines.push([...headers.map((_, i) => esc(orig[i] ?? '')), esc(re.errors.join('; '))].join(','))
+      lines.push(
+        [...headers.map((_, i) => esc(orig[i] ?? '')), esc(re.errors.join('; '))].join(','),
+      )
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -91,7 +93,9 @@ export function ImportWizard() {
     return (
       <form onSubmit={onUpload} className="space-y-4">
         <fieldset>
-          <legend className="text-sm font-medium text-text-secondary">What are you importing?</legend>
+          <legend className="text-sm font-medium text-text-secondary">
+            What are you importing?
+          </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {(['child', 'staff'] as ImportDataset[]).map((d) => (
               <label
@@ -161,7 +165,11 @@ export function ImportWizard() {
         <div className="grid grid-cols-3 gap-3">
           <Stat label="Created" value={summary.created ?? 0} tone="success" />
           <Stat label="Skipped (duplicates)" value={summary.skipped ?? 0} tone="muted" />
-          <Stat label="Failed" value={summary.failed ?? 0} tone={summary.failed ? 'error' : 'muted'} />
+          <Stat
+            label="Failed"
+            value={summary.failed ?? 0}
+            tone={summary.failed ? 'error' : 'muted'}
+          />
         </div>
         {summary.rowErrors && summary.rowErrors.length > 0 && (
           <div className="rounded-lg border border-error/30 bg-error-light p-3 text-sm">
@@ -176,7 +184,9 @@ export function ImportWizard() {
             </div>
             <ul className="mt-1 space-y-0.5 text-text-secondary">
               {summary.rowErrors.slice(0, 20).map((re) => (
-                <li key={re.rowNumber}>Row {re.rowNumber}: {re.errors.join('; ')}</li>
+                <li key={re.rowNumber}>
+                  Row {re.rowNumber}: {re.errors.join('; ')}
+                </li>
               ))}
             </ul>
             {summary.rowErrors.length > 20 && (
@@ -186,7 +196,10 @@ export function ImportWizard() {
             )}
           </div>
         )}
-        <Link href={view.href} className="inline-block text-sm font-semibold text-primary hover:underline">
+        <Link
+          href={view.href}
+          className="inline-block text-sm font-semibold text-primary hover:underline"
+        >
           {view.label} →
         </Link>
       </div>
@@ -200,7 +213,9 @@ export function ImportWizard() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-base font-semibold text-text-primary">Map your columns — {datasetLabel}</h3>
+        <h3 className="text-base font-semibold text-text-primary">
+          Map your columns — {datasetLabel}
+        </h3>
         <p className="text-sm text-text-muted">
           We matched what we could. Adjust any field, then review the preview below.
         </p>
@@ -216,13 +231,18 @@ export function ImportWizard() {
             <select
               value={mapping[f.key] ?? ''}
               onChange={(e) =>
-                setMapping((m) => ({ ...m, [f.key]: e.target.value === '' ? null : Number(e.target.value) }))
+                setMapping((m) => ({
+                  ...m,
+                  [f.key]: e.target.value === '' ? null : Number(e.target.value),
+                }))
               }
               className="mt-1 block w-full rounded-lg border border-border bg-surface p-2 text-sm"
             >
               <option value="">— Not in my file —</option>
               {headers.map((h, i) => (
-                <option key={i} value={i}>{h || `Column ${i + 1}`}</option>
+                <option key={i} value={i}>
+                  {h || `Column ${i + 1}`}
+                </option>
               ))}
             </select>
           </label>
@@ -231,16 +251,24 @@ export function ImportWizard() {
 
       {validation && (
         <div className="flex flex-wrap gap-3 text-sm">
-          <span className="rounded-full bg-success-light px-3 py-1 text-success">{validation.validCount} valid</span>
-          <span className="rounded-full bg-error-light px-3 py-1 text-error">{validation.errorRowCount} with errors</span>
-          <span className="rounded-full bg-warning-light px-3 py-1 text-warning">{validation.warningRowCount} with warnings</span>
+          <span className="rounded-full bg-success-light px-3 py-1 text-success">
+            {validation.validCount} valid
+          </span>
+          <span className="rounded-full bg-error-light px-3 py-1 text-error">
+            {validation.errorRowCount} with errors
+          </span>
+          <span className="rounded-full bg-warning-light px-3 py-1 text-warning">
+            {validation.warningRowCount} with warnings
+          </span>
         </div>
       )}
 
       {validation && validation.missingRequired.length > 0 && (
         <p className="text-sm text-error">
           Map these required fields to continue:{' '}
-          {validation.missingRequired.map((k) => fields.find((f) => f.key === k)?.label ?? k).join(', ')}
+          {validation.missingRequired
+            .map((k) => fields.find((f) => f.key === k)?.label ?? k)
+            .join(', ')}
         </p>
       )}
 
@@ -250,7 +278,9 @@ export function ImportWizard() {
             <tr>
               <th className="px-3 py-2">#</th>
               {mappedFields.map((f) => (
-                <th key={f.key} className="px-3 py-2">{f.label}</th>
+                <th key={f.key} className="px-3 py-2">
+                  {f.label}
+                </th>
               ))}
               <th className="px-3 py-2">Status</th>
             </tr>
@@ -261,13 +291,19 @@ export function ImportWizard() {
                 <tr key={idx} className="border-t border-border">
                   <td className="px-3 py-2 text-text-muted">{r.rowNumber}</td>
                   {mappedFields.map((f) => (
-                    <td key={f.key} className="px-3 py-2 text-text-primary">{r.values[f.key] ?? '—'}</td>
+                    <td key={f.key} className="px-3 py-2 text-text-primary">
+                      {r.values[f.key] ?? '—'}
+                    </td>
                   ))}
                   <td className="px-3 py-2">
                     {r.errors.length > 0 ? (
-                      <span className="text-error" title={r.errors.join('; ')}>✕ error</span>
+                      <span className="text-error" title={r.errors.join('; ')}>
+                        ✕ error
+                      </span>
                     ) : r.warnings.length > 0 ? (
-                      <span className="text-warning" title={r.warnings.join('; ')}>! warning</span>
+                      <span className="text-warning" title={r.warnings.join('; ')}>
+                        ! warning
+                      </span>
                     ) : (
                       <span className="text-success">✓</span>
                     )}
@@ -302,8 +338,17 @@ export function ImportWizard() {
   )
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone: 'success' | 'error' | 'muted' }) {
-  const color = tone === 'success' ? 'text-success' : tone === 'error' ? 'text-error' : 'text-text-secondary'
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: number
+  tone: 'success' | 'error' | 'muted'
+}) {
+  const color =
+    tone === 'success' ? 'text-success' : tone === 'error' ? 'text-error' : 'text-text-secondary'
   return (
     <div className="rounded-lg border border-border bg-surface p-3 text-center">
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
