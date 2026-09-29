@@ -32,6 +32,7 @@ import {
   FileText,
   Banknote,
   Receipt,
+  Scale,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -68,6 +69,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/teachers', label: 'Staff', icon: GraduationCap },
       { href: '/admin/classes', label: 'Rooms', icon: BookOpen },
+      { href: '/admin/ratios', label: 'Ratios', icon: Scale },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
     ],
   },
