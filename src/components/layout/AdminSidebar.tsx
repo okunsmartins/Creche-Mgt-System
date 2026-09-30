@@ -36,6 +36,7 @@ import {
   AlertCircle,
   Bell,
   LogIn,
+  NotebookPen,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -62,6 +63,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/students', label: 'Children', icon: Users },
       { href: '/admin/import', label: 'Import', icon: Upload },
+      { href: '/admin/daily-records', label: 'Daily Records', icon: NotebookPen },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
       { href: '/admin/link-requests', label: 'Link Requests', icon: ChevronRight },
