@@ -36,6 +36,7 @@ import {
   AlertCircle,
   Bell,
   LogIn,
+  Landmark,
   NotebookPen,
   TrendingUp,
   UserPlus,
@@ -116,6 +117,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/reports', label: 'Reports', icon: BarChart2 },
       { href: '/admin/commercial', label: 'Commercial', icon: TrendingUp },
+      { href: '/admin/subvention-report', label: 'Subvention', icon: Landmark },
     ],
   },
   {
