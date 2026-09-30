@@ -35,6 +35,7 @@ import {
   Scale,
   AlertCircle,
   LogIn,
+  Landmark,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -106,7 +107,10 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Reports',
-    items: [{ href: '/admin/reports', label: 'Reports', icon: BarChart2 }],
+    items: [
+      { href: '/admin/reports', label: 'Reports', icon: BarChart2 },
+      { href: '/admin/subvention-report', label: 'Subvention', icon: Landmark },
+    ],
   },
   {
     title: 'Administration',
