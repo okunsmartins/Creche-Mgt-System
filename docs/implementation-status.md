@@ -201,8 +201,11 @@ Work for the **school** product; passes its own tests but **not verified for the
 
 ## ⬜ Outstanding (not started / provider-gated)
 
-**Fee/subvention:** FEE-08 pay invoice via Connect (needs KYC — FEE-09 instalment engine already built to plug in),
-FEE-11 attendance true-up + Pobal claim accrual ledger. Also: `service_rates` (FEE-01), `invoice_lines` + full
+**Fee/subvention:** FEE-08 pay invoice via a payment provider (needs KYC — FEE-09 instalment engine already built
+to plug in). Two provider paths are inherited from the fork and code-complete but **not activated**:
+**Stripe Connect** (per-tenant) and **Revolut Pay** (inherited single-account payments + webhook + refunds; needs
+Revolut Business KYC, prod key/URL/webhook, and a sandbox refund smoke — per-tenant Revolut is a held branch).
+Also: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates` (FEE-01), `invoice_lines` + full
 8-state machine (FEE-04), parent invoice **payment** wiring, reminder **dispatch** (email/SMS send).
 
 **P0 crèche scope still open (spec):** compliance centre + inspection exports + retention/DPIA (§7.7);
@@ -288,7 +291,9 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 
 **Recommended next:**
 1. **Enable branch protection** on `main` (checklist in `docs/setup/github-branch-protection.md`) so red PRs stop merging.
-2. **Set up providers** (Resend → Twilio → Stripe Connect) per [provider-setup.md](provider-setup.md), then **deploy to
-   Vercel** per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md).
-3. **Unblock FEE-08** once Connect is active: wire invoice payment (FEE-09 instalment engine plugs in), then verify in sandbox.
+2. **Set up providers** (Resend → Twilio → **Stripe Connect and/or Revolut Pay**) per [provider-setup.md](provider-setup.md),
+   then **deploy to Vercel** per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md).
+   Revolut needs Business KYC + prod key/URL/webhook + a sandbox refund smoke before go-live.
+3. **Unblock FEE-08** once a payment provider (Stripe Connect or Revolut) is active: wire invoice payment (FEE-09
+   instalment engine plugs in), then verify in sandbox.
 4. Add the still-missing automated tests: PPSN-never-logged, parent invoice authz/render, and a DB-enabled CI isolation job.
