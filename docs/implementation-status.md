@@ -192,7 +192,7 @@ Work for the **school** product; passes its own tests but **not verified for the
 | Area | Where | Status for crèche |
 |---|---|---|
 | Multi-tenant core, Auth/RBAC, RLS + grants | `lib/tenant/*`, `lib/auth/*`; migs 003/004/009–021/033–036 | 🔵 reuse; new tables need own grants + RLS |
-| Stripe Connect (per-tenant) / Revolut / Twilio SMS / Resend email | `lib/stripe|revolut|sms|email/*`; migs 055–057/066/067 | 🔵 code complete; need KYC/ComReg/domain activation + fee wiring |
+| Stripe Connect (per-tenant) **+ Revolut (per-tenant)** / Twilio SMS / Resend email | `lib/stripe|revolut|sms|email/*`; migs 055–057/066/**067** | 🔵 code complete & **both providers are per-crèche** (each collects its own payments); need per-crèche KYC/key + ComReg/domain activation + FEE-08 fee wiring |
 | Orders, payment-links, refunds, reconciliation, subscriptions, documents, crypto | `lib/*` | 🔵 reuse; adapt to crèche fee flows |
 | Attendance (per class session) | `lib/attendance/*`; migs 031/032/062 | 🔵 base reusable; **daily check-in + ratios now built on top** (see ✅ above) |
 | Instalment math (school) | `lib/payments/instalments.ts`; mig 023 | 🔵 untouched; crèche uses the separate `lib/fees/instalments.ts` (FEE-09) |
@@ -201,12 +201,29 @@ Work for the **school** product; passes its own tests but **not verified for the
 
 ## ⬜ Outstanding (not started / provider-gated)
 
-**Fee/subvention:** FEE-08 pay invoice via a payment provider (needs KYC — FEE-09 instalment engine already built
-to plug in). Two provider paths are inherited from the fork and code-complete but **not activated**:
-**Stripe Connect** (per-tenant) and **Revolut Pay** (inherited single-account payments + webhook + refunds; needs
-Revolut Business KYC, prod key/URL/webhook, and a sandbox refund smoke — per-tenant Revolut is a held branch).
-Also: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates` (FEE-01), `invoice_lines` + full
-8-state machine (FEE-04), parent invoice **payment** wiring, reminder **dispatch** (email/SMS send).
+**Fee/subvention:** FEE-08 pay invoice via a payment provider (needs each crèche's own KYC — FEE-09 instalment
+engine already built to plug in). **Both provider paths are per-tenant and code-complete, but not yet wired to
+crèche invoices and not activated in production** (see "Per-tenant payments" below). When FEE-08 is built it **must**
+route through the same per-crèche resolvers (`stripeAccount: <tenant connect account>` / `resolveRevolutApiKey(schoolId)`),
+never a shared platform account. Also: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates`
+(FEE-01), `invoice_lines` + full 8-state machine (FEE-04), parent invoice **payment** wiring, reminder **dispatch**
+(email/SMS send).
+
+**Per-tenant payments (Stripe Connect + Revolut) — architecture in place, activation pending.** Each crèche collects
+its **own** payments straight into its **own** account once it sets up its portal — the platform is not the merchant
+of record and takes no cut. Verified in code:
+- **Stripe Connect (per-crèche):** `066_stripe_connect.sql`; onboarding via `/admin/payments/connect` (`ConnectStripeButton`
+  → `connectActions.ts`); checkout runs on the tenant's account (`stripe/actions.ts` → `stripeAccount: connect.stripe_connect_account_id`);
+  refunds use the same account. Status synced via `account.updated` webhook / on-return sync.
+- **Revolut (per-crèche):** `067_revolut_per_school.sql` (encrypted `revolut_api_key_enc` / `revolut_webhook_secret_enc`
+  on `schools`); the crèche enters its own key in `RevolutSettingsForm` on the same page; `resolveRevolutApiKey(schoolId)` /
+  `resolveRevolutWebhookSecret(schoolId)` (`revolut/perSchool.ts`) are used at checkout, in the webhook route
+  (`schoolIdFromExtRef` → per-school secret), and in refunds. Falls back to the platform key only if a crèche hasn't opted in.
+- **Activities & Programmes are already per-tenant:** `/admin/activities`, `/admin/programmes` are `school_id`-scoped, so
+  each crèche creates and charges for its own — payments flow through that crèche's connected Stripe/Revolut account.
+- **Activation remaining (per crèche, user-gated):** each crèche completes Stripe Connect KYC and/or enters its own
+  Revolut Business key + prod webhook; platform-level Stripe/Revolut prod keys set in Vercel as the fallback; then a
+  sandbox pay + refund smoke per provider.
 
 **P0 crèche scope still open (spec):** compliance centre + inspection exports + retention/DPIA (§7.7);
 tenant funding-settings UI (FEE-03); "term" fee frequency; licensed-capacity modelling for true occupancy.
@@ -291,9 +308,11 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 
 **Recommended next:**
 1. **Enable branch protection** on `main` (checklist in `docs/setup/github-branch-protection.md`) so red PRs stop merging.
-2. **Set up providers** (Resend → Twilio → **Stripe Connect and/or Revolut Pay**) per [provider-setup.md](provider-setup.md),
-   then **deploy to Vercel** per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md).
-   Revolut needs Business KYC + prod key/URL/webhook + a sandbox refund smoke before go-live.
-3. **Unblock FEE-08** once a payment provider (Stripe Connect or Revolut) is active: wire invoice payment (FEE-09
-   instalment engine plugs in), then verify in sandbox.
+2. **Set up providers** (Resend → Twilio → payments) per [provider-setup.md](provider-setup.md), then **deploy to Vercel**
+   per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md). Payments are
+   **per crèche**: set the platform-level Stripe/Revolut prod keys in Vercel as the fallback, then **each crèche** connects
+   its own Stripe account (Connect KYC) and/or enters its own Revolut Business key + prod webhook from `/admin/payments/connect`.
+   Run a sandbox pay + refund smoke per provider before go-live.
+3. **Unblock FEE-08** once a crèche's payment provider is active: wire invoice payment through the **per-tenant** resolvers
+   (Stripe Connect account / `resolveRevolutApiKey(schoolId)`), FEE-09 instalment engine plugs in, then verify in sandbox.
 4. Add the still-missing automated tests: PPSN-never-logged, parent invoice authz/render, and a DB-enabled CI isolation job.
