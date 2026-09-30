@@ -38,6 +38,7 @@ import {
   LogIn,
   Landmark,
   NotebookPen,
+  TrendingUp,
   UserPlus,
   Upload,
 } from 'lucide-react'
@@ -115,6 +116,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Reports',
     items: [
       { href: '/admin/reports', label: 'Reports', icon: BarChart2 },
+      { href: '/admin/commercial', label: 'Commercial', icon: TrendingUp },
       { href: '/admin/subvention-report', label: 'Subvention', icon: Landmark },
     ],
   },
