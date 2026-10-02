@@ -1,10 +1,17 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/auth/guards'
+import { requireAdmin, requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
-import { validateCollectionMethod, validateCollectionRun, normaliseDays } from './collection'
+import {
+  validateCollectionMethod,
+  validateCollectionRun,
+  normaliseDays,
+  computeCollectionCharge,
+  canTransitionEnrolment,
+  isEnrolmentStatus,
+} from './collection'
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -166,5 +173,210 @@ async function assignRunStaff(
     logger.error('collection_run_staff_assign_failed', { schoolId, error: error.message })
     return { ok: false, error: 'Could not assign staff to the run.' }
   }
+  return { ok: true }
+}
+
+// ── Enrolment (Slice 2) ───────────────────────────────────────────────────────
+
+/** Staff enrol a child in a run — approved immediately. */
+export async function enrolChildByStaffAction(input: {
+  runId: string
+  studentId: string
+  days?: number[]
+  notes?: string
+}): Promise<Result> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  const db = createSupabaseAdminClient()
+
+  const [{ data: run }, { data: child }] = await Promise.all([
+    db
+      .from('collection_runs')
+      .select('id')
+      .eq('id', input.runId)
+      .eq('school_id', schoolId)
+      .maybeSingle(),
+    db
+      .from('students')
+      .select('id')
+      .eq('id', input.studentId)
+      .eq('school_id', schoolId)
+      .maybeSingle(),
+  ])
+  if (!run) return { ok: false, error: 'Run not found for this crèche.' }
+  if (!child) return { ok: false, error: 'Child not found for this crèche.' }
+
+  const { error } = await db.from('collection_enrolments').insert({
+    school_id: schoolId,
+    student_id: input.studentId,
+    collection_run_id: input.runId,
+    days: normaliseDays(input.days ?? []),
+    status: 'approved',
+    requested_by: 'staff',
+    requested_by_profile_id: admin.id,
+    reviewed_by_profile_id: admin.id,
+    notes: input.notes?.trim() || null,
+  })
+  if (error) {
+    logger.error('collection_enrol_staff_failed', { schoolId, error: error.message })
+    return {
+      ok: false,
+      error: 'Could not enrol the child. They may already be enrolled in this run.',
+    }
+  }
+  revalidatePath('/admin/collection')
+  return { ok: true }
+}
+
+/** A parent requests collection for their own child. Requires written consent. */
+export async function requestCollectionByParentAction(input: {
+  runId: string
+  studentId: string
+  days?: number[]
+  consent: boolean
+}): Promise<Result> {
+  const parent = await requireVerifiedAuth()
+  if (!input.consent) return { ok: false, error: 'Please confirm consent to proceed.' }
+  const db = createSupabaseAdminClient()
+
+  // Authorise: parent must be actively linked to this child.
+  const { data: link } = await db
+    .from('parent_student_links')
+    .select('id, students(school_id)')
+    .eq('parent_id', parent.id)
+    .eq('student_id', input.studentId)
+    .eq('is_active', true)
+    .maybeSingle()
+  const schoolId = (link as { students: { school_id: string } | null } | null)?.students?.school_id
+  if (!link || !schoolId) return { ok: false, error: 'You are not linked to this child.' }
+
+  // The run must belong to the child's crèche.
+  const { data: run } = await db
+    .from('collection_runs')
+    .select('id')
+    .eq('id', input.runId)
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  if (!run) return { ok: false, error: 'Collection run not found.' }
+
+  const { error } = await db.from('collection_enrolments').insert({
+    school_id: schoolId,
+    student_id: input.studentId,
+    collection_run_id: input.runId,
+    days: normaliseDays(input.days ?? []),
+    status: 'requested',
+    requested_by: 'parent',
+    requested_by_profile_id: parent.id,
+    consent_given_at: new Date().toISOString(),
+  })
+  if (error) {
+    logger.error('collection_request_parent_failed', { error: error.message })
+    return { ok: false, error: 'Could not submit the request. The child may already be enrolled.' }
+  }
+  revalidatePath('/parent/collection')
+  revalidatePath('/admin/collection')
+  return { ok: true }
+}
+
+/** Crèche reviews an enrolment: approve / decline / end (status machine enforced). */
+export async function reviewEnrolmentAction(id: string, nextStatus: string): Promise<Result> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  if (!isEnrolmentStatus(nextStatus)) return { ok: false, error: 'Invalid status.' }
+
+  const db = createSupabaseAdminClient()
+  const { data: row } = await db
+    .from('collection_enrolments')
+    .select('status')
+    .eq('id', id)
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  if (!row) return { ok: false, error: 'Enrolment not found.' }
+
+  const current = (row as { status: string }).status
+  if (!isEnrolmentStatus(current) || !canTransitionEnrolment(current, nextStatus))
+    return { ok: false, error: `Cannot change a ${current} enrolment to ${nextStatus}.` }
+
+  const { error } = await db
+    .from('collection_enrolments')
+    .update({ status: nextStatus, reviewed_by_profile_id: admin.id })
+    .eq('id', id)
+    .eq('school_id', schoolId)
+  if (error) return { ok: false, error: 'Could not update the enrolment.' }
+  revalidatePath('/admin/collection')
+  return { ok: true }
+}
+
+/**
+ * Generate a collection charge (an issued invoice) for an APPROVED enrolment.
+ * net = run price × units. Reuses the invoices table + generate_invoice_number RPC,
+ * so the charge shows in /admin/fees and the parent's /parent/invoices. No NCS
+ * netting yet (school-age subvention is a later refinement — see design open qs).
+ */
+export async function generateCollectionChargeAction(input: {
+  enrolmentId: string
+  periodStart: string
+  periodEnd: string
+  dueDate: string
+  units: number
+}): Promise<Result> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  const db = createSupabaseAdminClient()
+
+  if (!input.periodStart || !input.periodEnd || !input.dueDate)
+    return { ok: false, error: 'A billing period and due date are required.' }
+  if (!Number.isInteger(input.units) || input.units < 1)
+    return { ok: false, error: 'Units must be at least 1.' }
+  if (input.periodEnd < input.periodStart)
+    return { ok: false, error: 'Period end must be on or after the start.' }
+
+  const { data: enr } = await db
+    .from('collection_enrolments')
+    .select('id, student_id, status, collection_runs(name, charge_basis, price_cents)')
+    .eq('id', input.enrolmentId)
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  const row = enr as {
+    id: string
+    student_id: string
+    status: string
+    collection_runs: { name: string; charge_basis: string; price_cents: number } | null
+  } | null
+  if (!row || !row.collection_runs) return { ok: false, error: 'Enrolment not found.' }
+  if (row.status !== 'approved')
+    return { ok: false, error: 'Only an approved enrolment can be charged.' }
+
+  const net = computeCollectionCharge(row.collection_runs.price_cents, input.units)
+  const { data: numData, error: numErr } = await db.rpc('generate_invoice_number')
+  if (numErr || !numData) return { ok: false, error: 'Could not allocate an invoice number.' }
+
+  const { error } = await db.from('invoices').insert({
+    school_id: schoolId,
+    student_id: row.student_id,
+    invoice_number: numData,
+    period_start: input.periodStart,
+    period_end: input.periodEnd,
+    due_date: input.dueDate,
+    gross_parent_cents: net,
+    net_parent_cents: net,
+    status: 'issued',
+    issued_at: new Date().toISOString(),
+    collection_enrolment_id: row.id,
+    created_by: admin.id,
+    snapshot: {
+      source: 'school_collection',
+      run_name: row.collection_runs.name,
+      charge_basis: row.collection_runs.charge_basis,
+      unit_price_cents: row.collection_runs.price_cents,
+      units: input.units,
+    },
+  })
+  if (error) {
+    logger.error('collection_charge_failed', { schoolId, error: error.message })
+    return { ok: false, error: 'Could not generate the charge.' }
+  }
+  revalidatePath('/admin/collection')
+  revalidatePath('/admin/fees')
   return { ok: true }
 }
