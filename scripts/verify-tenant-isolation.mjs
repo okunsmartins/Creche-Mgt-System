@@ -204,6 +204,21 @@ async function main() {
   created.collectionEnrolment = cenr.data?.id
   ok('seed: collection enrolment for Tenant A', !cenr.error, cenr.error?.message)
 
+  const creg = await admin
+    .from('collection_register')
+    .insert({
+      school_id: tenantA,
+      collection_run_id: created.collectionRun,
+      student_id: childA,
+      date: '2026-09-02',
+      status: 'collected',
+      collected_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single()
+  created.collectionRegister = creg.data?.id
+  ok('seed: collection register row for Tenant A', !creg.error, creg.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
   const tenantAIds = [
@@ -214,6 +229,7 @@ async function main() {
     created.collectionMethod,
     created.collectionRun,
     created.collectionEnrolment,
+    created.collectionRegister,
   ]
   for (const table of [
     'fee_schedules',
@@ -223,6 +239,7 @@ async function main() {
     'collection_methods',
     'collection_runs',
     'collection_enrolments',
+    'collection_register',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -297,6 +314,28 @@ async function main() {
     )
   }
 
+  // ── 1e. Action guard: Tenant B can't touch Tenant A's register entry ──────────
+  // Mirrors markRegisterAction `.eq('id', <row>).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('collection_register')
+      .update({ status: 'released', released_at: new Date().toISOString() })
+      .eq('id', created.collectionRegister)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot update Tenant A register', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('collection_register')
+      .select('status')
+      .eq('id', created.collectionRegister)
+      .single()
+    ok(
+      'cross-tenant: Tenant A register left intact',
+      still?.status === 'collected',
+      `status=${still?.status}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
@@ -306,6 +345,7 @@ async function main() {
     'collection_methods',
     'collection_runs',
     'collection_enrolments',
+    'collection_register',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -334,6 +374,8 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.collectionRegister)
+    await admin.from('collection_register').delete().eq('id', created.collectionRegister)
   if (created.collectionEnrolment)
     await admin.from('collection_enrolments').delete().eq('id', created.collectionEnrolment)
   if (created.collectionRun)

@@ -153,6 +153,36 @@ export function canTransitionEnrolment(from: EnrolmentStatus, to: EnrolmentStatu
   return ENROLMENT_TRANSITIONS[from].includes(to)
 }
 
+// ── Daily collection register (Slice 3) ───────────────────────────────────────
+// The lifecycle of one child on one collection day: scheduled → collected (from
+// school) → released (to an authorised collector), or marked absent. Undo paths let
+// staff correct a mistake.
+export const REGISTER_STATUSES = ['scheduled', 'collected', 'released', 'absent'] as const
+export type RegisterStatus = (typeof REGISTER_STATUSES)[number]
+
+export const REGISTER_STATUS_LABELS: Record<RegisterStatus, string> = {
+  scheduled: 'Scheduled',
+  collected: 'Collected from school',
+  released: 'Released to collector',
+  absent: 'Absent',
+}
+
+export function isRegisterStatus(v: string): v is RegisterStatus {
+  return (REGISTER_STATUSES as readonly string[]).includes(v)
+}
+
+const REGISTER_TRANSITIONS: Record<RegisterStatus, readonly RegisterStatus[]> = {
+  scheduled: ['collected', 'absent'],
+  collected: ['released', 'scheduled'],
+  released: ['collected'],
+  absent: ['scheduled'],
+}
+
+export function canTransitionRegister(from: RegisterStatus, to: RegisterStatus): boolean {
+  if (from === to) return false
+  return REGISTER_TRANSITIONS[from].includes(to)
+}
+
 export function validateCollectionRun(input: CollectionRunInput): Result {
   if (!input.name?.trim()) return { ok: false, error: 'A run name is required.' }
   if (!input.originSchoolName?.trim())

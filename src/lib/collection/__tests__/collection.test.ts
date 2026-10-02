@@ -12,6 +12,9 @@ import {
   ENROLMENT_STATUSES,
   isEnrolmentStatus,
   canTransitionEnrolment,
+  REGISTER_STATUSES,
+  isRegisterStatus,
+  canTransitionRegister,
   type CollectionRunInput,
 } from '../collection'
 
@@ -138,5 +141,28 @@ describe('enrolment status machine', () => {
     expect(canTransitionEnrolment('approved', 'approved')).toBe(false)
     expect(canTransitionEnrolment('approved', 'requested')).toBe(false)
     expect(canTransitionEnrolment('ended', 'declined')).toBe(false)
+  })
+})
+
+describe('collection register status machine', () => {
+  it('recognises statuses', () => {
+    expect(REGISTER_STATUSES).toEqual(['scheduled', 'collected', 'released', 'absent'])
+    expect(isRegisterStatus('collected')).toBe(true)
+    expect(isRegisterStatus('gone')).toBe(false)
+  })
+
+  it('follows the collection lifecycle with undo paths', () => {
+    expect(canTransitionRegister('scheduled', 'collected')).toBe(true)
+    expect(canTransitionRegister('scheduled', 'absent')).toBe(true)
+    expect(canTransitionRegister('collected', 'released')).toBe(true)
+    expect(canTransitionRegister('collected', 'scheduled')).toBe(true) // undo
+    expect(canTransitionRegister('released', 'collected')).toBe(true) // undo
+    expect(canTransitionRegister('absent', 'scheduled')).toBe(true) // undo
+  })
+
+  it('forbids illegal jumps', () => {
+    expect(canTransitionRegister('scheduled', 'released')).toBe(false)
+    expect(canTransitionRegister('released', 'absent')).toBe(false)
+    expect(canTransitionRegister('collected', 'collected')).toBe(false)
   })
 })
