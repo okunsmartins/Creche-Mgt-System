@@ -51,6 +51,7 @@ const created = {
   collector: null,
   collectionMethod: null,
   collectionRun: null,
+  collectionEnrolment: null,
 }
 
 async function main() {
@@ -189,6 +190,20 @@ async function main() {
   created.collectionRun = crun.data?.id
   ok('seed: collection run for Tenant A', !crun.error, crun.error?.message)
 
+  const cenr = await admin
+    .from('collection_enrolments')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      collection_run_id: created.collectionRun,
+      status: 'approved',
+      requested_by: 'staff',
+    })
+    .select('id')
+    .single()
+  created.collectionEnrolment = cenr.data?.id
+  ok('seed: collection enrolment for Tenant A', !cenr.error, cenr.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
   const tenantAIds = [
@@ -198,6 +213,7 @@ async function main() {
     created.collector,
     created.collectionMethod,
     created.collectionRun,
+    created.collectionEnrolment,
   ]
   for (const table of [
     'fee_schedules',
@@ -206,6 +222,7 @@ async function main() {
     'authorised_collectors',
     'collection_methods',
     'collection_runs',
+    'collection_enrolments',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -258,6 +275,28 @@ async function main() {
     )
   }
 
+  // ── 1d. Action guard: Tenant B can't touch Tenant A's collection enrolment ──
+  // Mirrors reviewEnrolmentAction `.eq('id', id).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('collection_enrolments')
+      .update({ status: 'ended' })
+      .eq('id', created.collectionEnrolment)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot end Tenant A enrolment', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('collection_enrolments')
+      .select('status')
+      .eq('id', created.collectionEnrolment)
+      .single()
+    ok(
+      'cross-tenant: Tenant A enrolment left intact',
+      still?.status === 'approved',
+      `status=${still?.status}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
@@ -266,6 +305,7 @@ async function main() {
     'authorised_collectors',
     'collection_methods',
     'collection_runs',
+    'collection_enrolments',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -294,6 +334,8 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.collectionEnrolment)
+    await admin.from('collection_enrolments').delete().eq('id', created.collectionEnrolment)
   if (created.collectionRun)
     await admin.from('collection_runs').delete().eq('id', created.collectionRun)
   if (created.collectionMethod)
