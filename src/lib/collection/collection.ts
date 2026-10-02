@@ -124,6 +124,35 @@ export interface CollectionRunInput {
   childrenPerChaperone?: number
 }
 
+// ── Enrolment status machine (Slice 2) ───────────────────────────────────────
+export const ENROLMENT_STATUSES = ['requested', 'approved', 'declined', 'ended'] as const
+export type EnrolmentStatus = (typeof ENROLMENT_STATUSES)[number]
+
+export const ENROLMENT_STATUS_LABELS: Record<EnrolmentStatus, string> = {
+  requested: 'Requested',
+  approved: 'Approved',
+  declined: 'Declined',
+  ended: 'Ended',
+}
+
+export function isEnrolmentStatus(v: string): v is EnrolmentStatus {
+  return (ENROLMENT_STATUSES as readonly string[]).includes(v)
+}
+
+// requested → approved/declined (a review decision); approved → ended (stop the
+// enrolment); declined/ended → approved (reinstate). No silent return to requested.
+const ENROLMENT_TRANSITIONS: Record<EnrolmentStatus, readonly EnrolmentStatus[]> = {
+  requested: ['approved', 'declined'],
+  approved: ['ended'],
+  declined: ['approved'],
+  ended: ['approved'],
+}
+
+export function canTransitionEnrolment(from: EnrolmentStatus, to: EnrolmentStatus): boolean {
+  if (from === to) return false
+  return ENROLMENT_TRANSITIONS[from].includes(to)
+}
+
 export function validateCollectionRun(input: CollectionRunInput): Result {
   if (!input.name?.trim()) return { ok: false, error: 'A run name is required.' }
   if (!input.originSchoolName?.trim())

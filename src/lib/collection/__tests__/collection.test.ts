@@ -9,6 +9,9 @@ import {
   formatDays,
   validateCollectionMethod,
   validateCollectionRun,
+  ENROLMENT_STATUSES,
+  isEnrolmentStatus,
+  canTransitionEnrolment,
   type CollectionRunInput,
 } from '../collection'
 
@@ -113,5 +116,27 @@ describe('validateCollectionRun', () => {
   it('rejects a bad custom ratio', () => {
     expect(validateCollectionRun({ ...base, childrenPerChaperone: 0 }).ok).toBe(false)
     expect(validateCollectionRun({ ...base, childrenPerChaperone: 4 }).ok).toBe(true)
+  })
+})
+
+describe('enrolment status machine', () => {
+  it('recognises valid statuses', () => {
+    expect(ENROLMENT_STATUSES).toEqual(['requested', 'approved', 'declined', 'ended'])
+    expect(isEnrolmentStatus('approved')).toBe(true)
+    expect(isEnrolmentStatus('pending')).toBe(false)
+  })
+
+  it('allows review decisions and reinstatement', () => {
+    expect(canTransitionEnrolment('requested', 'approved')).toBe(true)
+    expect(canTransitionEnrolment('requested', 'declined')).toBe(true)
+    expect(canTransitionEnrolment('approved', 'ended')).toBe(true)
+    expect(canTransitionEnrolment('declined', 'approved')).toBe(true)
+    expect(canTransitionEnrolment('ended', 'approved')).toBe(true)
+  })
+
+  it('forbids no-op and illegal moves', () => {
+    expect(canTransitionEnrolment('approved', 'approved')).toBe(false)
+    expect(canTransitionEnrolment('approved', 'requested')).toBe(false)
+    expect(canTransitionEnrolment('ended', 'declined')).toBe(false)
   })
 })

@@ -216,6 +216,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
+| **School Collection (Feature A) — Slice 2: enrolment + charging** | mig `080` (collection_enrolments + invoices.collection_enrolment_id); enrolment status machine (+3 tests); actions (staff enrol, parent request w/ consent, approve/decline/end, **generate charge → issued invoice**); admin `EnrolmentsPanel` on `/admin/collection`; parent `/parent/collection` + nav | pure status machine **unit-tested**; type-check/lint/format/842 tests clean; charge reuses the invoices table + `generate_invoice_number` RPC (shows in `/admin/fees` + `/parent/invoices`), all tenant/ownership-scoped | **Migration 080 NOT applied yet**; **no browser E2E / cross-tenant test yet**. NCS school-age netting not applied (charges gross; subvention refinement later). Daily register (Slice 3) + parent payment (Slice 4) pending. |
 
 ---
 

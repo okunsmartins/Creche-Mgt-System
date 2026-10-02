@@ -60,6 +60,7 @@ const NAV: NavEntry[] = [
       { href: '/parent/invoices', label: 'Fees & Invoices' },
       { href: '/parent/permission-slips', label: 'Permission Slips' },
       { href: '/parent/collectors', label: 'Who Can Collect' },
+      { href: '/parent/collection', label: 'School Collection' },
       { href: '/parent/payments', label: 'Payments' },
     ],
   },
