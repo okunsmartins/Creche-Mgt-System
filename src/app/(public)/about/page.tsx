@@ -1,25 +1,25 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, ShieldCheck, Wallet, BarChart3 } from 'lucide-react'
+import { ArrowRight, ShieldCheck, Receipt, ClipboardCheck } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'About' }
 
-// NOTE: starter content — edit the copy below to match your brand voice.
+// Starter content — edit the copy to match your brand voice.
 const highlights = [
   {
-    icon: Wallet,
-    title: 'Payments made simple',
-    body: 'Parents pay for activities, trips and programmes online — card or wallet — with clear receipts. Guest payments need no account.',
+    icon: Receipt,
+    title: 'Fees & subvention, sorted',
+    body: 'ECCE and NCS are netted off every invoice automatically, so parents are billed the right amount and your provider receivables are tracked for you — no more end-of-month spreadsheet maths.',
   },
   {
-    icon: BarChart3,
-    title: 'Attendance & insight',
-    body: 'Take attendance, track programmes, and see how your crèche is doing with built-in reporting — all in one place.',
+    icon: ClipboardCheck,
+    title: 'Attendance, ratios & daily records',
+    body: 'Check children in and out, keep rooms within regulatory adult-to-child ratios in real time, and log sleep, meals, nappies, incidents and medication — all in one place.',
   },
   {
     icon: ShieldCheck,
     title: 'Secure & compliant',
-    body: 'Each school gets its own private portal. Payment details are handled by regulated providers — we never store card numbers.',
+    body: 'Each crèche gets its own private portal with role-based access. Children’s sensitive details are encrypted, and payments are handled by regulated providers — we never store card numbers.',
   },
 ]
 
@@ -36,16 +36,29 @@ export default function AboutPage() {
             About Creche Wise
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Payments and admin, <span className="text-primary">built for schools</span>
+            Fees, subvention and admin, <span className="text-primary">built for crèches</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Creche Wise gives every school its own portal to collect payments, manage activities and
-            programmes, take attendance, and message parents — without the paperwork.
+            Creche Wise gives every crèche its own portal to handle fees and ECCE/NCS subvention,
+            enrolments and waiting lists, attendance and ratios, daily records and parent payments —
+            without the paperwork.
           </p>
         </div>
       </section>
 
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Made for Irish early-years settings
+          </h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            Full-day care, sessional preschool, Montessori, naíonraí, after-school and community
+            childcare all run differently — and all spend too long on fees, subvention returns and
+            compliance paperwork. Creche Wise brings enrolment, billing, attendance and parent
+            communication into one calm, secure place so you can spend more time with the children.
+          </p>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-3">
           {highlights.map(({ icon: Icon, title, body }) => (
             <div key={title} className="card p-6">
@@ -61,7 +74,7 @@ export default function AboutPage() {
         <div className="mt-10 rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center">
           <h2 className="text-lg font-semibold text-text-primary">Run a crèche?</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-text-secondary">
-            Set up your crèche&apos;s own portal in minutes.
+            Set up your crèche&apos;s own branded portal in minutes.
           </p>
           <Link
             href="/get-started"
