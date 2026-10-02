@@ -199,6 +199,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
+| **School Collection (Feature A) — Slice 1: config** | mig `079` (collection_methods / collection_runs / collection_run_staff); `src/lib/collection/*` (**14 tests**); `/admin/collection` + `CollectionPanel` + sidebar link | pure lib (charge bases, chaperone ratio, charge computation, day/run validation) **unit-tested**; type-check/lint/format clean; admin can configure methods + create/delete runs (method & charge-basis dropdowns, day picker, capacity, price, staff assignment, ratio warning) | **Migration 079 NOT applied yet**; **no browser E2E / cross-tenant test yet**. Enrolment + parent request + consent + **charging** (Slice 2, mig 080), daily collection register (Slice 3), and payment (Slice 4) not built. Design: [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md). |
 
 ---
 

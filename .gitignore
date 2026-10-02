@@ -50,3 +50,6 @@ creche-dev-credentials.local.txt
 
 # Local dev credentials (never commit)
 Password/
+
+# Local working notes / review prompts (never commit)
+*Test-Review*.txt
