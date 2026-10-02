@@ -43,7 +43,7 @@ Production Build on every PR; E2E job defined but not passing yet. ⚠️ **Bran
 `main` — until it is, red/unchecked merges remain possible (see `docs/setup/github-branch-protection.md`).
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–079 applied (**078 authorised_collectors + 079 school-collection config applied + DB-verified
+Migrations 001–080 applied (**078 authorised_collectors + 079 school-collection config + 080 collection_enrolments applied + DB-verified
 2026-10-02**: insert, CHECK
 constraints, partial-unique, updated_at trigger, anon-blocked). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
@@ -197,8 +197,27 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
   (add method → add run → €-charge + ratio warning rendered); **cross-tenant isolation test extended**
   (`scripts/verify-tenant-isolation.mjs` now covers `collection_methods`/`collection_runs`, incl. "Tenant B cannot
   modify Tenant A's run"); type-check / lint / format / 839 tests all green.
-- **Not done (next slices):** enrolment + parent request + consent + **charging** (Slice 2, needs mig 080 +
-  the fee/NCS engine), the daily **collection register** (Slice 3), and **parent payment** (Slice 4, provider-gated).
+### School Collection Service (Feature A) — Slice 2: enrolment + charging (migration 080, verified)
+- **Files:** migration `080` (`collection_enrolments` + `invoices.collection_enrolment_id`); enrolment status
+  machine in `collection.ts` (+3 tests, **17 total**); `collection/actions.ts` (staff enrol, parent request with
+  written consent, approve/decline/end, **generate charge**); admin `EnrolmentsPanel` on `/admin/collection`;
+  parent `/parent/collection` + `ParentCollectionForm` + nav.
+- **Charging:** an approved enrolment → `generateCollectionChargeAction` creates an **issued invoice**
+  (run price × units) via the existing invoices table + `generate_invoice_number` RPC, linked by
+  `collection_enrolment_id` — so it appears in `/admin/fees` and `/parent/invoices`.
+- **Verified:** migration applied + DB-checked; **browser-tested** (enrol Emma Byrne → Approved → Generate charge →
+  `INV-2026-000014`, €240 = 20×€12, issued, linked, snapshot `source: school_collection`); **cross-tenant test
+  extended** (`verify-tenant-isolation.mjs` covers `collection_enrolments`, incl. "Tenant B cannot end Tenant A's
+  enrolment" — 26 checks pass); type-check / lint / format / tests all green.
+- **Not done (by design):** NCS school-age netting (charges gross for now — subvention refinement later); the daily
+  **collection register** (Slice 3); **parent payment** (Slice 4, provider-gated).
+
+### Security — cross-tenant isolation review (2026-10-03)
+- Static audit of every server-side data path + DB-backed `verify-tenant-isolation.mjs` (26 checks).
+  **No cross-tenant data-isolation vulnerabilities found.** Full report:
+  [security-review-cross-tenant-2026-10.md](security-review-cross-tenant-2026-10.md).
+- Hardening applied: removed a dead client-callable `incrementPaymentLinkUseCount`; scoped
+  `incrementPaymentLinkVisitCount` by `school_id`. Follow-up: scope `incrementPaymentLinkCompletedOrderCount` too.
 
 ---
 
@@ -216,7 +235,6 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
-| **School Collection (Feature A) — Slice 2: enrolment + charging** | mig `080` (collection_enrolments + invoices.collection_enrolment_id); enrolment status machine (+3 tests); actions (staff enrol, parent request w/ consent, approve/decline/end, **generate charge → issued invoice**); admin `EnrolmentsPanel` on `/admin/collection`; parent `/parent/collection` + nav | pure status machine **unit-tested**; type-check/lint/format/842 tests clean; charge reuses the invoices table + `generate_invoice_number` RPC (shows in `/admin/fees` + `/parent/invoices`), all tenant/ownership-scoped | **Migration 080 NOT applied yet**; **no browser E2E / cross-tenant test yet**. NCS school-age netting not applied (charges gross; subvention refinement later). Daily register (Slice 3) + parent payment (Slice 4) pending. |
 
 ---
 

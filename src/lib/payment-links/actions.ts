@@ -151,34 +151,20 @@ export async function updatePaymentLinkAction(
 }
 
 /**
- * Increment use_count for a payment link.
- * Uses a read-modify-write rather than an RPC so no DB function is required.
- * Called server-side only.
+ * Increment visit_count for a payment link. Scoped by school_id so a caller can
+ * only ever bump the counter of a link in the tenant it already resolved (the
+ * public pay page knows the link's school_id). Read-modify-write; never throws.
  */
-export async function incrementPaymentLinkUseCount(linkId: string): Promise<void> {
-  const adminClient = createSupabaseAdminClient()
-  const { data } = await adminClient
-    .from('payment_links')
-    .select('use_count')
-    .eq('id', linkId)
-    .single()
-  if (!data) {
-    logger.warn('increment_use_count_link_not_found', { linkId })
-    return
-  }
-  const { error } = await adminClient
-    .from('payment_links')
-    .update({ use_count: (data as { use_count: number }).use_count + 1 })
-    .eq('id', linkId)
-  if (error) logger.error('increment_use_count_failed', { linkId, error: error.message })
-}
-
-export async function incrementPaymentLinkVisitCount(linkId: string): Promise<void> {
+export async function incrementPaymentLinkVisitCount(
+  linkId: string,
+  schoolId: string,
+): Promise<void> {
   const adminClient = createSupabaseAdminClient()
   const { data } = await adminClient
     .from('payment_links')
     .select('visit_count')
     .eq('id', linkId)
+    .eq('school_id', schoolId)
     .single()
   if (!data) {
     logger.warn('increment_visit_count_link_not_found', { linkId })
@@ -188,6 +174,7 @@ export async function incrementPaymentLinkVisitCount(linkId: string): Promise<vo
     .from('payment_links')
     .update({ visit_count: (data as { visit_count: number }).visit_count + 1 })
     .eq('id', linkId)
+    .eq('school_id', schoolId)
   if (error) logger.error('increment_visit_count_failed', { linkId, error: error.message })
 }
 

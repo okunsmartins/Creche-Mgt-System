@@ -157,7 +157,7 @@ export default async function PayByTokenPage({ params }: { params: Promise<{ tok
   ).map((c) => ({ id: c.id, name: c.name }))
 
   // Count this valid page view. The function never throws, so errors are logged and the render is unaffected.
-  await incrementPaymentLinkVisitCount(link.id)
+  await incrementPaymentLinkVisitCount(link.id, schoolId)
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
