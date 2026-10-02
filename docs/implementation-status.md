@@ -43,7 +43,8 @@ Production Build on every PR; E2E job defined but not passing yet. ⚠️ **Bran
 `main` — until it is, red/unchecked merges remain possible (see `docs/setup/github-branch-protection.md`).
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–078 applied (**078 authorised_collectors applied + DB-verified 2026-10-02**: insert, CHECK
+Migrations 001–079 applied (**078 authorised_collectors + 079 school-collection config applied + DB-verified
+2026-10-02**: insert, CHECK
 constraints, partial-unique, updated_at trigger, anon-blocked). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
@@ -183,6 +184,22 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 - **Not done (by design):** parent-propose page is wired + logic-covered but not browser-exercised; check-out handover
   display (COL-05) deferred to the School Collection build.
 
+### School Collection Service (Feature A) — Slice 1: run configuration (migration 079, verified)
+- **Design:** [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md).
+- **Files:** migration `079` (`collection_methods`, `collection_runs`, `collection_run_staff`);
+  `src/lib/collection/{collection.ts, actions.ts}` (**14 tests**); `/admin/collection` + `CollectionPanel`;
+  sidebar link (Payments → School Collection).
+- **What a crèche can do now:** configure its collection **methods** (per-crèche dropdown — Minibus / Walking bus /
+  Gate collection / …) and create **school runs** (origin school, method, days, pickup time, capacity, chaperone
+  ratio, **charge basis [per-day/weekly/per-term] + price**), assign chaperone staff, and see a **ratio warning**
+  when a run is under-staffed for its capacity.
+- **Verified:** migration applied + DB-checked (insert / CHECK constraints / unique / anon-blocked); **browser-tested**
+  (add method → add run → €-charge + ratio warning rendered); **cross-tenant isolation test extended**
+  (`scripts/verify-tenant-isolation.mjs` now covers `collection_methods`/`collection_runs`, incl. "Tenant B cannot
+  modify Tenant A's run"); type-check / lint / format / 839 tests all green.
+- **Not done (next slices):** enrolment + parent request + consent + **charging** (Slice 2, needs mig 080 +
+  the fee/NCS engine), the daily **collection register** (Slice 3), and **parent payment** (Slice 4, provider-gated).
+
 ---
 
 ## 🟡 Built but NOT fully verified — do NOT report as complete
@@ -199,7 +216,6 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
-| **School Collection (Feature A) — Slice 1: config** | mig `079` (collection_methods / collection_runs / collection_run_staff); `src/lib/collection/*` (**14 tests**); `/admin/collection` + `CollectionPanel` + sidebar link | pure lib (charge bases, chaperone ratio, charge computation, day/run validation) **unit-tested**; type-check/lint/format clean; admin can configure methods + create/delete runs (method & charge-basis dropdowns, day picker, capacity, price, staff assignment, ratio warning) | **Migration 079 NOT applied yet**; **no browser E2E / cross-tenant test yet**. Enrolment + parent request + consent + **charging** (Slice 2, mig 080), daily collection register (Slice 3), and payment (Slice 4) not built. Design: [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md). |
 
 ---
 
