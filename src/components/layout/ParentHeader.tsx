@@ -59,6 +59,7 @@ const NAV: NavEntry[] = [
     items: [
       { href: '/parent/invoices', label: 'Fees & Invoices' },
       { href: '/parent/permission-slips', label: 'Permission Slips' },
+      { href: '/parent/collectors', label: 'Who Can Collect' },
       { href: '/parent/payments', label: 'Payments' },
     ],
   },
