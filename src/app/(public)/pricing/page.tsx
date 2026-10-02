@@ -12,14 +12,15 @@ export const metadata: Metadata = { title: 'Pricing' }
 // Stripe Checkout at onboarding) is a FULL Pro trial, so this same list applies
 // during the trial — there is no reduced free tier.
 const FEATURES: string[] = [
-  'Online payment collection (activities, trips, books)',
-  'Guest & parent payments',
-  'Pupil management & class lists',
-  'Email receipts',
-  'Payment links',
-  'Instalment payments',
+  'Fees & invoicing with automatic ECCE/NCS subvention',
+  'Online parent payments (card & wallet) + guest pay',
+  'Child, room & staff management',
+  'Attendance, live ratios & daily records',
+  'Enrolment & waiting-list CRM',
+  'Email receipts & parent messaging',
+  'Instalment payments & payment links',
   'CSV import',
-  'Advanced reports & analytics',
+  'Reports: arrears, subvention & occupancy',
 ]
 
 export default async function PricingPage({

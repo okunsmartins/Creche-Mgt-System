@@ -16,7 +16,7 @@ export default function GetStartedPage() {
             Create your portal
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Set up your <span className="text-primary">school portal</span>
+            Set up your <span className="text-primary">crèche portal</span>
           </h1>
           <p className="mx-auto mt-3 max-w-md text-base text-text-secondary">
             First, confirm your email. We&apos;ll send you a link to verify it&apos;s really you —

@@ -6,14 +6,14 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-02
 **Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
 🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
 🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
 
 ---
 
-## Verification snapshot (2026-09-30)
+## Verification snapshot (2026-10-02)
 
 | Check | Command | Result |
 |---|---|---|
@@ -21,6 +21,7 @@
 | Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean |
 | Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
 | Format | `npm run format:check` (`prettier --check`) | ✅ all files match |
+| **Production deploy** | Vercel `creche-mgt-system` → `https://crechewise.com` | ✅ **LIVE** (HTTPS, smoke-tested: landing, admin sign-in, tenant pages) |
 | DB migrations 068–077 applied | verified via service-role scripts | ✅ tables/grants/RPC/guard-trigger, DOB, check-ins, daily records, enquiries + RLS lock-downs all present |
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **10/10** (scoping, RLS deny-by-default, dup invoice-number rejected) |
@@ -39,13 +40,39 @@ is run manually — CI has no DB.
 session feature landed on `main` via PR (build, Prettier/CI fix, isolation tests, DOB/age, check-in+ratio UI,
 daily records, enquiries CRM, arrears, reminders, subvention report, commercial dashboard, security lock-downs).
 **CI** (`.github/workflows/ci.yml`) runs Lint & Type Check (type-check + lint + `format:check`), Unit Tests,
-Production Build on every PR; E2E job defined but not passing yet. ⚠️ **Branch protection still not enabled** on
-`main` — until it is, red/unchecked merges remain possible (see `docs/setup/github-branch-protection.md`).
+Production Build on every PR; E2E job defined but not passing yet. ✅ **Branch protection ENABLED** on `main`
+(2026-09-30) — ruleset `protect-main`, Active, **bypass list empty**, requires a PR + the 3 status checks
+(Lint & Type Check / Unit Tests / Production Build; **not** E2E) + branches up to date + conversation resolution,
+and blocks force-pushes/deletions. Verified: a direct push to `main` was rejected (`GH013 … 3 of 3 required status
+checks are expected`). Vercel auto-deploys `main` to production on merge.
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
 Migrations 001–077 applied. Test tenant: **Angels Nest Crèche** (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
+
+---
+
+## Production / go-live status (2026-10-02)
+
+The platform is **deployed and live** on its own domain; remaining go-live items are provider activation, not code.
+
+| Area | Status |
+|---|---|
+| **Hosting** | ✅ Vercel project `creche-mgt-system` (team First Stack Solutions, **Hobby plan** — needs **Pro** for commercial launch). Env vars set in Production (24 vars from `.env.local`; `NEXT_PUBLIC_SCHOOL_ID`/`NODE_ENV` deliberately omitted). |
+| **Domain + TLS** | ✅ `crechewise.com` apex (CNAME → vercel-dns, DNS-only/grey in Cloudflare) + `www` 308-redirect → apex; SSL issued; HTTPS live. |
+| **Supabase Auth URLs** | ✅ Site URL `https://crechewise.com` + redirect allowlist (apex, www, `*.vercel.app`). |
+| **Email — sending** | ✅ **Resend**, domain `crechewise.com` verified (DKIM/SPF via Cloudflare), live send proven from `noreply@crechewise.com`. |
+| **Email — receiving** | ✅ **Cloudflare Email Routing**, catch-all `*@crechewise.com` → Gmail (verified). Resend "Enable Receiving" left OFF (no inbound processing in app). |
+| **SMS** | 🟡 **Twilio configured** (Messaging Service "Creche Wise" `MG2a6a7…`, alphanumeric sender `CrecheWise`, 4 env vars set, creds API-validated). ComReg sender-ID registration **submitted** (Twilio ticket #29800180, Bundle `BU2f420…`) — **pending approval (≤3 days) + OPA activation**. ⚠️ Until approved, unregistered alpha senders to IE are tagged "Likely Scam" — **do not do real parent sends yet**. |
+| **Build hardening** | ✅ Nunito **self-hosted** via `next/font/local` (`src/app/fonts/nunito-latin-variable.woff2`) — removes the intermittent `next/font/google` Vercel build failure. |
+| **Payments (Stripe/Revolut)** | ⬜ **Not activated.** Both are per-crèche and code-complete; setup paused mid-way (decision: Stripe **Test mode + new dedicated account** first). Unblocks **FEE-08**. |
+
+**Public-facing copy is now crèche-specific.** About, FAQs, pricing, onboarding/billing, contact (emails → `@crechewise.com`),
+privacy, get-started, activities/programmes and guest-payment (incl. demo activities) and the auth layout were rewritten
+from the inherited school wording to crèche terminology (children/rooms/staff, ECCE/NCS, daily records); tenant URLs
+corrected to `crechewise.com/s/<creche>`. Routes, DB tables and code identifiers remain unchanged by design. Remaining
+school wording, if any, is in **code comments / email templates / in-portal copy** (follow-up sweep).
 
 ---
 
@@ -163,8 +190,13 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 - Sidebar, list pages, dashboard, **add/edit forms**, page titles/breadcrumbs, home **features grid**,
   onboarding, permission-slip labels, **Crèche Settings**, and platform-owner views all use
   **Children / Staff / Rooms / crèche**. ~200 strings across ~80 files.
+- **Public/marketing pages rewritten (2026-10-02):** About, FAQs (incl. new ECCE/NCS + attendance/ratios/daily-records
+  Q&As), pricing + onboarding/billing feature lists (now list the real crèche features), contact (emails →
+  `@crechewise.com`), privacy (children/rooms), get-started, activities/programmes, guest-payment (incl. demo activities),
+  and the auth layout. Tenant URLs corrected `skoolbido.com/s/your-school` → `crechewise.com/s/your-creche`.
 - ⚠️ Routes, DB tables and code identifiers are **unchanged** by design (`/admin/students`, `students`, `classes`, `teachers`).
-- Remaining school wording, if any, is incidental prose — grep `-i "school"` before go-live for a final pass.
+- Remaining school wording is now only in **code comments, email templates, and some in-portal copy** — a follow-up
+  sweep (grep `-i "school"` excluding identifiers) before full go-live.
 
 ---
 
@@ -233,7 +265,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 **DevSecOps (spec §11):**
 - ✅ GitHub remote + PR CI (lint/type/format/unit/build); ✅ secret scanning + push protection active; ✅ anon-read
   lock-down (migs 074/075).
-- ⬜ **Branch protection** on `main` (required checks, no bypass) — checklist ready in `docs/setup/github-branch-protection.md`.
+- ✅ **Branch protection** on `main` (ruleset `protect-main`, Active, empty bypass list, requires PR + 3 status checks +
+  up-to-date + conversation resolution, blocks force-push/deletion) — **enabled & verified 2026-09-30**.
 - ⬜ Wire `scripts/verify-tenant-isolation.mjs` into a DB-enabled CI job; get the E2E job actually passing.
 - ⬜ SAST/Semgrep, SCA/Dependabot updates, Trivy, DAST/ZAP, SBOM; DPIA + threat-model sign-off (children's special-category data).
 
@@ -242,18 +275,21 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 ## Manual configuration steps
 
 1. **Deps:** `npm ci` (Windows: slow first run, ~10 min — normal).
-2. **`.env.local`** is present and filled for the dev Supabase (`xpbavfutfejlfbmnntyl`) + `ENCRYPTION_KEY` + `CRON_SECRET`;
-   Stripe/Resend/Twilio are placeholders. Never commit (gitignored).
+2. **`.env.local`** is filled for the dev Supabase (`xpbavfutfejlfbmnntyl`) + `ENCRYPTION_KEY` + `CRON_SECRET`;
+   **Resend + Twilio are now real values**, **Stripe is still placeholder** (Part 1 not done). Never commit (gitignored).
+   The same 24 vars are set in **Vercel Production**.
 3. **Applying future migrations:** no `SUPABASE_DB_URL`/psql/management token is configured here, so DDL is applied by
    **pasting the migration into the Supabase SQL editor** (that is how 068–077 were applied). To automate later, set a
    connection string and use `npm run db:migrate` (`supabase db push`).
 4. **Confirm NCS/ECCE rates** with a Pobal/finance SME and load into FEE-03 config; replace the `CONFIRM` fallbacks.
 5. **Confirm the reference Irish room ratios** in `src/lib/ratios/ratio.ts` (flagged CONFIRM) — the ratio **UI is now
    live**, so these constants are user-facing; confirm before pilot.
-6. **⚠️ Remove `src/app/api/dev/` before production** (dev-only seed/Pro-unlock route).
-7. **Enable branch protection on `main`** now (repo exists + CI runs): `docs/setup/github-branch-protection.md`.
-8. **Before pilot / go-live:** Stripe Connect + Revolut KYC; ComReg/Twilio A2P; email sender-domain (SPF/DKIM/DMARC);
-   DPIA. Provider + Vercel steps: [provider-setup.md](provider-setup.md), [deploy-checklist.md](deploy-checklist.md),
+6. ✅ **Dev-only route `src/app/api/dev/` removed** (was the seed/Pro-unlock bypass) — confirmed gone pre-deploy.
+7. ✅ **Branch protection on `main` enabled** (ruleset `protect-main`) — done 2026-09-30.
+8. **Remaining before pilot / go-live:** ⬜ **Stripe Connect + Revolut KYC** (per crèche; Part 1 platform setup paused);
+   ⬜ **Twilio/ComReg sender-ID approval** (submitted, pending) + approve Twilio as OPA on approval; ⬜ **Vercel Pro**
+   (Hobby is non-commercial); ⬜ DPIA. (✅ already done: Resend email domain, Cloudflare email receiving, domain + TLS,
+   Supabase Auth URLs.) Runbooks: [provider-setup.md](provider-setup.md), [deploy-checklist.md](deploy-checklist.md),
    [domain-setup-crechewise.md](domain-setup-crechewise.md).
 
 ---
@@ -307,12 +343,15 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
 **Recommended next:**
-1. **Enable branch protection** on `main` (checklist in `docs/setup/github-branch-protection.md`) so red PRs stop merging.
-2. **Set up providers** (Resend → Twilio → payments) per [provider-setup.md](provider-setup.md), then **deploy to Vercel**
-   per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md). Payments are
-   **per crèche**: set the platform-level Stripe/Revolut prod keys in Vercel as the fallback, then **each crèche** connects
-   its own Stripe account (Connect KYC) and/or enters its own Revolut Business key + prod webhook from `/admin/payments/connect`.
-   Run a sandbox pay + refund smoke per provider before go-live.
-3. **Unblock FEE-08** once a crèche's payment provider is active: wire invoice payment through the **per-tenant** resolvers
+1. **Payments — Stripe (Part 1) + Revolut.** Decision taken: **Stripe Test mode + a new dedicated Creche Wise account**.
+   Platform setup: API keys → Pro products/prices → enable Connect (Standard) → two webhook endpoints (`STRIPE_WEBHOOK_SECRET`
+   + `STRIPE_CONNECT_WEBHOOK_SECRET` on `/api/webhooks/stripe`) → set the 6 Stripe env vars locally + Vercel. Then each crèche
+   self-serves at `/admin/payments/connect` (Stripe Connect KYC and/or own Revolut key). Flip to Live when onboarding a real
+   paying crèche. Run a sandbox pay + refund smoke per provider.
+2. **Unblock FEE-08** once a crèche's payment provider is active: wire invoice payment through the **per-tenant** resolvers
    (Stripe Connect account / `resolveRevolutApiKey(schoolId)`), FEE-09 instalment engine plugs in, then verify in sandbox.
-4. Add the still-missing automated tests: PPSN-never-logged, parent invoice authz/render, and a DB-enabled CI isolation job.
+3. **On Twilio approval:** approve Twilio as OPA in the ComReg portal, then flip the "Text parents" home card from
+   "Coming soon" to live; do a real test send.
+4. **Upgrade Vercel to Pro** before a commercial launch (Hobby is non-commercial).
+5. Add the still-missing automated tests: PPSN-never-logged, parent invoice authz/render, and a DB-enabled CI isolation job.
+6. Follow-up copy sweep: code comments / email templates / in-portal strings still say "school" in places.

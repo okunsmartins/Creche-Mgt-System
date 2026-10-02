@@ -8,21 +8,21 @@ export const metadata: Metadata = {
 }
 
 // Creche Wise platform contact addresses (shown on the public site, not inside a
-// school's portal). All three forward to the team inbox.
+// crèche's portal). All three forward to the team inbox.
 const PLATFORM_CONTACTS: { title: string; email: string; description: string }[] = [
   {
     title: 'General enquiries',
-    email: 'info@skoolbido.com',
+    email: 'info@crechewise.com',
     description: 'Questions about Creche Wise, how it works, or getting started.',
   },
   {
-    title: 'Schools & sales',
-    email: 'contact@skoolbido.com',
+    title: 'Crèches & sales',
+    email: 'contact@crechewise.com',
     description: 'Thinking of using Creche Wise for your crèche? Talk to us about setting it up.',
   },
   {
     title: 'Support',
-    email: 'support@skoolbido.com',
+    email: 'support@crechewise.com',
     description: 'Already using Creche Wise? Get help with your portal or report an issue.',
   },
 ]
@@ -85,7 +85,7 @@ export default async function ContactPage() {
             <div className="card p-6 text-sm text-text-secondary">
               <p className="font-medium text-text-primary">Are you a parent?</p>
               <p className="mt-1">
-                To reach your child&apos;s school, open your crèche&apos;s portal or{' '}
+                To reach your child&apos;s crèche, open your crèche&apos;s portal or{' '}
                 <Link href="/activities" className="text-primary hover:underline">
                   find your crèche
                 </Link>
@@ -133,7 +133,7 @@ export default async function ContactPage() {
             <p className="font-medium text-text-primary">Contact the crèche office</p>
             <p className="mt-1">
               {school.name} hasn&apos;t added contact details to the portal yet. Please reach the
-              school office directly.
+              crèche office directly.
             </p>
           </div>
         )}

@@ -71,7 +71,7 @@ export default async function GuestPaymentPage({
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-text-secondary">
               Select an activity below to pay without creating an account. You will need your
-              child&apos;s pupil payment code.{' '}
+              child&apos;s payment code.{' '}
               <Link href="/login" className="text-primary hover:underline">
                 Sign in
               </Link>{' '}
@@ -155,7 +155,7 @@ export default async function GuestPaymentPage({
   const DEMO_ACTIVITIES: Record<string, ActivityDetail> = {
     '00000000-0000-0000-0000-000000000101': {
       id: '00000000-0000-0000-0000-000000000101',
-      name: 'Junior Infants School Tour – Dublin Zoo',
+      name: 'Toddler Room Outing – Dublin Zoo',
       amount_cents: 2500,
       publication_status: 'published',
       is_active: true,
@@ -164,7 +164,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000102': {
       id: '00000000-0000-0000-0000-000000000102',
-      name: 'Senior Infants School Tour – Tayto Park',
+      name: 'Preschool Outing – Tayto Park',
       amount_cents: 3000,
       publication_status: 'published',
       is_active: true,
@@ -173,7 +173,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000103': {
       id: '00000000-0000-0000-0000-000000000103',
-      name: 'First & Second Class – Swimming Lessons',
+      name: 'Preschool – Swimming Lessons',
       amount_cents: 4500,
       publication_status: 'published',
       is_active: true,
@@ -182,7 +182,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000104': {
       id: '00000000-0000-0000-0000-000000000104',
-      name: 'Third & Fourth Class – Gaelic Football Blitz',
+      name: 'Wobblers Room – Music & Movement',
       amount_cents: 500,
       publication_status: 'published',
       is_active: true,
@@ -191,7 +191,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000105': {
       id: '00000000-0000-0000-0000-000000000105',
-      name: 'Fifth & Sixth Class – Science Week Workshop',
+      name: 'Preschool – Messy Play Workshop',
       amount_cents: 800,
       publication_status: 'published',
       is_active: true,
@@ -200,7 +200,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000106': {
       id: '00000000-0000-0000-0000-000000000106',
-      name: 'School Book Rental Scheme 2026–27',
+      name: 'Art & Materials Fund 2026–27',
       amount_cents: 5500,
       publication_status: 'published',
       is_active: true,
@@ -209,7 +209,7 @@ export default async function GuestPaymentPage({
     },
     '00000000-0000-0000-0000-000000000107': {
       id: '00000000-0000-0000-0000-000000000107',
-      name: 'Whole School – Christmas Pantomime',
+      name: 'Whole Crèche – Christmas Party',
       amount_cents: 1500,
       publication_status: 'published',
       is_active: true,

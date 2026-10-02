@@ -15,12 +15,13 @@ export const metadata: Metadata = { title: 'Start your free trial' }
 export const dynamic = 'force-dynamic'
 
 const FEATURES: string[] = [
-  'Online payment collection (activities, trips, books)',
-  'Guest & parent payments',
-  'Pupil management & class lists',
+  'Fees & invoicing with automatic ECCE/NCS subvention',
+  'Online parent payments (card & wallet) + guest pay',
+  'Child, room & staff management',
+  'Attendance, live ratios & daily records',
   'Payment links & instalments',
   'CSV import',
-  'Advanced reports & analytics',
+  'Reports: arrears, subvention & occupancy',
 ]
 
 /**

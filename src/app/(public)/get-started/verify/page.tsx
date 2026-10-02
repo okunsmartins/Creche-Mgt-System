@@ -57,7 +57,7 @@ export default async function VerifyPortalPage({
                   <p className="mt-2 text-sm text-text-secondary">
                     You&apos;re currently signed in as{' '}
                     <span className="font-semibold text-text-primary">{user.email}</span>. Creating
-                    a new school portal needs its own account — please sign out, then open this
+                    a new crèche portal needs its own account — please sign out, then open this
                     confirmation link again to register.
                   </p>
                   <form action={signOutAction} className="mt-6">
