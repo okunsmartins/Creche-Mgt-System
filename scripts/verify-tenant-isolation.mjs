@@ -44,7 +44,14 @@ const ok = (label, pass, detail = '') =>
   (pass ? 0 : (failures++, 0))
 
 // Track created rows for cleanup.
-const created = { schedule: null, registration: null, invoice: null, collector: null }
+const created = {
+  schedule: null,
+  registration: null,
+  invoice: null,
+  collector: null,
+  collectionMethod: null,
+  collectionRun: null,
+}
 
 async function main() {
   // Two tenants. The dev DB has 2 schools; Tenant A must have at least one child.
@@ -157,14 +164,48 @@ async function main() {
   created.collector = col.data?.id
   ok('seed: authorised collector for Tenant A', !col.error, col.error?.message)
 
+  const meth = await admin
+    .from('collection_methods')
+    .insert({ school_id: tenantA, label: 'ISO-TEST Minibus' })
+    .select('id')
+    .single()
+  created.collectionMethod = meth.data?.id
+  ok('seed: collection method for Tenant A', !meth.error, meth.error?.message)
+
+  const crun = await admin
+    .from('collection_runs')
+    .insert({
+      school_id: tenantA,
+      name: 'ISO-TEST Run',
+      origin_school_name: 'ISO-TEST NS',
+      collection_method_id: created.collectionMethod,
+      days_of_week: [1, 2, 3],
+      capacity: 8,
+      charge_basis: 'per_day',
+      price_cents: 1200,
+    })
+    .select('id')
+    .single()
+  created.collectionRun = crun.data?.id
+  ok('seed: collection run for Tenant A', !crun.error, crun.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
-  const tenantAIds = [created.schedule, registrationId, created.invoice, created.collector]
+  const tenantAIds = [
+    created.schedule,
+    registrationId,
+    created.invoice,
+    created.collector,
+    created.collectionMethod,
+    created.collectionRun,
+  ]
   for (const table of [
     'fee_schedules',
     'child_funding_registrations',
     'invoices',
     'authorised_collectors',
+    'collection_methods',
+    'collection_runs',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -195,12 +236,36 @@ async function main() {
     )
   }
 
+  // ── 1c. Action guard: a Tenant-B-scoped mutation can't touch Tenant A's run ──
+  // Mirrors deleteCollectionRunAction / setRunStaffAction `.eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('collection_runs')
+      .update({ is_active: false, name: 'HIJACKED' })
+      .eq('id', created.collectionRun)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot modify Tenant A run', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('collection_runs')
+      .select('name, is_active')
+      .eq('id', created.collectionRun)
+      .single()
+    ok(
+      'cross-tenant: Tenant A run left intact',
+      still?.name === 'ISO-TEST Run' && still?.is_active === true,
+      `name=${still?.name} active=${still?.is_active}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
     'child_funding_registrations',
     'invoices',
     'authorised_collectors',
+    'collection_methods',
+    'collection_runs',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -229,6 +294,10 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.collectionRun)
+    await admin.from('collection_runs').delete().eq('id', created.collectionRun)
+  if (created.collectionMethod)
+    await admin.from('collection_methods').delete().eq('id', created.collectionMethod)
   if (created.collector)
     await admin.from('authorised_collectors').delete().eq('id', created.collector)
   if (created.invoice) await admin.from('invoices').delete().eq('id', created.invoice)
