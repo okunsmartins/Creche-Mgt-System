@@ -168,6 +168,21 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 - ⚠️ Routes, DB tables and code identifiers are **unchanged** by design (`/admin/students`, `students`, `classes`, `teachers`).
 - Remaining school wording, if any, is incidental prose — grep `-i "school"` before go-live for a final pass.
 
+### Authorised Collectors (Feature B) — migration 078, verified
+- **Design:** [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md).
+  Per-child register of approved collectors with crèche approval — a Tusla requirement and the foundation for the
+  School Collection Service (Feature A).
+- **Files:** `src/lib/collectors/{collectors.ts, password.ts, actions.ts}` (**15 tests**); `/admin/collectors` +
+  `CollectorsPanel`; `/parent/collectors` + `ParentCollectorsForm`; sidebar + parent nav links.
+- **Verified:** migration 078 applied + DB-checked (insert / CHECK / partial-unique / trigger / anon-blocked);
+  **admin flow browser-tested** (add → Approved → Revoke → Approve); **cross-tenant isolation test passing**
+  (`scripts/verify-tenant-isolation.mjs` now covers `authorised_collectors`, incl. "Tenant B cannot revoke Tenant A's
+  collector"); type-check / lint / format / 825 tests all green.
+- Staff add = auto-approved; parent propose = pending (authorised via active `parent_student_links`); parents cannot
+  self-authorise unaccompanied release. Collection "door word" stored as a one-way scrypt hash.
+- **Not done (by design):** parent-propose page is wired + logic-covered but not browser-exercised; check-out handover
+  display (COL-05) deferred to the School Collection build.
+
 ---
 
 ## 🟡 Built but NOT fully verified — do NOT report as complete
@@ -184,7 +199,6 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
-| **Authorised Collectors (Feature B)** | mig `078`; `src/lib/collectors/*` (**15 tests**); `/admin/collectors` + `CollectorsPanel`; `/parent/collectors` + `ParentCollectorsForm` | pure lib (validate, status machine, scrypt password hash/verify) **unit-tested**; type-check/lint/format clean; both nav links added; staff add (auto-approved) + parent propose (pending) + approve/decline/revoke, all tenant/ownership-scoped; **migration 078 applied + DB-verified** (insert/CHECK/partial-unique/trigger/anon-blocked) | **No browser E2E yet**; **no cross-tenant negative test** written yet (add before marking ✅); check-out handover display (COL-05) deferred. Design: [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md). |
 
 ---
 

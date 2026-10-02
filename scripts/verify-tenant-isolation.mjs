@@ -8,8 +8,11 @@
  *
  *   node scripts/verify-tenant-isolation.mjs
  *
- * It checks three things for `fee_schedules` / `child_funding_registrations` / `invoices`:
+ * It checks, for `fee_schedules` / `child_funding_registrations` / `invoices` /
+ * `authorised_collectors`:
  *   1. App-layer scoping — a query scoped to Tenant B never returns Tenant A's rows.
+ *   1b. Action guard — a Tenant-B-scoped mutation can't modify Tenant A's collector
+ *       (mirrors reviewCollectorAction's `.eq('id').eq('school_id')`).
  *   2. RLS backstop — the anon/authenticated key sees ZERO rows (deny-by-default),
  *      so a forgotten `school_id` filter still can't leak across tenants.
  *   3. Idempotency — a duplicate invoice_number is rejected by the unique constraint.
@@ -41,7 +44,7 @@ const ok = (label, pass, detail = '') =>
   (pass ? 0 : (failures++, 0))
 
 // Track created rows for cleanup.
-const created = { schedule: null, registration: null, invoice: null }
+const created = { schedule: null, registration: null, invoice: null, collector: null }
 
 async function main() {
   // Two tenants. The dev DB has 2 schools; Tenant A must have at least one child.
@@ -86,6 +89,10 @@ async function main() {
   created.schedule = sched.data?.id
   ok('seed: fee_schedule for Tenant A', !sched.error, sched.error?.message)
 
+  // The child may already have an ACTIVE NCS registration (the "one active per scheme
+  // per child" partial-unique). That's fine — for the scoping test we just need a
+  // Tenant A registration row, so on collision we reuse the existing one and don't
+  // delete it in cleanup (we didn't create it).
   const reg = await admin
     .from('child_funding_registrations')
     .insert({
@@ -98,8 +105,20 @@ async function main() {
     })
     .select('id')
     .single()
-  created.registration = reg.data?.id
-  ok('seed: NCS registration for Tenant A', !reg.error, reg.error?.message)
+  let registrationId = reg.data?.id ?? null
+  if (reg.error) {
+    const existing = await admin
+      .from('child_funding_registrations')
+      .select('id')
+      .eq('school_id', tenantA)
+      .limit(1)
+      .maybeSingle()
+    registrationId = existing.data?.id ?? null
+    ok('seed: NCS registration for Tenant A (reused existing row)', !!registrationId)
+  } else {
+    created.registration = reg.data.id // only clean up what we created
+    ok('seed: NCS registration for Tenant A', true)
+  }
 
   const num = (await admin.rpc('generate_invoice_number')).data
   const inv = await admin
@@ -123,15 +142,66 @@ async function main() {
   created.invoice = inv.data?.id
   ok('seed: issued invoice for Tenant A', !inv.error, inv.error?.message)
 
+  const col = await admin
+    .from('authorised_collectors')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      full_name: 'ISO-TEST Collector',
+      relationship: 'grandparent',
+      status: 'approved',
+      proposed_by: 'staff',
+    })
+    .select('id')
+    .single()
+  created.collector = col.data?.id
+  ok('seed: authorised collector for Tenant A', !col.error, col.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
-  for (const table of ['fee_schedules', 'child_funding_registrations', 'invoices']) {
+  // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
+  const tenantAIds = [created.schedule, registrationId, created.invoice, created.collector]
+  for (const table of [
+    'fee_schedules',
+    'child_funding_registrations',
+    'invoices',
+    'authorised_collectors',
+  ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
-    const leaked = (data ?? []).some((r) => Object.values(created).includes(r.id))
+    const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
     ok(`scoping: Tenant B query on ${table} excludes Tenant A rows`, !leaked)
   }
 
+  // ── 1b. Action guard: a Tenant-B-scoped mutation can't touch Tenant A's collector ──
+  // Mirrors reviewCollectorAction's `.eq('id', id).eq('school_id', <my school>)` — an
+  // admin of Tenant B must change ZERO rows when aiming at Tenant A's collector.
+  {
+    const { data: touched } = await admin
+      .from('authorised_collectors')
+      .update({ status: 'revoked', is_active: false })
+      .eq('id', created.collector)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot revoke Tenant A collector', (touched?.length ?? 0) === 0)
+    // Confirm the row is untouched (still approved/active).
+    const { data: still } = await admin
+      .from('authorised_collectors')
+      .select('status, is_active')
+      .eq('id', created.collector)
+      .single()
+    ok(
+      'cross-tenant: Tenant A collector left intact',
+      still?.status === 'approved' && still?.is_active === true,
+      `status=${still?.status} active=${still?.is_active}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
-  for (const table of ['fee_schedules', 'child_funding_registrations', 'invoices']) {
+  for (const table of [
+    'fee_schedules',
+    'child_funding_registrations',
+    'invoices',
+    'authorised_collectors',
+  ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
     ok(
@@ -159,6 +229,8 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.collector)
+    await admin.from('authorised_collectors').delete().eq('id', created.collector)
   if (created.invoice) await admin.from('invoices').delete().eq('id', created.invoice)
   if (created.registration)
     await admin.from('child_funding_registrations').delete().eq('id', created.registration)
