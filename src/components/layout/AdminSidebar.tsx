@@ -40,6 +40,7 @@ import {
   NotebookPen,
   TrendingUp,
   UserPlus,
+  UserCheck,
   Upload,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
@@ -70,6 +71,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/daily-records', label: 'Daily Records', icon: NotebookPen },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
+      { href: '/admin/collectors', label: 'Collectors', icon: UserCheck },
       { href: '/admin/link-requests', label: 'Link Requests', icon: ChevronRight },
     ],
   },

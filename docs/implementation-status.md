@@ -43,7 +43,9 @@ Production Build on every PR; E2E job defined but not passing yet. ⚠️ **Bran
 `main` — until it is, red/unchecked merges remain possible (see `docs/setup/github-branch-protection.md`).
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–077 applied. Test tenant: **Angels Nest Crèche** (`manager@angelsnest.ie`; password in the
+Migrations 001–078 applied (**078 authorised_collectors applied + DB-verified 2026-10-02**: insert, CHECK
+constraints, partial-unique, updated_at trigger, anon-blocked). Test tenant: **Angels Nest Crèche**
+(`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
 
@@ -182,6 +184,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
+| **Authorised Collectors (Feature B)** | mig `078`; `src/lib/collectors/*` (**15 tests**); `/admin/collectors` + `CollectorsPanel`; `/parent/collectors` + `ParentCollectorsForm` | pure lib (validate, status machine, scrypt password hash/verify) **unit-tested**; type-check/lint/format clean; both nav links added; staff add (auto-approved) + parent propose (pending) + approve/decline/revoke, all tenant/ownership-scoped; **migration 078 applied + DB-verified** (insert/CHECK/partial-unique/trigger/anon-blocked) | **No browser E2E yet**; **no cross-tenant negative test** written yet (add before marking ✅); check-out handover display (COL-05) deferred. Design: [design/school-collection-and-authorised-collectors.md](design/school-collection-and-authorised-collectors.md). |
 
 ---
 
