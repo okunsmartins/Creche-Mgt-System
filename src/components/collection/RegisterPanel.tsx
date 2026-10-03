@@ -58,18 +58,26 @@ export function RegisterPanel({ groups, date }: { groups: RegisterRunGroup[]; da
     <div className="space-y-5">
       {error && <Alert variant="error">{error}</Alert>}
 
-      <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
-        <span className="font-medium text-text-primary">Collection day</span>
-        <input
-          type="date"
-          value={date}
-          className="input-base"
-          onChange={(e) => {
-            const v = e.target.value
-            if (v) router.push(`/admin/collection/register?date=${v}`)
-          }}
-        />
-      </label>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
+          <span className="font-medium text-text-primary">Collection day</span>
+          <input
+            type="date"
+            value={date}
+            className="input-base"
+            onChange={(e) => {
+              const v = e.target.value
+              if (v) router.push(`/admin/collection/register?date=${v}`)
+            }}
+          />
+        </label>
+        <a
+          href={`/admin/collection/register/roster?date=${date}`}
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+        >
+          Printable roster →
+        </a>
+      </div>
 
       {totalChildren === 0 ? (
         <div className="rounded-xl border border-border bg-surface p-8 text-center text-text-muted">
