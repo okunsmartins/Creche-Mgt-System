@@ -72,37 +72,15 @@ export function isFeatureAvailable(
   return hasProAccess(sub, now)
 }
 
-type SmsAccessFields = AccessFields & Pick<SubscriptionRow, 'sms_enabled'>
-
 /**
- * Whether a school may use SMS (the €44.99 Pro+SMS tier). Requires BOTH current
- * Pro access AND the SMS entitlement flag, which is set from the Stripe price at
- * webhook-sync time. Plain Pro schools return false. Pure — testable without I/O.
+ * Whether a school may use SMS. SMS is included with the single Creche Wise plan,
+ * so SMS access is simply current plan access — any school with Pro access (active,
+ * trialing, or in the past-due grace window) can send texts. (A per-school monthly
+ * allowance + top-up credits still meter volume; see `lib/sms/balance.ts`.) Pure —
+ * testable without I/O.
  */
-export function hasSmsAccess(sub: SmsAccessFields | null, now: Date = new Date()): boolean {
-  if (!sub || !sub.sms_enabled) return false
+export function hasSmsAccess(sub: AccessFields | null, now: Date = new Date()): boolean {
   return hasProAccess(sub, now)
-}
-
-/**
- * How a school should be moved onto the €44.99 Pro + SMS tier, given its current
- * subscription. Pure so the action logic is unit-testable without Stripe/DB.
- *
- * - `already_on_sms` — has the SMS entitlement AND current access; nothing to do.
- * - `modify`         — has a live Stripe subscription with access → change its
- *                      price in place (proration), no second checkout.
- * - `checkout`       — no live Stripe subscription (free/lapsed, or a local signup
- *                      trial with no Stripe sub) → start a fresh Checkout.
- */
-export type TierSwitchMode = 'already_on_sms' | 'modify' | 'checkout'
-
-export function tierSwitchMode(
-  sub: Pick<SubscriptionRow, 'stripe_subscription_id' | 'sms_enabled'> | null,
-  hasAccess: boolean,
-): TierSwitchMode {
-  if (sub?.sms_enabled && hasAccess) return 'already_on_sms'
-  if (sub?.stripe_subscription_id && hasAccess) return 'modify'
-  return 'checkout'
 }
 
 /** Fetch a school's subscription row (or null = treat as free). */

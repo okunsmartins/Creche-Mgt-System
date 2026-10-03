@@ -1,12 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { MessageSquare } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/guards'
 import { getSchoolSubscription, hasProAccess } from '@/lib/subscriptions/access'
-import { getProSmsPrices } from '@/lib/stripe/prices'
-import { serverEnv } from '@/lib/env'
 import { ManageBillingButton } from '@/components/subscriptions/ManageBillingButton'
-import { SwitchToSmsButton } from '@/components/subscriptions/SwitchToSmsButton'
 import { Badge } from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
 import type { SubscriptionStatus } from '@/types/database'
@@ -29,16 +25,8 @@ export default async function SubscriptionPage() {
   const sub = await getSchoolSubscription(admin.schoolId!)
   const isPro = hasProAccess(sub)
   const hasBilling = !!sub?.stripe_customer_id
-
-  // Pro + SMS add-on. Offer the switch to a crèche that has Pro access but not the
-  // SMS entitlement, provided the tier's prices are configured.
-  const smsMonthlyPriceId = serverEnv.stripeProSmsMonthlyPriceId
-  const smsAnnualPriceId = serverEnv.stripeProSmsAnnualPriceId
-  const smsTierConfigured = !!(smsMonthlyPriceId || smsAnnualPriceId)
-  const hasSms = isPro && !!sub?.sms_enabled
-  const showSmsUpsell = isPro && !hasSms && smsTierConfigured
-  const smsPrices = showSmsUpsell ? await getProSmsPrices() : { monthly: null, annual: null }
-  const planName = hasSms ? 'Pro + SMS' : isPro ? 'Pro' : 'Free'
+  const onTrial = isPro && sub?.status === 'trialing'
+  const planName = isPro ? 'Creche Wise' : 'Free'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -55,8 +43,10 @@ export default async function SubscriptionPage() {
               Current plan
             </p>
             <p className="mt-1 text-2xl font-bold text-text-primary">{planName}</p>
-            {hasSms && (
-              <p className="mt-0.5 text-xs font-medium text-primary">Includes SMS texting</p>
+            {isPro && (
+              <p className="mt-0.5 text-xs font-medium text-primary">
+                {onTrial ? 'Free trial — all features, SMS included' : 'All features, SMS included'}
+              </p>
             )}
           </div>
           {sub && (
@@ -66,8 +56,8 @@ export default async function SubscriptionPage() {
           )}
         </div>
 
-        {/* Details for an active/known subscription */}
-        {sub && sub.plan !== 'free' && (
+        {/* Details for an active subscription or an in-progress trial */}
+        {sub && isPro && (
           <dl className="space-y-2 border-t border-border pt-4 text-sm">
             {sub.status === 'trialing' && sub.trial_ends_at && (
               <div className="flex justify-between">
@@ -127,48 +117,6 @@ export default async function SubscriptionPage() {
           )}
         </div>
       </div>
-
-      {/* Pro + SMS add-on */}
-      {showSmsUpsell && (
-        <div className="card space-y-4 p-6">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <MessageSquare className="h-5 w-5 text-primary" aria-hidden="true" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-text-primary">Add texting — Pro + SMS</h2>
-              <p className="mt-1 text-sm text-text-muted">
-                Text parents straight to their phones for urgent notices. Keeps all your Pro
-                features and adds a monthly texting allowance, with credit top-ups when you need
-                more. The upgrade takes effect right away.
-              </p>
-            </div>
-          </div>
-          <div className="space-y-3 border-t border-border pt-4">
-            {smsMonthlyPriceId && (
-              <SwitchToSmsButton
-                priceId={smsMonthlyPriceId}
-                label={
-                  smsPrices.monthly
-                    ? `Switch to Pro + SMS — ${smsPrices.monthly}/month`
-                    : 'Switch to Pro + SMS (monthly)'
-                }
-              />
-            )}
-            {smsAnnualPriceId && (
-              <SwitchToSmsButton
-                priceId={smsAnnualPriceId}
-                variant="outline"
-                label={
-                  smsPrices.annual
-                    ? `Switch to annual — ${smsPrices.annual}/year`
-                    : 'Switch to Pro + SMS (annual)'
-                }
-              />
-            )}
-          </div>
-        </div>
-      )}
 
       <p className="text-center text-xs text-text-muted">
         Billing is handled securely by Stripe. We never store your card details.

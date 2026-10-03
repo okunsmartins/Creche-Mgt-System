@@ -28,8 +28,8 @@ export default async function TeacherSmsPage() {
           <p className="mt-1 text-sm text-text-muted">Send SMS to the parents of your class.</p>
         </div>
         <UpgradePrompt
-          title="Texting parents is a Pro + SMS feature"
-          description="Your crèche needs the Pro + SMS plan to text parents. Ask your administrator to upgrade."
+          title="Texting needs an active subscription"
+          description="SMS is included with the Creche Wise plan. Ask your administrator to subscribe to enable texting after the free trial."
           cta="See plans"
         />
       </div>

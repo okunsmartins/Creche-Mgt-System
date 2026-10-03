@@ -5,19 +5,6 @@ import { sendSubscriptionPaymentFailedEmail, sendSubscriptionEndedEmail } from '
 import { mapStatus, planForStatus } from './status'
 import type { SubscriptionStatus } from '@/types/database'
 
-/**
- * Configured €44.99 Pro+SMS price ids (empty until the live product exists). Read
- * from process.env directly rather than via serverEnv so importing this module in
- * tests doesn't trigger full env validation (buildSubscriptionSyncPayload is used
- * in unit tests).
- */
-function smsTierPriceIds(): string[] {
-  return [
-    process.env['STRIPE_PRO_SMS_MONTHLY_PRICE_ID'],
-    process.env['STRIPE_PRO_SMS_ANNUAL_PRICE_ID'],
-  ].filter((v): v is string => Boolean(v))
-}
-
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
 
 async function schoolIdByCustomer(
@@ -89,25 +76,21 @@ export interface SubscriptionSyncPayload {
  * Extracted so the version-robust period/status/trial logic is unit-testable
  * without mocking Supabase or Stripe network calls.
  *
- * `smsPriceIds` are the configured €44.99 Pro+SMS price ids — a subscription on
- * one of them sets `sms_enabled`, the SMS entitlement. Passed in (not read from
- * env) to keep this function pure. Empty ⇒ no SMS tier configured ⇒ never enabled.
+ * SMS is included with the single Creche Wise plan, so `sms_enabled` simply mirrors
+ * paid-plan access (plan === 'pro') rather than a separate SMS-tier price.
  */
-export function buildSubscriptionSyncPayload(
-  sub: Stripe.Subscription,
-  smsPriceIds: readonly string[] = [],
-): SubscriptionSyncPayload {
+export function buildSubscriptionSyncPayload(sub: Stripe.Subscription): SubscriptionSyncPayload {
   const status = mapStatus(sub.status)
-  const priceIds = subscriptionPriceIds(sub)
+  const plan = planForStatus(status)
   return {
     stripe_subscription_id: sub.id,
     stripe_customer_id: customerIdOf(sub),
-    plan: planForStatus(status),
+    plan,
     status,
     current_period_end: toIso(getCurrentPeriodEnd(sub)),
     cancel_at_period_end: sub.cancel_at_period_end ?? false,
     trial_ends_at: toIso(sub.trial_end),
-    sms_enabled: smsPriceIds.length > 0 && priceIds.some((id) => smsPriceIds.includes(id)),
+    sms_enabled: plan === 'pro',
   }
 }
 
@@ -155,7 +138,7 @@ export async function syncSubscriptionFromStripe(
 ): Promise<void> {
   const customerId = customerIdOf(sub)
   const schoolId = (sub.metadata?.school_id as string | undefined) ?? null
-  const payload = buildSubscriptionSyncPayload(sub, smsTierPriceIds())
+  const payload = buildSubscriptionSyncPayload(sub)
   const { status, plan } = payload
 
   if (schoolId) {

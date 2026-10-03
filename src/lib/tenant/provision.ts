@@ -1,5 +1,6 @@
 import type { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
+import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
 
@@ -186,17 +187,20 @@ export async function provisionSchool(
     },
   ])
 
-  // 2.5 Create a placeholder subscription row with NO access yet. The owner adds
-  //     a card at onboarding (/onboarding/billing → Stripe Checkout), which starts
-  //     a Stripe-managed TRIAL_PERIOD_DAYS trial and auto-charges when it ends —
-  //     so we deliberately do NOT set trial_ends_at here (that would suppress the
-  //     Checkout trial) and do NOT grant access (status 'incomplete'/plan 'free'
-  //     → hasProAccess === false) until the card is captured. The webhook upserts
-  //     this row to 'trialing' once Checkout completes.
+  // 2.5 Grant a no-card free trial. The new crèche gets TRIAL_PERIOD_DAYS of full
+  //     access immediately — status 'trialing' with an explicit trial_ends_at makes
+  //     hasProAccess() true until that date (see lib/subscriptions/access.ts). No
+  //     card is required to start. When the trial ends without a subscription,
+  //     hasProAccess() flips to false and requireSchoolAccessOrRedirect() sends the
+  //     crèche to /pricing to subscribe (the paywall). Because trial_ends_at is set
+  //     here, Checkout later charges immediately rather than granting a second trial
+  //     (see grantTrial in stripe/subscriptionActions.ts) — one free month per crèche.
+  const trialEndsAt = new Date(Date.now() + TRIAL_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const { error: subErr } = await adminClient.from('subscriptions').insert({
     school_id: schoolId,
     plan: 'free',
-    status: 'incomplete',
+    status: 'trialing',
+    trial_ends_at: trialEndsAt,
   })
   if (subErr) {
     // Non-fatal: the checkout webhook upserts by school_id anyway. Log for audit.
