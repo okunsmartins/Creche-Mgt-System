@@ -209,8 +209,26 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
   `INV-2026-000014`, €240 = 20×€12, issued, linked, snapshot `source: school_collection`); **cross-tenant test
   extended** (`verify-tenant-isolation.mjs` covers `collection_enrolments`, incl. "Tenant B cannot end Tenant A's
   enrolment" — 26 checks pass); type-check / lint / format / tests all green.
-- **Not done (by design):** NCS school-age netting (charges gross for now — subvention refinement later); the daily
-  **collection register** (Slice 3); **parent payment** (Slice 4, provider-gated).
+- **Not done (by design):** NCS school-age netting (charges gross for now — subvention refinement later);
+  **parent payment** (Slice 4, provider-gated).
+
+### School Collection Service (Feature A) — Slice 3: daily collection register (migration 081, verified)
+- **Files:** migration `081` (`collection_register`: status CHECK machine, `UNIQUE(run,student,date)`,
+  `released_to_collector_id` FK → `authorised_collectors`, RLS + grants); register status machine in
+  `collection.ts` (+3 tests, **20 total**); `markRegisterAction` in `collection/actions.ts`; admin
+  `/admin/collection/register` page + `RegisterPanel` (date picker, per-run tables, release-to-collector
+  picker, undo); link from the collection page header.
+- **Logic:** ties runs (A) to authorised collectors (B) — one row per enrolled child per day; lifecycle
+  `scheduled → collected (from school) → released (to collector)` or `absent`, with undo paths.
+  `markRegisterAction` is school_id-scoped, requires an **approved enrolment** for (run,child), and
+  `released` requires an **approved authorised collector** belonging to that child; enforces the transition
+  machine (no row = `scheduled`).
+- **Verified:** migration `081` **applied** to DB (2026-10-03); **browser-tested end-to-end** on localhost —
+  built method (Minibus) → run (After-school run, €12/day) → enrol Emma Byrne (Approved) → approved collector
+  Mary Byrne → register: **Scheduled → Collected from school → Released to collector (Mary Byrne)**, Undo
+  available, no console errors. type-check / lint / format / unit tests all green (**20/20** collection suite);
+  `verify-tenant-isolation.mjs` extended to cover `collection_register` (scoping + RLS + "Tenant B cannot
+  update Tenant A's register row"). Committed on `feat/collection-register` (PR open — merge via GitHub UI).
 
 ### Security — cross-tenant isolation review (2026-10-03)
 - Static audit of every server-side data path + DB-backed `verify-tenant-isolation.mjs` (26 checks).

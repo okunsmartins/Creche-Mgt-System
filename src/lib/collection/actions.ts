@@ -11,6 +11,9 @@ import {
   computeCollectionCharge,
   canTransitionEnrolment,
   isEnrolmentStatus,
+  canTransitionRegister,
+  isRegisterStatus,
+  type RegisterStatus,
 } from './collection'
 
 type Result = { ok: true } | { ok: false; error: string }
@@ -378,5 +381,100 @@ export async function generateCollectionChargeAction(input: {
   }
   revalidatePath('/admin/collection')
   revalidatePath('/admin/fees')
+  return { ok: true }
+}
+
+// ── Daily collection register (Slice 3) ───────────────────────────────────────
+
+/**
+ * Set a child's collection status for a given day (scheduled → collected →
+ * released, or absent). Upserts one register row per (run, student, date). A row
+ * that doesn't exist yet is treated as 'scheduled'. 'released' requires an approved
+ * authorised collector for that child. All tenant/ownership-scoped.
+ */
+export async function markRegisterAction(input: {
+  runId: string
+  studentId: string
+  date: string
+  status: string
+  collectorId?: string | null
+}): Promise<Result> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  if (!isRegisterStatus(input.status)) return { ok: false, error: 'Invalid status.' }
+  if (!input.date) return { ok: false, error: 'A date is required.' }
+  const next = input.status as RegisterStatus
+  const db = createSupabaseAdminClient()
+
+  // The child must have an APPROVED enrolment in this run (which also proves the
+  // run + child belong to this crèche).
+  const { data: enr } = await db
+    .from('collection_enrolments')
+    .select('id')
+    .eq('school_id', schoolId)
+    .eq('collection_run_id', input.runId)
+    .eq('student_id', input.studentId)
+    .eq('status', 'approved')
+    .maybeSingle()
+  if (!enr) return { ok: false, error: 'No approved enrolment for this child on this run.' }
+
+  // 'released' needs an approved authorised collector belonging to this child.
+  let collectorId: string | null = null
+  if (next === 'released') {
+    if (!input.collectorId) return { ok: false, error: 'Choose who collected the child.' }
+    const { data: col } = await db
+      .from('authorised_collectors')
+      .select('id')
+      .eq('id', input.collectorId)
+      .eq('school_id', schoolId)
+      .eq('student_id', input.studentId)
+      .eq('status', 'approved')
+      .maybeSingle()
+    if (!col) return { ok: false, error: 'That collector is not approved for this child.' }
+    collectorId = input.collectorId
+  }
+
+  // Current state (no row yet = scheduled). Enforce the transition machine.
+  const { data: existing } = await db
+    .from('collection_register')
+    .select('id, status')
+    .eq('school_id', schoolId)
+    .eq('collection_run_id', input.runId)
+    .eq('student_id', input.studentId)
+    .eq('date', input.date)
+    .maybeSingle()
+  const current = (existing as { status: string } | null)?.status ?? 'scheduled'
+  if (current !== next) {
+    if (!isRegisterStatus(current) || !canTransitionRegister(current, next))
+      return { ok: false, error: `Cannot change a ${current} entry to ${next}.` }
+  }
+
+  const now = new Date().toISOString()
+  const fields = {
+    status: next,
+    collected_at: next === 'collected' || next === 'released' ? now : null,
+    released_at: next === 'released' ? now : null,
+    released_to_collector_id: collectorId,
+    recorded_by_profile_id: admin.id,
+  }
+
+  const { error } = existing
+    ? await db
+        .from('collection_register')
+        .update(fields)
+        .eq('id', (existing as { id: string }).id)
+        .eq('school_id', schoolId)
+    : await db.from('collection_register').insert({
+        school_id: schoolId,
+        collection_run_id: input.runId,
+        student_id: input.studentId,
+        date: input.date,
+        ...fields,
+      })
+  if (error) {
+    logger.error('collection_register_failed', { schoolId, error: error.message })
+    return { ok: false, error: 'Could not update the register.' }
+  }
+  revalidatePath('/admin/collection/register')
   return { ok: true }
 }

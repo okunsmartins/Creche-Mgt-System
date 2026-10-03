@@ -149,12 +149,20 @@ export default async function CollectionPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">School collection</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Set up the collection methods and school runs your crèche offers. {runs.length} run
-          {runs.length === 1 ? '' : 's'}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">School collection</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Set up the collection methods and school runs your crèche offers. {runs.length} run
+            {runs.length === 1 ? '' : 's'}.
+          </p>
+        </div>
+        <a
+          href="/admin/collection/register"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+        >
+          Today&apos;s register →
+        </a>
       </div>
       <CollectionPanel methods={methods} runs={runs} staff={staff} />
 
