@@ -2,11 +2,11 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getSchoolsOverview, type SchoolOverviewRow } from './schools'
 import { getStripeMrrCents } from './stripeMrr'
 
-// Estimated list prices (cents/month). We store only plan + sms_enabled, not the
-// Stripe amount or billing interval — so MRR here is an ESTIMATE that assumes the
-// monthly price. Annual plans are over-counted; surface it as "est." in the UI.
-const PRO_MONTHLY_CENTS = 3999
-const PRO_SMS_MONTHLY_CENTS = 4499
+// Estimated list price (cents/month) for the single Creche Wise plan. We store only
+// plan + status, not the Stripe amount or billing interval — so MRR here is an
+// ESTIMATE that assumes the monthly price. Annual plans are over-counted; surface it
+// as "est." in the UI. The exact figure comes from Stripe when available.
+const PLAN_MONTHLY_CENTS = 7499
 
 const TRIAL_SOON_DAYS = 7
 const COLLECTED_STATUSES = ['paid', 'partially_refunded'] as const
@@ -46,11 +46,9 @@ export function monthStartIso(now: Date = new Date()): string {
 }
 
 /** Estimated monthly revenue (cents) a school contributes — paid (active) only. */
-export function estimateMonthlyCents(
-  row: Pick<SchoolOverviewRow, 'status' | 'smsEnabled'>,
-): number {
+export function estimateMonthlyCents(row: Pick<SchoolOverviewRow, 'status'>): number {
   if (row.status !== 'active') return 0 // trials/past_due/none contribute 0 to MRR
-  return row.smsEnabled ? PRO_SMS_MONTHLY_CENTS : PRO_MONTHLY_CENTS
+  return PLAN_MONTHLY_CENTS
 }
 
 /** Point-in-time school counts by subscription state. Pure. */

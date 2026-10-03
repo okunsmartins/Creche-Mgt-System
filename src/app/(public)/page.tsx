@@ -50,9 +50,9 @@ const features: Feature[] = [
     title: 'Text parents',
     label: 'SMS straight to phones',
     glow: 'card-glow-teal',
-    // Built (Pro+SMS tier) but not operational until Twilio + the Pro+SMS Stripe
-    // product are configured. Kept "Coming soon" so we don't advertise a feature
-    // no visitor can use yet — flip to href:'/login', cta:'Staff sign in' at go-live.
+    // Included with the plan, but kept "Coming soon" until the ComReg sender-ID
+    // registration is approved (an unregistered sender is flagged "likely scam").
+    // Flip to href:'/login', cta:'Staff sign in' once approved.
     comingSoon: true,
   },
   {

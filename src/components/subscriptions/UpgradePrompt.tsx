@@ -4,9 +4,9 @@ import { Lock, ArrowRight } from 'lucide-react'
 interface UpgradePromptProps {
   title?: string
   description?: string
-  /** Button label — override for tiers other than plain Pro (e.g. Pro + SMS). */
+  /** Button label — defaults to the subscribe CTA. */
   cta?: string
-  /** Where the button links — defaults to /pricing (plain Pro). */
+  /** Where the button links — defaults to /pricing. */
   href?: string
 }
 

@@ -51,7 +51,7 @@ async function loadBalance(adminClient: AdminClient, schoolId: string): Promise<
     const period_start = periodStartOf(new Date())
     await adminClient.from('school_sms_balance').insert({ school_id: schoolId, period_start })
     row = {
-      included_limit: 100,
+      included_limit: 500,
       included_used: 0,
       period_start,
       credits: 0,
@@ -103,9 +103,10 @@ export async function sendParentSmsAction(
   const isTeacher = user.roles.includes('teacher')
   if (!isAdmin && !isTeacher) return { error: 'You do not have permission to send texts.' }
 
-  // SMS is gated behind the €44.99 Pro+SMS tier (server-authoritative entitlement).
+  // SMS is included with the Creche Wise plan — this just requires current plan
+  // access (active subscription or an in-progress free trial).
   if (!(await schoolHasSmsAccess(user.schoolId))) {
-    return { error: 'Texting parents requires the Pro + SMS plan. Upgrade to enable it.' }
+    return { error: 'Texting parents requires an active subscription. Subscribe to enable it.' }
   }
 
   const audienceType = formData.get('audienceType')

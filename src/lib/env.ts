@@ -51,21 +51,13 @@ export const serverEnv = {
   get stripeConnectWebhookSecret(): string {
     return optionalEnv('STRIPE_CONNECT_WEBHOOK_SECRET')
   },
-  // Subscription price IDs — optional until the subscription checkout is live.
+  // Single-plan price IDs (monthly + annual) — optional until the subscription
+  // checkout is live. Both unlock every feature, SMS included.
   get stripeProMonthlyPriceId(): string {
     return optionalEnv('STRIPE_PRO_MONTHLY_PRICE_ID')
   },
   get stripeProAnnualPriceId(): string {
     return optionalEnv('STRIPE_PRO_ANNUAL_PRICE_ID')
-  },
-  // €44.99 "Pro + SMS" tier price IDs — a subscription on one of these grants the
-  // SMS entitlement (subscriptions.sms_enabled) at webhook-sync time. Optional
-  // until the live Stripe Pro+SMS product exists.
-  get stripeProSmsMonthlyPriceId(): string {
-    return optionalEnv('STRIPE_PRO_SMS_MONTHLY_PRICE_ID')
-  },
-  get stripeProSmsAnnualPriceId(): string {
-    return optionalEnv('STRIPE_PRO_SMS_ANNUAL_PRICE_ID')
   },
   // Revolut Pay — optional until credentials are provisioned. When unset, the
   // Revolut payment option is hidden and the order/webhook paths are inert.

@@ -14,7 +14,7 @@ export interface SmsBalanceView {
   creditsExpireAt: string | null
 }
 
-const DEFAULT_INCLUDED_LIMIT = 100
+const DEFAULT_INCLUDED_LIMIT = 500
 
 /**
  * Read-only SMS balance for display. Applies the monthly allowance reset and the

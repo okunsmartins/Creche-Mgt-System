@@ -29,9 +29,9 @@ export default async function AdminSmsPage() {
           </p>
         </div>
         <UpgradePrompt
-          title="Texting parents is a Pro + SMS feature"
-          description="Upgrade to the Pro + SMS plan (€44.99/mo) to text parents. It includes a monthly allowance of texts, with credit top-ups when you need more."
-          cta="Upgrade to Pro + SMS"
+          title="Texting is included with your subscription"
+          description="SMS to parents is part of the Creche Wise plan — with a monthly allowance of texts and credit top-ups when you need more. Subscribe to continue texting after your free trial."
+          cta="View subscription"
           href="/admin/subscription"
         />
       </div>

@@ -53,38 +53,3 @@ export const getProPrices = unstable_cache(
   ['pro-prices'],
   { revalidate: 3600 },
 )
-
-/**
- * Fetch and format the configured €44.99 Pro + SMS tier prices from Stripe.
- * Mirrors {@link getProPrices}; returns nulls gracefully until the SMS-tier price
- * ids are configured (STRIPE_PRO_SMS_MONTHLY/ANNUAL_PRICE_ID).
- */
-export const getProSmsPrices = unstable_cache(
-  async (): Promise<ProPriceDisplay> => {
-    const stripe = getStripe()
-    const result: ProPriceDisplay = { monthly: null, annual: null }
-
-    const lookups: [keyof ProPriceDisplay, string][] = []
-    if (serverEnv.stripeProSmsMonthlyPriceId)
-      lookups.push(['monthly', serverEnv.stripeProSmsMonthlyPriceId])
-    if (serverEnv.stripeProSmsAnnualPriceId)
-      lookups.push(['annual', serverEnv.stripeProSmsAnnualPriceId])
-
-    await Promise.all(
-      lookups.map(async ([key, id]) => {
-        try {
-          const price = await stripe.prices.retrieve(id)
-          result[key] = formatAmount(price.unit_amount, price.currency)
-        } catch (err) {
-          logger.warn('pro_sms_price_fetch_failed', {
-            which: key,
-            error: err instanceof Error ? err.message : 'Unknown error',
-          })
-        }
-      }),
-    )
-    return result
-  },
-  ['pro-sms-prices'],
-  { revalidate: 3600 },
-)
