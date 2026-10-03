@@ -6,10 +6,12 @@ import { ParentCollectionForm } from '@/components/collection/ParentCollectionFo
 import {
   ENROLMENT_STATUS_LABELS,
   CHARGE_BASIS_UNIT,
+  REGISTER_STATUS_LABELS,
   type EnrolmentStatus,
   type ChargeBasis,
+  type RegisterStatus,
 } from '@/lib/collection/collection'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'School Collection' }
 
@@ -18,6 +20,13 @@ const STATUS_VARIANT: Record<EnrolmentStatus, 'success' | 'warning' | 'error' | 
   requested: 'warning',
   declined: 'error',
   ended: 'default',
+}
+
+const REGISTER_VARIANT: Record<RegisterStatus, 'success' | 'warning' | 'error' | 'default'> = {
+  released: 'success',
+  collected: 'warning',
+  absent: 'error',
+  scheduled: 'default',
 }
 
 export default async function ParentCollectionPage() {
@@ -74,6 +83,31 @@ export default async function ParentCollectionPage() {
     enrolments = (data ?? []) as unknown as typeof enrolments
   }
 
+  // Collection history: the register entries for this parent's children (read-only).
+  // Scoped by the parent's own child ids (from active links), so only their children show.
+  let history: {
+    id: string
+    date: string
+    status: string
+    collected_at: string | null
+    released_at: string | null
+    students: { first_name: string | null; last_name: string | null } | null
+    collection_runs: { name: string } | null
+    authorised_collectors: { full_name: string } | null
+  }[] = []
+  if (childIds.length > 0) {
+    const { data } = await db
+      .from('collection_register')
+      .select(
+        'id, date, status, collected_at, released_at, students(first_name, last_name), collection_runs(name), authorised_collectors(full_name)',
+      )
+      .in('student_id', childIds)
+      .order('date', { ascending: false })
+      .order('released_at', { ascending: false, nullsFirst: false })
+      .limit(100)
+    history = (data ?? []) as unknown as typeof history
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-1 text-2xl font-bold text-text-primary">School collection</h1>
@@ -122,6 +156,72 @@ export default async function ParentCollectionPage() {
                             <Badge variant={STATUS_VARIANT[status] ?? 'default'}>
                               {ENROLMENT_STATUS_LABELS[status] ?? e.status}
                             </Badge>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="mb-8">
+            <h2 className="mb-1 text-lg font-semibold text-text-primary">Collection history</h2>
+            <p className="mb-3 text-sm text-text-muted">
+              A record of each day your child was collected from school and released to an
+              authorised collector.
+            </p>
+            {history.length === 0 ? (
+              <div className="rounded-lg border border-border bg-surface p-6 text-text-muted">
+                No collection history yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-border bg-surface text-left text-text-muted">
+                    <tr>
+                      <th className="px-4 py-3">Date</th>
+                      <th className="px-4 py-3">Child</th>
+                      <th className="px-4 py-3">Run</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Released to</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {history.map((h) => {
+                      const status = h.status as RegisterStatus
+                      return (
+                        <tr key={h.id}>
+                          <td className="whitespace-nowrap px-4 py-3 text-text-secondary">
+                            {formatDate(h.date)}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-text-primary">
+                            {[h.students?.first_name, h.students?.last_name]
+                              .filter(Boolean)
+                              .join(' ') || '—'}
+                          </td>
+                          <td className="px-4 py-3 text-text-secondary">
+                            {h.collection_runs?.name ?? '—'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant={REGISTER_VARIANT[status] ?? 'default'}>
+                              {REGISTER_STATUS_LABELS[status] ?? h.status}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-text-secondary">
+                            {h.status === 'released' && h.authorised_collectors?.full_name ? (
+                              <>
+                                {h.authorised_collectors.full_name}
+                                {h.released_at && (
+                                  <span className="block text-xs text-text-muted">
+                                    {formatDate(h.released_at, true)}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-text-muted">—</span>
+                            )}
                           </td>
                         </tr>
                       )
