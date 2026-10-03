@@ -28,8 +28,8 @@ describe('loadSmsBalanceView', () => {
   it('returns the default allowance when no row exists', async () => {
     const view = await loadSmsBalanceView(mockAdmin(null), 'school_1')
     expect(view).toEqual({
-      allowanceLimit: 100,
-      allowanceRemaining: 100,
+      allowanceLimit: 500,
+      allowanceRemaining: 500,
       credits: 0,
       creditsExpireAt: null,
     })
