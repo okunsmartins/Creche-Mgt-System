@@ -71,6 +71,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/import', label: 'Import', icon: Upload },
       { href: '/admin/daily-records', label: 'Daily Records', icon: NotebookPen },
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
+      { href: '/admin/observations', label: 'Learning Journals', icon: BookOpen },
       { href: '/admin/permission-slips', label: 'Permission Slips', icon: ClipboardCheck },
       { href: '/admin/collectors', label: 'Collectors', icon: UserCheck },
       { href: '/admin/link-requests', label: 'Link Requests', icon: ChevronRight },
