@@ -228,7 +228,20 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
   Mary Byrne → register: **Scheduled → Collected from school → Released to collector (Mary Byrne)**, Undo
   available, no console errors. type-check / lint / format / unit tests all green (**20/20** collection suite);
   `verify-tenant-isolation.mjs` extended to cover `collection_register` (scoping + RLS + "Tenant B cannot
-  update Tenant A's register row"). Committed on `feat/collection-register` (PR open — merge via GitHub UI).
+  update Tenant A's register row"). Merged to main via **PR #31** (2026-10-03).
+
+### School Collection Service (Feature A) — refinement: parent collection history (no migration, verified at data layer)
+- **File:** read-only "Collection history" section added to `/parent/collection` (`src/app/(parent)/parent/collection/page.tsx`).
+  Shows each day the parent's child was collected from school and released: date, child, run, register status,
+  and which authorised collector took them (with time). Scoped to the parent's own child ids (from active
+  `parent_student_links`), so a parent only sees their own children's entries. No schema change — reuses
+  `collection_register` + the page's existing link resolution.
+- **Verified:** type-check / lint / format green. Data-layer verified — the page's **exact query** (with the
+  `students` / `collection_runs` / `authorised_collectors` FK embeds) returns the correct row
+  (Emma Byrne → After-school run → released → Mary Byrne, with timestamps). A live parent-login render was
+  not possible: the only parent linked to a child-with-history is also a platform/admin account, which the
+  parent route guard redirects, and no parent-only account exists to seed from. Markup mirrors the already-
+  verified "Your requests" table on the same page. Branch `feat/parent-collection-history` (PR open).
 
 ### Security — cross-tenant isolation review (2026-10-03)
 - Static audit of every server-side data path + DB-backed `verify-tenant-isolation.mjs` (26 checks).
