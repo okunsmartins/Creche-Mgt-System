@@ -6,7 +6,7 @@ import { getStripe } from '@/lib/stripe/client'
 import { serverEnv } from '@/lib/env'
 import { logger } from '@/lib/logging'
 import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
-import { hasProAccess, tierSwitchMode } from '@/lib/subscriptions/access'
+import { hasProAccess } from '@/lib/subscriptions/access'
 import type { SubscriptionRow } from '@/types/database'
 
 export type SubscriptionCheckoutState = {
@@ -34,16 +34,12 @@ type SubLite = Pick<
   | 'sms_enabled'
 > | null
 
-/** Configured plain-Pro price ids (€39.99 tier). Empty until the product exists. */
+/**
+ * Configured price ids for the single Creche Wise plan (monthly + annual). Empty
+ * until the product exists in Stripe. SMS and every other feature are included.
+ */
 function proPriceIds(): string[] {
   return [serverEnv.stripeProMonthlyPriceId, serverEnv.stripeProAnnualPriceId].filter(
-    (p): p is string => !!p,
-  )
-}
-
-/** Configured €44.99 Pro + SMS price ids. Empty until the product exists. */
-function smsPriceIds(): string[] {
-  return [serverEnv.stripeProSmsMonthlyPriceId, serverEnv.stripeProSmsAnnualPriceId].filter(
     (p): p is string => !!p,
   )
 }
@@ -153,13 +149,13 @@ async function beginCheckoutForPrice(
 }
 
 /**
- * Starts a Stripe Checkout session for a school to subscribe to a paid plan (plain
- * Pro or the Pro + SMS tier).
+ * Starts a Stripe Checkout session for a school to subscribe to the Creche Wise plan
+ * (monthly or annual — both unlock every feature, SMS included).
  *
  * Security:
  *  - requireAdmin() — only an admin of a school may subscribe it.
- *  - The price ID is validated against the configured Pro / Pro+SMS prices; an
- *    arbitrary client-supplied price is rejected (never trust client pricing).
+ *  - The price ID is validated against the configured plan prices; an arbitrary
+ *    client-supplied price is rejected (never trust client pricing).
  *  - The Stripe customer is created/reused idempotently per school.
  *  - Authoritative state is set later by the webhook, not the browser redirect.
  */
@@ -170,8 +166,8 @@ export async function createSubscriptionCheckoutAction(
   const admin = await requireAdmin()
   if (!admin.schoolId) return { error: 'No school is associated with your account.' }
 
-  // Any configured plan price is allowed (Pro or Pro + SMS) — reject anything else.
-  const allowedPrices = [...proPriceIds(), ...smsPriceIds()]
+  // Only the configured plan prices (monthly/annual) are allowed — reject anything else.
+  const allowedPrices = proPriceIds()
   const priceId = formData.get('priceId')
   if (allowedPrices.length === 0) {
     return { error: 'Subscriptions are not available yet. Please try again later.' }
@@ -192,94 +188,6 @@ export async function createSubscriptionCheckoutAction(
   }
 
   return beginCheckoutForPrice(admin, sub, priceId)
-}
-
-/**
- * Move a school onto the €44.99 Pro + SMS tier.
- *
- * - A school with a LIVE Stripe subscription is upgraded IN PLACE: the line item's
- *   price is swapped to the SMS price with proration, so there is no second
- *   subscription and no re-entering card details. `sms_enabled` is set optimistically
- *   (the price is now confirmed on Stripe) for instant activation; the webhook
- *   remains the source of truth and reconfirms it.
- * - A school with no live Stripe subscription (free/lapsed, or a local signup trial)
- *   is sent through a fresh Checkout for the SMS price.
- *
- * Security mirrors createSubscriptionCheckoutAction: admin-only, price validated
- * against the configured SMS prices, never trusting a client-supplied amount.
- */
-export async function switchToProSmsAction(
-  _prev: SubscriptionCheckoutState,
-  formData: FormData,
-): Promise<SubscriptionCheckoutState> {
-  const admin = await requireAdmin()
-  if (!admin.schoolId) return { error: 'No school is associated with your account.' }
-
-  const allowedSms = smsPriceIds()
-  const priceId = formData.get('priceId')
-  if (allowedSms.length === 0) {
-    return { error: 'The Pro + SMS plan is not available yet. Please try again later.' }
-  }
-  if (typeof priceId !== 'string' || !allowedSms.includes(priceId)) {
-    return { error: 'Invalid plan selected.' }
-  }
-
-  const adminClient = createSupabaseAdminClient()
-  const sub = await loadSchoolSub(adminClient, admin.schoolId)
-  const mode = tierSwitchMode(sub, hasProAccess(sub))
-
-  if (mode === 'already_on_sms') {
-    return { error: 'Your school is already on the Pro + SMS plan.' }
-  }
-
-  if (mode === 'checkout') {
-    return beginCheckoutForPrice(admin, sub, priceId)
-  }
-
-  // mode === 'modify' — upgrade the live subscription in place.
-  const subscriptionId = sub!.stripe_subscription_id!
-  const stripe = getStripe()
-  try {
-    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId)
-    const itemId = stripeSub.items.data[0]?.id
-    if (!itemId) {
-      logger.error('tier_switch_no_item', { schoolId: admin.schoolId, subscriptionId })
-      return { error: 'Could not update your plan. Please try again.' }
-    }
-
-    // Already on this price on Stripe? Just make sure the entitlement is set.
-    const alreadyOnSmsPrice = stripeSub.items.data.some(
-      (i) => i.price?.id && allowedSms.includes(i.price.id),
-    )
-    if (!alreadyOnSmsPrice) {
-      await stripe.subscriptions.update(subscriptionId, {
-        items: [{ id: itemId, price: priceId }],
-        proration_behavior: 'create_prorations',
-        metadata: { school_id: admin.schoolId },
-      })
-    }
-  } catch (err) {
-    logger.error('tier_switch_update_failed', {
-      schoolId: admin.schoolId,
-      subscriptionId,
-      error: err instanceof Error ? err.message : 'Unknown error',
-    })
-    return { error: 'Could not update your plan. Please try again.' }
-  }
-
-  // Optimistically enable SMS now — the price change is confirmed on Stripe, and
-  // customer.subscription.updated will reconfirm sms_enabled from the price.
-  const { error: flagError } = await adminClient
-    .from('subscriptions')
-    .update({ sms_enabled: true })
-    .eq('school_id', admin.schoolId)
-  if (flagError) {
-    logger.error('tier_switch_flag_failed', { schoolId: admin.schoolId, error: flagError.message })
-    // Non-fatal: the webhook will still set sms_enabled from the price.
-  }
-
-  logger.info('tier_switched_to_pro_sms', { schoolId: admin.schoolId, subscriptionId })
-  return { success: true }
 }
 
 export type BillingPortalState = {

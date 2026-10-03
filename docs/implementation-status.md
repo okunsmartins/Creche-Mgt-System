@@ -243,6 +243,21 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
   parent route guard redirects, and no parent-only account exists to seed from. Markup mirrors the already-
   verified "Your requests" table on the same page. Branch `feat/parent-collection-history` (PR open).
 
+### Pricing — single all-inclusive plan + no-card trial (migration 082 applied, verified)
+- **Model (user decision 2026-10-03):** ONE plan — **€74.99/month** or **€809.89/year** (true 10% off, EUR) —
+  unlocks every feature, **SMS included** (no separate Pro+SMS tier). **500 SMS/month** allowance (was 100;
+  migration `082`, applied) + existing top-up credits. **First month free, no card**; paywall after 30 days.
+- **Code:** `hasSmsAccess = hasProAccess`; webhook `sms_enabled = plan==='pro'`; removed `switchToProSmsAction`,
+  `SwitchToSmsButton`, `getProSmsPrices`, SMS price-id env getters; checkout = single plan monthly/annual.
+  `provision.ts` grants a no-card `trialing` sub (`trial_ends_at = +30d`); signup → `/admin/dashboard`;
+  onboarding/billing retargeted to the post-trial subscribe step; pricing + admin-subscription pages reworked;
+  platform MRR estimate → €74.99.
+- **Verified:** tsc / eslint / prettier clean; **76** subscription/platform/env unit tests pass; browser-verified
+  `/pricing` (one plan, "no card required", SMS 500/mo) and `/admin/subscription` (single plan, no upsell).
+  Branch `feat/single-plan-pricing` (PR open). ⚠️ **Prices come from Stripe**: create the one product + two prices
+  on the new account (Stripe activation Task S2) and set `STRIPE_PRO_MONTHLY_PRICE_ID` / `STRIPE_PRO_ANNUAL_PRICE_ID`.
+  The old `reference/stripe-pro-product` notes (€39.99/€420, two tiers) are superseded.
+
 ### Security — cross-tenant isolation review (2026-10-03)
 - Static audit of every server-side data path + DB-backed `verify-tenant-isolation.mjs` (26 checks).
   **No cross-tenant data-isolation vulnerabilities found.** Full report:

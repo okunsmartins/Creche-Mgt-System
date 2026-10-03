@@ -6,29 +6,29 @@ import { schoolHasProAccess } from '@/lib/subscriptions/access'
 import { getProPrices } from '@/lib/stripe/prices'
 import { serverEnv } from '@/lib/env'
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton'
-import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
 
-export const metadata: Metadata = { title: 'Start your free trial' }
+export const metadata: Metadata = { title: 'Subscribe' }
 
-// The plan flips to trialing via the Stripe webhook after checkout, so always
-// re-check on load rather than caching.
+// Access flips via the Stripe webhook after checkout, so always re-check on load
+// rather than caching.
 export const dynamic = 'force-dynamic'
 
 const FEATURES: string[] = [
+  'Text parents (SMS) — 500 texts/month included',
   'Online payment collection (activities, trips, books)',
   'Guest & parent payments',
-  'Pupil management & class lists',
+  'Child management, rooms & daily check-in',
+  'Fees, invoices & NCS subvention',
   'Payment links & instalments',
-  'CSV import',
   'Advanced reports & analytics',
 ]
 
 /**
- * Card-at-signup billing step, shown right after a new school is created. The
- * owner adds a card to start a {TRIAL_PERIOD_DAYS}-day free trial via Stripe
- * Checkout; Stripe collects the card now, charges nothing until the trial ends,
- * then auto-charges — no return visit needed. If the crèche already has access
- * (trial already started, or webhook already landed), skip straight to the app.
+ * Subscribe step. New crèches get a no-card free trial at signup and go straight to
+ * the dashboard, so this page is normally reached only once that trial has ended (or
+ * a subscription lapsed). It opens Stripe Checkout for the single Creche Wise plan.
+ * If the crèche already has access (trial still running, or the webhook already
+ * landed after checkout), it skips straight to the app.
  */
 export default async function OnboardingBillingPage() {
   const admin = await requireAdmin()
@@ -53,11 +53,11 @@ export default async function OnboardingBillingPage() {
             Almost there
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Start your <span className="text-primary">{TRIAL_PERIOD_DAYS}-day free trial</span>
+            Subscribe to <span className="text-primary">Creche Wise</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Add a card to activate your crèche portal. You won&apos;t be charged for{' '}
-            {TRIAL_PERIOD_DAYS} days — cancel anytime before then and you pay nothing.
+            Your free trial has ended. Subscribe to keep your crèche portal — every feature, SMS
+            included. Cancel anytime.
           </p>
         </div>
       </section>
@@ -65,22 +65,20 @@ export default async function OnboardingBillingPage() {
       <section className="mx-auto max-w-md px-4 py-12 sm:px-6">
         <div className="card space-y-5 p-6">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">Pro plan</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Creche Wise</h2>
             <p className="mt-1 text-sm text-text-muted">
-              Everything your crèche office needs. Free for {TRIAL_PERIOD_DAYS} days, then it renews
-              automatically.
+              Everything your crèche needs — SMS included. Cancel anytime.
             </p>
             <p className="mt-4 text-3xl font-bold text-text-primary">
-              €0
-              <span className="text-base font-normal text-text-muted">
-                {' '}
-                for {TRIAL_PERIOD_DAYS} days
-              </span>
+              {prices.monthly ?? '€—'}
+              <span className="text-base font-normal text-text-muted">/month</span>
             </p>
-            <p className="mt-1 text-sm text-text-muted">
-              Then {prices.monthly ?? 'Pro'}/month
-              {prices.annual ? `, or ${prices.annual}/year` : ''}.
-            </p>
+            {prices.annual && (
+              <p className="mt-1 text-sm text-text-muted">
+                or {prices.annual}/year —{' '}
+                <span className="font-semibold text-primary">save 10%</span>
+              </p>
+            )}
           </div>
 
           <div className="space-y-3 border-t border-border pt-4">
@@ -90,9 +88,7 @@ export default async function OnboardingBillingPage() {
                   <SubscribeButton
                     priceId={monthlyPriceId}
                     label={
-                      prices.monthly
-                        ? `Start free trial — then ${prices.monthly}/month`
-                        : 'Start free trial (monthly)'
+                      prices.monthly ? `Subscribe — ${prices.monthly}/month` : 'Subscribe monthly'
                     }
                   />
                 )}
@@ -100,9 +96,7 @@ export default async function OnboardingBillingPage() {
                   <SubscribeButton
                     priceId={annualPriceId}
                     label={
-                      prices.annual
-                        ? `Start free trial — then ${prices.annual}/year`
-                        : 'Start free trial (annual)'
+                      prices.annual ? `Subscribe — ${prices.annual}/year` : 'Subscribe annually'
                     }
                   />
                 )}
@@ -116,10 +110,7 @@ export default async function OnboardingBillingPage() {
 
           <div className="flex items-start gap-2 rounded-md bg-primary/5 px-3 py-2.5 text-xs text-text-muted">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span>
-              Secure card entry by Stripe. No charge for {TRIAL_PERIOD_DAYS} days. Cancel anytime
-              from your dashboard.
-            </span>
+            <span>Secure card entry by Stripe. Cancel anytime from your dashboard.</span>
           </div>
 
           <ul className="grid gap-2.5 pt-1">

@@ -29,15 +29,14 @@ function row(partial: Partial<SchoolOverviewRow>): SchoolOverviewRow {
 }
 
 describe('estimateMonthlyCents', () => {
-  it('counts active pro at 3999, active pro+sms at 4499', () => {
-    expect(estimateMonthlyCents({ status: 'active', smsEnabled: false })).toBe(3999)
-    expect(estimateMonthlyCents({ status: 'active', smsEnabled: true })).toBe(4499)
+  it('counts an active school at the single plan price (7499)', () => {
+    expect(estimateMonthlyCents({ status: 'active' })).toBe(7499)
   })
 
   it('counts trials / past_due / none as 0 (not yet paying)', () => {
-    expect(estimateMonthlyCents({ status: 'trialing', smsEnabled: true })).toBe(0)
-    expect(estimateMonthlyCents({ status: 'past_due', smsEnabled: false })).toBe(0)
-    expect(estimateMonthlyCents({ status: 'none', smsEnabled: false })).toBe(0)
+    expect(estimateMonthlyCents({ status: 'trialing' })).toBe(0)
+    expect(estimateMonthlyCents({ status: 'past_due' })).toBe(0)
+    expect(estimateMonthlyCents({ status: 'none' })).toBe(0)
   })
 })
 
