@@ -90,15 +90,23 @@ export function FundingDashboard({
               )}
             </p>
           </div>
-          {canManage && (
-            <form action={formAction}>
-              <input type="hidden" name="weekStart" value={weekStart} />
-              <Button type="submit" loading={isPending}>
-                <Play className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                Run this week&apos;s compliance
-              </Button>
-            </form>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="/admin/funding/ncs-weekly"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              Weekly return →
+            </a>
+            {canManage && (
+              <form action={formAction}>
+                <input type="hidden" name="weekStart" value={weekStart} />
+                <Button type="submit" loading={isPending}>
+                  <Play className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Run this week&apos;s compliance
+                </Button>
+              </form>
+            )}
+          </div>
         </div>
         {state.error && (
           <Alert variant="error" className="mt-3">
