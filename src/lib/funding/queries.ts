@@ -119,3 +119,85 @@ export async function getFundingDashboard(schoolId: string): Promise<FundingDash
 
   return { openActions, severityCounts, latestWeek }
 }
+
+export interface NcsReturnRow {
+  studentId: string
+  childName: string
+  claimedMinutes: number
+  actualMinutes: number
+  monitoringMinutes: number
+  underAttended: boolean
+  fullWeekAbsent: boolean
+  consecutiveUnderWeeks: number
+  consecutiveAbsenceWeeks: number
+  thresholdEvent: string
+  riskState: string
+  calculationVersion: string
+}
+
+export interface NcsWeeklyReturn {
+  weekStart: string
+  reviewRequired: NcsReturnRow[]
+  noActionCount: number
+  total: number
+  calculationVersion: string | null
+}
+
+/** The prepared NCS weekly return for one reporting week (exception list + counts). */
+export async function getNcsWeeklyReturn(
+  schoolId: string,
+  weekStart: string,
+): Promise<NcsWeeklyReturn> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('ncs_weekly_compliance_snapshots')
+    .select(
+      'student_id, claimed_minutes, actual_attendance_minutes, ncs_monitoring_minutes, under_attended, full_week_absent, consecutive_under_attendance_weeks, consecutive_absence_weeks, threshold_event, risk_state, calculation_version, students(first_name, last_name)',
+    )
+    .eq('school_id', schoolId)
+    .eq('week_start', weekStart)
+  const rows =
+    (data as unknown as
+      | {
+          student_id: string
+          claimed_minutes: number
+          actual_attendance_minutes: number
+          ncs_monitoring_minutes: number
+          under_attended: boolean
+          full_week_absent: boolean
+          consecutive_under_attendance_weeks: number
+          consecutive_absence_weeks: number
+          threshold_event: string
+          risk_state: string
+          calculation_version: string
+          students: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+
+  const mapped: NcsReturnRow[] = rows.map((r) => ({
+    studentId: r.student_id,
+    childName: [r.students?.first_name, r.students?.last_name].filter(Boolean).join(' ') || '—',
+    claimedMinutes: r.claimed_minutes,
+    actualMinutes: r.actual_attendance_minutes,
+    monitoringMinutes: r.ncs_monitoring_minutes,
+    underAttended: r.under_attended,
+    fullWeekAbsent: r.full_week_absent,
+    consecutiveUnderWeeks: r.consecutive_under_attendance_weeks,
+    consecutiveAbsenceWeeks: r.consecutive_absence_weeks,
+    thresholdEvent: r.threshold_event,
+    riskState: r.risk_state,
+    calculationVersion: r.calculation_version,
+  }))
+
+  const reviewRequired = mapped
+    .filter((r) => r.thresholdEvent !== 'NONE' || r.riskState !== 'NONE')
+    .sort((a, b) => b.consecutiveUnderWeeks - a.consecutiveUnderWeeks)
+
+  return {
+    weekStart,
+    reviewRequired,
+    noActionCount: mapped.length - reviewRequired.length,
+    total: mapped.length,
+    calculationVersion: mapped[0]?.calculationVersion ?? null,
+  }
+}
