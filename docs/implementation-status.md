@@ -241,7 +241,18 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
   (Emma Byrne → After-school run → released → Mary Byrne, with timestamps). A live parent-login render was
   not possible: the only parent linked to a child-with-history is also a platform/admin account, which the
   parent route guard redirects, and no parent-only account exists to seed from. Markup mirrors the already-
-  verified "Your requests" table on the same page. Branch `feat/parent-collection-history` (PR open).
+  verified "Your requests" table on the same page. Merged to main via **PR #32** (2026-10-03).
+
+### School Collection Service (Feature A) — refinement: printable staff roster (no migration, verified)
+- **File:** `/admin/collection/register/roster` (`src/app/(admin)/admin/collection/register/roster/page.tsx`) +
+  a date-aware "Printable roster →" link on the register. A print-friendly sheet staff carry on the run: per
+  active run a header (origin school, pickup, method, days, child count, chaperones assigned vs required with
+  an **under-ratio** flag, assigned staff) and a table of enrolled children — Collected checkbox, each child's
+  approved authorised collectors as tick-boxes, signature/time line; flags children with no approved collector.
+- **Verified:** type-check / lint / format green; **browser-tested** on localhost (After-school run → Emma Byrne
+  row, Collected box, "☐ Mary Byrne (parent)" collector tick, signature line, "0 assigned / 1 required ⚠ under
+  ratio"). Reuses the existing global `@media print` chrome-hiding (globals.css, already used by reports/attendance)
+  via `PrintButton`; no schema change. Branch `feat/collection-roster` (PR open).
 
 ### Pricing — single all-inclusive plan + no-card trial (migration 082 applied, verified)
 - **Model (user decision 2026-10-03):** ONE plan — **€74.99/month** or **€809.89/year** (true 10% off, EUR) —
