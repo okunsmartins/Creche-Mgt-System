@@ -137,20 +137,39 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ]
 
+const FUNDING_SECTION: NavSection = {
+  title: 'Funding',
+  items: [{ href: '/admin/funding', label: 'Funding & Hive', icon: Landmark }],
+}
+
 interface AdminSidebarProps {
   user: SessionUser
   logoUrl?: string | null
   /** Platform owner — shows the owner-only "Schools" (all-schools) link. */
   isOwner?: boolean
+  /** Funding & Hive Centre enabled for this tenant — shows the Funding section. */
+  fundingEnabled?: boolean
 }
 
-export function AdminSidebar({ user, logoUrl, isOwner = false }: AdminSidebarProps) {
+export function AdminSidebar({
+  user,
+  logoUrl,
+  isOwner = false,
+  fundingEnabled = false,
+}: AdminSidebarProps) {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // Insert the Funding section (before Reports) only when the tenant has the feature
+  // flag on and the user holds funding.view — otherwise the module stays hidden.
+  const showFunding = fundingEnabled && user.permissions.includes('funding.view')
+  const sections: NavSection[] = showFunding
+    ? NAV_SECTIONS.flatMap((s) => (s.title === 'Reports' ? [FUNDING_SECTION, s] : [s]))
+    : NAV_SECTIONS
+
   // All nav hrefs, for most-specific active matching (so a parent like
   // /admin/attendance and its /summary child don't both highlight).
-  const allHrefs = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href))
+  const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href))
   const matchesPath = (p: string) => pathname === p || pathname.startsWith(`${p}/`)
   const isHrefActive = (href: string) =>
     matchesPath(href) &&
@@ -209,7 +228,7 @@ export function AdminSidebar({ user, logoUrl, isOwner = false }: AdminSidebarPro
 
       {/* Navigation */}
       <nav aria-label="Admin navigation" className="flex-1 overflow-y-auto px-3 py-3">
-        {NAV_SECTIONS.map((section, si) => (
+        {sections.map((section, si) => (
           <div key={si} className={cn('mb-3', si > 0 && 'mt-1')}>
             {section.title && (
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/60">
