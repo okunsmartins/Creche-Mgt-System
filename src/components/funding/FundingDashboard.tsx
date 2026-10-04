@@ -97,6 +97,12 @@ export function FundingDashboard({
             >
               Weekly return →
             </a>
+            <a
+              href="/admin/funding/claims"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              Claims &amp; co-payments →
+            </a>
             {canManage && (
               <form action={formAction}>
                 <input type="hidden" name="weekStart" value={weekStart} />

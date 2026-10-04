@@ -201,3 +201,104 @@ export async function getNcsWeeklyReturn(
     calculationVersion: mapped[0]?.calculationVersion ?? null,
   }
 }
+
+export interface NcsChildOption {
+  id: string
+  name: string
+}
+
+/** Active NCS children (for the claim composer). */
+export async function getNcsChildOptions(schoolId: string): Promise<NcsChildOption[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('child_funding_registrations')
+    .select('student_id, students(first_name, last_name)')
+    .eq('school_id', schoolId)
+    .eq('scheme', 'NCS')
+    .eq('status', 'ACTIVE')
+  const rows =
+    (data as unknown as
+      | {
+          student_id: string
+          students: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+  // De-duplicate by student (a child could in theory have >1 active row).
+  const seen = new Map<string, string>()
+  for (const r of rows) {
+    if (!seen.has(r.student_id))
+      seen.set(
+        r.student_id,
+        [r.students?.first_name, r.students?.last_name].filter(Boolean).join(' ') ||
+          'Unnamed child',
+      )
+  }
+  return [...seen.entries()].map(([id, name]) => ({ id, name }))
+}
+
+export interface ClaimView {
+  id: string
+  studentId: string
+  childName: string
+  status: string
+  startDate: string
+  endDate: string | null
+  termMinutes: number
+  nonTermMinutes: number
+  weeklyFeeCents: number | null
+  ncsSubsidyCents: number
+  ecceSubsidyCents: number
+  discountCents: number
+  calculatedCopaymentCents: number | null
+  overrideCents: number | null
+  overrideReason: string | null
+}
+
+/** All NCS claim versions for a school, newest first. */
+export async function getClaimsForSchool(schoolId: string): Promise<ClaimView[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('ncs_claim_versions')
+    .select(
+      'id, student_id, status, start_date, end_date, term_minutes, non_term_minutes, weekly_fee_cents, ncs_subsidy_cents, ecce_subsidy_cents, discount_cents, calculated_copayment_cents, manual_override_cents, override_reason, students(first_name, last_name)',
+    )
+    .eq('school_id', schoolId)
+    .order('created_at', { ascending: false })
+  const rows =
+    (data as unknown as
+      | {
+          id: string
+          student_id: string
+          status: string
+          start_date: string
+          end_date: string | null
+          term_minutes: number
+          non_term_minutes: number
+          weekly_fee_cents: number | null
+          ncs_subsidy_cents: number
+          ecce_subsidy_cents: number
+          discount_cents: number
+          calculated_copayment_cents: number | null
+          manual_override_cents: number | null
+          override_reason: string | null
+          students: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+  return rows.map((r) => ({
+    id: r.id,
+    studentId: r.student_id,
+    childName: [r.students?.first_name, r.students?.last_name].filter(Boolean).join(' ') || '—',
+    status: r.status,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    termMinutes: r.term_minutes,
+    nonTermMinutes: r.non_term_minutes,
+    weeklyFeeCents: r.weekly_fee_cents,
+    ncsSubsidyCents: r.ncs_subsidy_cents,
+    ecceSubsidyCents: r.ecce_subsidy_cents,
+    discountCents: r.discount_cents,
+    calculatedCopaymentCents: r.calculated_copayment_cents,
+    overrideCents: r.manual_override_cents,
+    overrideReason: r.override_reason,
+  }))
+}
