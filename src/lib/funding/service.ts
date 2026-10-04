@@ -10,7 +10,7 @@ import {
   type ThresholdEvent,
   type RiskState,
 } from './ncs-compliance'
-import { weekDates, previousWeekStart, weekEnd } from './week'
+import { weekDates, previousWeekStart, weekEnd, latestCompletedWeekStart } from './week'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
 
@@ -277,4 +277,35 @@ export async function buildWeeklyCompliance(
     actionsCreated,
   })
   return { weekStart, totalChildren: children.length, clear, review, actionsCreated }
+}
+
+/**
+ * Build the weekly compliance for every tenant that has the Funding & Hive Centre
+ * enabled. Tenant-safe (each build is school-scoped) and idempotent — safe to run
+ * on a schedule. Defaults to the most recently completed reporting week.
+ */
+export async function buildWeeklyComplianceForEnabledTenants(
+  weekStart: string = latestCompletedWeekStart(),
+): Promise<{ weekStart: string; tenants: number; summaries: WeeklyBuildSummary[] }> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('tenant_funding_settings')
+    .select('school_id')
+    .eq('hive_centre_enabled', true)
+    .eq('ncs_enabled', true)
+  const schoolIds = ((data as { school_id: string }[] | null) ?? []).map((r) => r.school_id)
+
+  const summaries: WeeklyBuildSummary[] = []
+  for (const schoolId of schoolIds) {
+    try {
+      summaries.push(await buildWeeklyCompliance(schoolId, weekStart))
+    } catch (err) {
+      logger.error('ncs_weekly_build_tenant_failed', {
+        schoolId,
+        weekStart,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
+    }
+  }
+  return { weekStart, tenants: schoolIds.length, summaries }
 }

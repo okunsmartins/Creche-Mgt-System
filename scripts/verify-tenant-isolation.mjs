@@ -219,6 +219,54 @@ async function main() {
   created.collectionRegister = creg.data?.id
   ok('seed: collection register row for Tenant A', !creg.error, creg.error?.message)
 
+  // Funding & Hive Centre (Phase 1) rows for Tenant A.
+  const fcfg = await admin
+    .from('funding_programme_config')
+    .insert({
+      school_id: tenantA,
+      programme: 'NCS',
+      programme_year: '2026/2027',
+      rules_version: 'ncs-2026.1',
+    })
+    .select('id')
+    .single()
+  created.fundingConfig = fcfg.data?.id
+  ok('seed: funding_programme_config for Tenant A', !fcfg.error, fcfg.error?.message)
+
+  const snap = await admin
+    .from('ncs_weekly_compliance_snapshots')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      week_start: '2020-01-06', // synthetic historic Monday — avoids colliding with real snapshots
+      claimed_minutes: 2400,
+      under_attended: true,
+      consecutive_under_attendance_weeks: 8,
+      threshold_event: 'UNDER_8',
+      calculation_version: 'ncs-2026.1',
+    })
+    .select('id')
+    .single()
+  created.ncsSnapshot = snap.data?.id
+  ok('seed: ncs_weekly_compliance_snapshot for Tenant A', !snap.error, snap.error?.message)
+
+  const hact = await admin
+    .from('hive_action_items')
+    .insert({
+      school_id: tenantA,
+      programme: 'NCS',
+      action_type: 'NCS_UNDER_ATTENDANCE_8W',
+      entity_type: 'child',
+      entity_id: childA,
+      severity: 'ACTION',
+      status: 'OPEN',
+      description: 'ISO-TEST under-attendance action',
+    })
+    .select('id')
+    .single()
+  created.hiveAction = hact.data?.id
+  ok('seed: hive_action_item for Tenant A', !hact.error, hact.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
   const tenantAIds = [
@@ -230,6 +278,9 @@ async function main() {
     created.collectionRun,
     created.collectionEnrolment,
     created.collectionRegister,
+    created.fundingConfig,
+    created.ncsSnapshot,
+    created.hiveAction,
   ]
   for (const table of [
     'fee_schedules',
@@ -240,6 +291,9 @@ async function main() {
     'collection_runs',
     'collection_enrolments',
     'collection_register',
+    'funding_programme_config',
+    'ncs_weekly_compliance_snapshots',
+    'hive_action_items',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -336,6 +390,28 @@ async function main() {
     )
   }
 
+  // ── 1f. Action guard: Tenant B can't resolve Tenant A's Hive action ───────────
+  // Mirrors updateHiveActionAction `.eq('id', <row>).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('hive_action_items')
+      .update({ status: 'DISMISSED_WITH_REASON', dismissed_reason: 'HIJACK' })
+      .eq('id', created.hiveAction)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot resolve Tenant A hive action', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('hive_action_items')
+      .select('status')
+      .eq('id', created.hiveAction)
+      .single()
+    ok(
+      'cross-tenant: Tenant A hive action left intact',
+      still?.status === 'OPEN',
+      `status=${still?.status}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
@@ -346,6 +422,9 @@ async function main() {
     'collection_runs',
     'collection_enrolments',
     'collection_register',
+    'funding_programme_config',
+    'ncs_weekly_compliance_snapshots',
+    'hive_action_items',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -374,6 +453,12 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.hiveAction)
+    await admin.from('hive_action_items').delete().eq('id', created.hiveAction)
+  if (created.ncsSnapshot)
+    await admin.from('ncs_weekly_compliance_snapshots').delete().eq('id', created.ncsSnapshot)
+  if (created.fundingConfig)
+    await admin.from('funding_programme_config').delete().eq('id', created.fundingConfig)
   if (created.collectionRegister)
     await admin.from('collection_register').delete().eq('id', created.collectionRegister)
   if (created.collectionEnrolment)
