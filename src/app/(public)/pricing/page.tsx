@@ -8,18 +8,20 @@ import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
 
 export const metadata: Metadata = { title: 'Pricing' }
 
-// Everything a crèche gets on Pro. The card-at-signup free trial (started via
-// Stripe Checkout at onboarding) is a FULL Pro trial, so this same list applies
-// during the trial — there is no reduced free tier.
+// Everything a crèche gets — one plan unlocks it all. The no-card free trial grants
+// full access from day one, so this same list applies during the trial. There is no
+// reduced tier and no separate SMS add-on: texting is included.
 const FEATURES: string[] = [
+  'Text parents (SMS) — 500 texts/month included',
   'Online payment collection (activities, trips, books)',
   'Guest & parent payments',
-  'Pupil management & class lists',
-  'Email receipts',
-  'Payment links',
-  'Instalment payments',
+  'Child management, rooms & daily check-in',
+  'Fees, invoices & NCS subvention',
+  'School collection & authorised collectors',
+  'Payment links & instalments',
   'CSV import',
   'Advanced reports & analytics',
+  'Email receipts & reminders',
 ]
 
 export default async function PricingPage({
@@ -37,19 +39,19 @@ export default async function PricingPage({
     <>
       {reason === 'start_trial' && (
         <div className="border-b border-primary/20 bg-primary/5 px-4 py-3 text-center text-sm text-primary">
-          Add a card below to <strong>start your {TRIAL_PERIOD_DAYS}-day free trial</strong> — you
-          won&apos;t be charged until it ends, and you can cancel anytime.
+          Create your portal to <strong>start your {TRIAL_PERIOD_DAYS}-day free trial</strong> — no
+          card required, and you can cancel anytime.
         </div>
       )}
       {reason === 'trial_ended' && (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
           Your crèche&apos;s <strong>{TRIAL_PERIOD_DAYS}-day free trial has ended</strong>.
-          Subscribe to Pro below to continue using the portal.
+          Subscribe below to continue using the portal.
         </div>
       )}
       {locked && (
         <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-          That&apos;s a <strong>Pro</strong> feature. Subscribe below to unlock it for your crèche.
+          Your <strong>free trial has ended</strong>. Subscribe below to unlock it for your crèche.
         </div>
       )}
       {/* Hero */}
@@ -63,11 +65,11 @@ export default async function PricingPage({
             Plans &amp; pricing
           </div>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Simple pricing for <span className="text-primary">your crèche</span>
+            One simple price for <span className="text-primary">your crèche</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Try every feature free for {TRIAL_PERIOD_DAYS} days. Add a card to start — you
-            won&apos;t be charged until the trial ends, and you can cancel anytime.
+            Every feature, SMS included — one plan. Try it free for {TRIAL_PERIOD_DAYS} days,{' '}
+            <strong>no card required</strong>. Cancel anytime.
           </p>
         </div>
       </section>
@@ -75,14 +77,13 @@ export default async function PricingPage({
       {/* Plans */}
       <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Free trial */}
+          {/* Free trial — no card */}
           <div className="card flex flex-col p-6">
             <h2 className="text-lg font-semibold text-text-primary">
               {TRIAL_PERIOD_DAYS}-day free trial
             </h2>
             <p className="mt-1 text-sm text-text-muted">
-              Full access to every feature. Card required to start — no charge for{' '}
-              {TRIAL_PERIOD_DAYS} days.
+              Full access to every feature — <strong>no card required</strong> to start.
             </p>
             <p className="mt-4 text-3xl font-bold text-text-primary">
               €0
@@ -92,7 +93,7 @@ export default async function PricingPage({
               </span>
             </p>
             <p className="mt-1 text-sm text-text-muted">
-              Then {prices.monthly ?? 'Pro'}/month to keep your portal.
+              Add your details after the trial to keep your portal.
             </p>
             <Link
               href="/get-started"
@@ -102,14 +103,14 @@ export default async function PricingPage({
             </Link>
           </div>
 
-          {/* Pro */}
+          {/* The single Creche Wise plan */}
           <div className="card relative flex flex-col border-primary/40 p-6 shadow-glow">
             <div className="absolute -top-3 right-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
-              Most popular
+              Everything included
             </div>
-            <h2 className="text-lg font-semibold text-text-primary">Pro</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Creche Wise</h2>
             <p className="mt-1 text-sm text-text-muted">
-              Everything your crèche office needs, after your trial.
+              Every feature, SMS included — after your free trial.
             </p>
             <p className="mt-4 text-3xl font-bold text-text-primary">
               {prices.monthly ?? '€—'}
@@ -117,7 +118,8 @@ export default async function PricingPage({
             </p>
             {prices.annual && (
               <p className="mt-1 text-sm text-text-muted">
-                or {prices.annual}/year — save vs. paying monthly
+                or {prices.annual}/year —{' '}
+                <span className="font-semibold text-primary">save 10%</span>
               </p>
             )}
             <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -150,8 +152,8 @@ export default async function PricingPage({
                 </p>
               )}
               <p className="text-center text-xs text-text-muted">
-                Card required. Billing starts today if your {TRIAL_PERIOD_DAYS}-day free trial has
-                already ended. Admin sign-in required.
+                No card needed to start your trial. Subscribe anytime from your admin portal. Admin
+                sign-in required.
               </p>
             </div>
           </div>
@@ -163,8 +165,8 @@ export default async function PricingPage({
             Everything included
           </h2>
           <p className="mt-1 text-center text-sm text-text-muted">
-            Every feature below is available during your {TRIAL_PERIOD_DAYS}-day free trial and on
-            Pro.
+            One plan unlocks everything below — free during your {TRIAL_PERIOD_DAYS}-day trial, then
+            on your subscription.
           </p>
           <ul className="mx-auto mt-6 grid max-w-2xl gap-3 sm:grid-cols-2">
             {FEATURES.map((label) => (

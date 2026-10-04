@@ -58,7 +58,7 @@ function makeSub(overrides: Record<string, unknown> = {}): Stripe.Subscription {
 }
 
 describe('buildSubscriptionSyncPayload', () => {
-  it('maps an active subscription to a pro/active payload', () => {
+  it('maps an active subscription to a pro/active payload (SMS included)', () => {
     const payload = buildSubscriptionSyncPayload(makeSub())
     expect(payload).toEqual({
       stripe_subscription_id: 'sub_123',
@@ -68,43 +68,32 @@ describe('buildSubscriptionSyncPayload', () => {
       current_period_end: '2023-11-14T22:13:20.000Z',
       cancel_at_period_end: false,
       trial_ends_at: null,
-      sms_enabled: false,
+      sms_enabled: true,
     })
   })
 
-  it('sets sms_enabled when the subscription is on a configured Pro+SMS price', () => {
-    const sub = makeSub({ items: { data: [{ price: { id: 'price_sms_monthly' } }] } })
-    const payload = buildSubscriptionSyncPayload(sub, ['price_sms_monthly', 'price_sms_annual'])
-    expect(payload.sms_enabled).toBe(true)
+  it('includes SMS for any paid plan, regardless of the price id', () => {
+    const sub = makeSub({ items: { data: [{ price: { id: 'price_any' } }] } })
+    expect(buildSubscriptionSyncPayload(sub).sms_enabled).toBe(true)
   })
 
-  it('leaves sms_enabled false for a plain Pro price', () => {
-    const sub = makeSub({ items: { data: [{ price: { id: 'price_pro_monthly' } }] } })
-    const payload = buildSubscriptionSyncPayload(sub, ['price_sms_monthly', 'price_sms_annual'])
-    expect(payload.sms_enabled).toBe(false)
-  })
-
-  it('never enables SMS when no SMS price ids are configured', () => {
-    const sub = makeSub({ items: { data: [{ price: { id: 'price_sms_monthly' } }] } })
-    expect(buildSubscriptionSyncPayload(sub, []).sms_enabled).toBe(false)
-    expect(buildSubscriptionSyncPayload(sub).sms_enabled).toBe(false)
-  })
-
-  it('carries trialing status, trial end date and keeps pro plan', () => {
+  it('carries trialing status, trial end date, keeps pro plan and includes SMS', () => {
     const payload = buildSubscriptionSyncPayload(
       makeSub({ status: 'trialing', trial_end: 1_700_500_000 }),
     )
     expect(payload.status).toBe('trialing')
     expect(payload.plan).toBe('pro')
     expect(payload.trial_ends_at).toBe('2023-11-20T17:06:40.000Z')
+    expect(payload.sms_enabled).toBe(true)
   })
 
-  it('reverts plan to free when cancelled and surfaces cancel_at_period_end', () => {
+  it('reverts plan to free when cancelled, disables SMS, surfaces cancel_at_period_end', () => {
     const payload = buildSubscriptionSyncPayload(
       makeSub({ status: 'canceled', cancel_at_period_end: true }),
     )
     expect(payload.status).toBe('cancelled')
     expect(payload.plan).toBe('free')
+    expect(payload.sms_enabled).toBe(false)
     expect(payload.cancel_at_period_end).toBe(true)
   })
 

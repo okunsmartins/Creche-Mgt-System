@@ -37,6 +37,7 @@ const NAV: NavEntry[] = [
     items: [
       { href: '/parent/attendance', label: 'Attendance' },
       { href: '/parent/assignments', label: 'Assignments' },
+      { href: '/parent/learning-journal', label: 'Learning Journal' },
       { href: '/parent/reports', label: 'Reports' },
     ],
   },

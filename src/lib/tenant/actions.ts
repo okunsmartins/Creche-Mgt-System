@@ -55,7 +55,9 @@ export async function createSchoolAction(
   }
 
   logger.info('school_provisioned', { schoolId: result.schoolId })
-  // Card-at-signup: the school has no access yet — send the new admin to add a
-  // card and start their Stripe-managed free trial (auto-charges when it ends).
-  redirect('/onboarding/billing')
+  // No-card trial: provisioning grants a free trial with full access immediately
+  // (status 'trialing'), so the new admin goes straight to the dashboard. They add
+  // payment details later (from /admin/subscription or the paywall) to continue
+  // after the trial ends.
+  redirect('/admin/dashboard')
 }

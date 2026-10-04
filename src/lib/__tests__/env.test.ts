@@ -34,7 +34,7 @@ describe('env (lazy access)', () => {
 
   it('optional vars fall back without throwing', async () => {
     const { serverEnv } = await import('../env')
-    expect(() => serverEnv.stripeProSmsMonthlyPriceId).not.toThrow()
+    expect(() => serverEnv.stripeProMonthlyPriceId).not.toThrow()
     expect(serverEnv.emailFromName).toBeTruthy() // has a default fallback
   })
 })
