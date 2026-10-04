@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import type { SessionUser } from '@/types'
 import { fundingEnabled } from './access'
+import { reconcileClaimBilling } from './reconcile'
 import { CURRENT_NCS_RULES_VERSION } from './rules'
 import {
   computeCopayment,
@@ -116,7 +117,19 @@ export async function saveClaimAction(
     }
   }
 
+  // Reconcile the prepared co-payment against the parent's actual billing (best
+  // effort — a mismatch raises a Hive action; it never blocks or changes the save).
+  try {
+    await reconcileClaimBilling(g.schoolId, studentId, calculated)
+  } catch (err) {
+    logger.error('copayment_reconcile_failed', {
+      schoolId: g.schoolId,
+      error: err instanceof Error ? err.message : 'Unknown error',
+    })
+  }
+
   revalidatePath('/admin/funding/claims')
+  revalidatePath('/admin/funding')
   return { success: true }
 }
 
