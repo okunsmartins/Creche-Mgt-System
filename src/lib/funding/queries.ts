@@ -1,5 +1,6 @@
 import 'server-only'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { diffCoreProfiles, type CoreProfile, type ProfileChange } from './core-funding'
 
 export interface HiveActionView {
   id: string
@@ -396,4 +397,64 @@ export async function getReadinessItems(
     dueDate: r.due_date,
     notes: r.notes,
   }))
+}
+
+export interface CoreFundingView {
+  programmeYear: string
+  snapshot: CoreProfile | null
+  snapshotCapturedAt: string | null
+  current: CoreProfile
+  changes: ProfileChange[]
+}
+
+/**
+ * Core Funding shadow view: the last verified snapshot vs the current live profile.
+ * staffCount (active teachers) and roomCount (active classes) are derived live;
+ * totalCapacity and operatingWeeks are carried from the snapshot (manager-maintained,
+ * since Creche Wise doesn't model room capacity), so drift auto-detects staff/room
+ * changes — the spec's headline Core Funding signals.
+ */
+export async function getCoreFundingView(
+  schoolId: string,
+  programmeYear: string,
+): Promise<CoreFundingView> {
+  const db = createSupabaseAdminClient()
+
+  const [{ count: staffCount }, { count: roomCount }, { data: snapRow }] = await Promise.all([
+    db
+      .from('teachers')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('is_active', true),
+    db
+      .from('classes')
+      .select('id', { count: 'exact', head: true })
+      .eq('school_id', schoolId)
+      .eq('is_active', true),
+    db
+      .from('core_funding_snapshots')
+      .select('profile, created_at')
+      .eq('school_id', schoolId)
+      .eq('programme_year', programmeYear)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  const snap = snapRow as { profile: CoreProfile; created_at: string } | null
+  const snapshot = snap?.profile ?? null
+  const current: CoreProfile = {
+    staffCount: staffCount ?? 0,
+    roomCount: roomCount ?? 0,
+    totalCapacity: snapshot?.totalCapacity ?? 0,
+    operatingWeeks: snapshot?.operatingWeeks ?? 0,
+  }
+  const changes = snapshot ? diffCoreProfiles(snapshot, current) : []
+  return {
+    programmeYear,
+    snapshot,
+    snapshotCapturedAt: snap?.created_at ?? null,
+    current,
+    changes,
+  }
 }
