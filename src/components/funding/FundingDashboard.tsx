@@ -115,6 +115,12 @@ export function FundingDashboard({
             >
               Programme readiness →
             </a>
+            <a
+              href="/admin/funding/core-funding"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              Core Funding →
+            </a>
             {canManage && (
               <form action={formAction}>
                 <input type="hidden" name="weekStart" value={weekStart} />
