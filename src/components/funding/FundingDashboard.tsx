@@ -103,6 +103,18 @@ export function FundingDashboard({
             >
               Claims &amp; co-payments →
             </a>
+            <a
+              href="/admin/funding/ecce"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              ECCE →
+            </a>
+            <a
+              href="/admin/funding/readiness"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              Programme readiness →
+            </a>
             {canManage && (
               <form action={formAction}>
                 <input type="hidden" name="weekStart" value={weekStart} />

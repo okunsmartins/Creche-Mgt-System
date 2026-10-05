@@ -302,3 +302,98 @@ export async function getClaimsForSchool(schoolId: string): Promise<ClaimView[]>
     overrideReason: r.override_reason,
   }))
 }
+
+export interface EcceRegistrationView {
+  id: string
+  studentId: string
+  childName: string
+  ppsnPresent: boolean
+  session: string | null
+  aimLevel7: boolean
+  startDateSet: boolean
+  preparedAt: string | null
+  submittedAt: string | null
+}
+
+/** ECCE registrations for a school (PPSN presence only — never the value). */
+export async function getEcceRegistrations(schoolId: string): Promise<EcceRegistrationView[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('child_funding_registrations')
+    .select(
+      'id, student_id, pps_number_encrypted, ecce_session, aim_level_7, start_date, ecce_registration_prepared_at, ecce_registration_submitted_at, students(first_name, last_name)',
+    )
+    .eq('school_id', schoolId)
+    .eq('scheme', 'ECCE')
+    .order('created_at', { ascending: false })
+  const rows =
+    (data as unknown as
+      | {
+          id: string
+          student_id: string
+          pps_number_encrypted: string | null
+          ecce_session: string | null
+          aim_level_7: boolean
+          start_date: string | null
+          ecce_registration_prepared_at: string | null
+          ecce_registration_submitted_at: string | null
+          students: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+  return rows.map((r) => ({
+    id: r.id,
+    studentId: r.student_id,
+    childName: [r.students?.first_name, r.students?.last_name].filter(Boolean).join(' ') || '—',
+    ppsnPresent: !!r.pps_number_encrypted,
+    session: r.ecce_session,
+    aimLevel7: r.aim_level_7,
+    startDateSet: !!r.start_date,
+    preparedAt: r.ecce_registration_prepared_at,
+    submittedAt: r.ecce_registration_submitted_at,
+  }))
+}
+
+export interface ReadinessItemView {
+  id: string
+  itemKey: string
+  label: string
+  category: string | null
+  status: string
+  dueDate: string | null
+  notes: string | null
+}
+
+/** Programme Readiness checklist items for a school + year (empty until seeded). */
+export async function getReadinessItems(
+  schoolId: string,
+  programmeYear: string,
+): Promise<ReadinessItemView[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('funding_readiness_items')
+    .select('id, item_key, label, category, status, due_date, notes')
+    .eq('school_id', schoolId)
+    .eq('programme_year', programmeYear)
+    .order('category')
+  return (
+    (data as
+      | {
+          id: string
+          item_key: string
+          label: string
+          category: string | null
+          status: string
+          due_date: string | null
+          notes: string | null
+        }[]
+      | null) ?? []
+  ).map((r) => ({
+    id: r.id,
+    itemKey: r.item_key,
+    label: r.label,
+    category: r.category,
+    status: r.status,
+    dueDate: r.due_date,
+    notes: r.notes,
+  }))
+}
