@@ -6,24 +6,27 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-09-30
+**Last updated:** 2026-10-06
+**Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
+Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
+See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 **Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
 🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
 🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
 
 ---
 
-## Verification snapshot (2026-09-30)
+## Verification snapshot (2026-10-06)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **810 passed / 68 files** |
-| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean |
-| Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean |
-| Format | `npm run format:check` (`prettier --check`) | ✅ all files match |
-| DB migrations 068–077 applied | verified via service-role scripts | ✅ tables/grants/RPC/guard-trigger, DOB, check-ins, daily records, enquiries + RLS lock-downs all present |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **897 passed / 78 files** (re-run 2026-10-06, exit 0) |
+| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean (2026-10-06) |
+| Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean (2026-10-06) |
+| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (funding + teachers re-checked 2026-10-06) |
+| DB migrations 068–087 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–087** Funding & Hive Centre (Phases 1–4); user-applied, "Success" |
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
-| Tenant isolation + idempotency (fee tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **10/10** (scoping, RLS deny-by-default, dup invoice-number rejected) |
+| Tenant isolation + idempotency (fee + collection + part of funding) | `node scripts/verify-tenant-isolation.mjs` | ✅ scoping/RLS/dup-reject; funding tables **partially** covered (`funding_programme_config`, `ncs_weekly_compliance_snapshots`, `hive_action_items`). ⚠️ `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots` **not yet in the script** |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
@@ -39,16 +42,125 @@ is run manually — CI has no DB.
 session feature landed on `main` via PR (build, Prettier/CI fix, isolation tests, DOB/age, check-in+ratio UI,
 daily records, enquiries CRM, arrears, reminders, subvention report, commercial dashboard, security lock-downs).
 **CI** (`.github/workflows/ci.yml`) runs Lint & Type Check (type-check + lint + `format:check`), Unit Tests,
-Production Build on every PR; E2E job defined but not passing yet. ⚠️ **Branch protection still not enabled** on
-`main` — until it is, red/unchecked merges remain possible (see `docs/setup/github-branch-protection.md`).
+Production Build on every PR; E2E job defined but **skipped** (not passing yet). ✅ **Branch protection ENABLED** on
+`main` (2026-09-30, ruleset "protect-main": PR required + 3 status checks [Lint & Type Check / Unit Tests / Production
+Build] + up-to-date + conversation resolution; direct pushes rejected). Phases 1–4 + the teacher-edit fix (PR #43) all
+merged green through this gate.
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–080 applied (**078 authorised_collectors + 079 school-collection config + 080 collection_enrolments applied + DB-verified
-2026-10-02**: insert, CHECK
-constraints, partial-unique, updated_at trigger, anon-blocked). Test tenant: **Angels Nest Crèche**
+Migrations 001–087 applied (**081 collection register; 082 SMS allowance; 083 child observations; 084–087 Funding &
+Hive Centre Phases 1–4** — all applied + DB-verified; 087 `core_funding_snapshots` confirmed by a successful write in
+the browser E2E). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
+
+---
+
+## Funding & Hive Centre — Phases 1–4 (Hive & Funding Automation Addendum)
+
+> Additive layer, **feature-flagged per tenant** (`tenant_funding_settings.hive_centre_enabled`, ships **dark**).
+> Governing rule: **proactive compliance, not competitor parity**, and **no direct Hive automation** — there is no Hive
+> API, so the only "integration" is prepare / validate / export for the human to submit. Migrations **084–087** applied.
+> Phase-0 map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
+> Code: `src/lib/funding/*`, `src/components/funding/*`, `src/app/(admin)/admin/funding/*`,
+> `src/app/api/{cron/ncs-weekly-compliance,admin/funding/*}`.
+
+**2026-10-06 review result:** type-check, ESLint, Prettier all clean; **897/78 vitest pass** (of which the funding pure
+suites = 47: `week` 5, `ncs-compliance` 16, `copayment` 12, `ecce-readiness` 9, `core-funding` 5). **No reproducible
+defects found** in the Phase 1–4 logic reviewed (NCS engine, co-payment, reconciliation, access gate, cron guard,
+permission gates). The outstanding items below are **unbuilt features**, not bugs.
+
+### ✅ Completed & verified (automated test + browser E2E on Angels Nest)
+
+| Phase | What | Key files | Verification |
+|---|---|---|---|
+| **1 — NCS weekly compliance** | Versioned rules (`ncs-2026.1`: 4-wk absence / 8-wk under / 12-wk continued / pre-threshold wk 6–7 / closure-pauses); pure weekly engine (under-attendance, consecutive counters, threshold + risk, ECCE-minute exclusion, term/non-term); immutable weekly snapshots; prioritised **explainable** action queue; weekly-return review pack (printable) + CSV export; Mon-07:00 cron | `rules.ts`, `ncs-compliance.ts`, `week.ts`, `service.ts`, `queries.ts`, `actions.ts`, `FundingDashboard.tsx`, `/admin/funding` + `/ncs-weekly`, `api/cron/ncs-weekly-compliance`, `api/admin/funding/ncs-weekly` (mig 084) | 21 unit tests; browser E2E: 8-wk under-attendance → ACTION with explanation + due date |
+| **2 — Claims & co-payment** | Claim status machine (DRAFT⇄READY→VERIFIED→SUBMITTED_EXTERNALLY / SUPERSEDED); co-payment = fee − NCS − ECCE − discount (floored); mandatory-fields from 31 Jul 2026; **3-way billing reconciliation** → deduped mismatch action, **never mutates invoice/claim**; versioned claim snapshots; CSV export | `copayment.ts`, `reconcile.ts`, `claim-actions.ts`, `ClaimsPanel.tsx`, `/admin/funding/claims`, `api/admin/funding/claims` (mig 085) | 12 unit tests; browser E2E: €75.40 co-payment; lifecycle Draft→Submitted; €200 vs €75.40 mismatch action |
+| **3 — ECCE + Programme Readiness** | ECCE prep (sessions AM/PM/OTHER, Eircode check, **AIM-Level-7 gate** requiring confirmed session before "ready"); mark prepared/submitted; 2026/2027 readiness checklist (10 items, statuses + due dates) | `ecce.ts`, `readiness.ts`, `ecce-actions.ts`, `EccePanel.tsx`, `ReadinessPanel.tsx`, `/admin/funding/ecce` + `/readiness` (mig 086) | 9 unit tests; browser E2E: AIM-L7 "ready" blocked without session, passes with AM; checklist seeded |
+| **4 — Core Funding shadow/drift** | Last **verified** service profile snapshot vs **live** staff/room counts (+ manager-held capacity/weeks); drift detection; "Flag for review" → explainable `CORE_FUNDING_DRIFT` action; immutable snapshots | `core-funding.ts`, `core-funding-actions.ts`, `queries.getCoreFundingView`, `CoreFundingPanel.tsx`, `/admin/funding/core-funding` (mig 087) | 5 unit tests; browser E2E: capture → "Matches current" → add staff → "Drift detected (Staff 3→4)" → flag → queue item |
+
+**Cross-cutting, done:** `funding.*` permissions seeded (mig 084) with non-sensitive ones mapped to `super_admin`/`school_admin`;
+**sensitive perms (`view_sensitive_identifiers`, `manage_aim`, `override_calculation`) ungranted by default**; every page
+behind `requireFundingAdmin` (admin + `funding.view` + flag → `notFound()` when off); every mutation/export gated on the
+right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions carry **no PPSN/CHICK** (names + hours/€ only).
+
+### 🟡 Built but NOT fully verified — do not report as complete
+
+- **Cross-tenant isolation**: only Phase-1 tables (`funding_programme_config`, `ncs_weekly_compliance_snapshots`,
+  `hive_action_items`) are in `scripts/verify-tenant-isolation.mjs`. **`ncs_claim_versions`, `funding_readiness_items`,
+  `core_funding_snapshots` have RLS + grants but no isolation regression test yet.** (Release-blocking per the project's
+  own rule: new tenant table ⇒ negative test in the same PR.)
+- **Programme-year rule selection**: `resolveNcsRules()` ignores the programme year (single version `ncs-2026.1`);
+  `funding_programme_config` exists but the engine does not yet read `rules_version`/deadlines from it.
+- **NCS thresholds/rates** (`NCS_RULES_2026`) are flagged **CONFIRM** against the current Pobal/NCS circular before go-live.
+- **E2E**: the addendum §17.4 acceptance scenarios are **not** written as Playwright specs; CI's E2E job is skipped.
+
+### ⬜ Outstanding (not started)
+
+- **Proactive event wiring (addendum §9) — the core differentiator, largely NOT automatic.** Compliance runs only from
+  the manual **"Run this week's compliance"** button and the weekly cron; Core-Funding drift and co-payment mismatch are
+  raised **on manual action / on claim-save**, not automatically when the operational record changes. No operational
+  mutation (attendance edit, fee/discount change, staff/room change, calendar change) publishes a domain event today
+  (verified: nothing outside `src/lib/funding` imports a funding service except the admin layout nav-gate + the cron).
+  **Missing time-based scans:** CHICK/award-expiry scan, readiness-drift scan, service-calendar/closure triggers.
+- **Phase 5 — AIM** (restricted/sensitive domain): not started. Only an `aim_level_7` boolean exists (for the ECCE gate);
+  no `aim_cases` table, consent metadata, restricted workflow, or narrowed permission wiring.
+- **Immutable submission snapshots / evidence packs** (`funding_submission_snapshots`: canonical JSON + rendered PDF/CSV
+  + data-source/rule versions + verifier + external-submission evidence): not built. Only CSV exports + a printable
+  weekly-return page exist.
+- **Sensitive-identifier controlled reveal + audit:** PPSN is shown as **presence-only** (`ppsnPresent`, never revealed) —
+  safe by default — but the permission-gated reveal, the reveal/export **audit events**, and CHICK surfacing are not built.
+  No funding-specific writes to the audit log yet (`FundingAuditService` not implemented).
+- **`HiveIntegrationAdapter` interface + `ManualHiveAdapter`** as a named abstraction: not implemented (CSV export is the
+  de-facto manual path; formalise before any future Phase 6 import adapter).
+- **Child-profile Funding panel/tab**: not built (funding lives only under `/admin/funding/*`).
+
+### Manual configuration steps (funding)
+
+1. **Migrations 084–087** — already applied to prod (`xpbavfutfejlfbmnntyl`). Re-apply by pasting each file into the
+   Supabase SQL editor if restoring an environment.
+2. **Turn the module on per crèche** (it ships dark):
+   `UPDATE public.tenant_funding_settings SET hive_centre_enabled = true WHERE school_id = '<tenant-uuid>';`
+3. **`CRON_SECRET`** must be set in Vercel (already in local `.env.local`). The weekly cron is registered in `vercel.json`
+   at `0 7 * * 1` (Mon 07:00) → `/api/cron/ncs-weekly-compliance` (Bearer-authenticated).
+4. **Grant sensitive permissions deliberately** (left unmapped on purpose) when their features are built —
+   `view_sensitive_identifiers`, `manage_aim`, `override_calculation` via `role_permissions`.
+5. **Confirm NCS rules** (`src/lib/funding/rules.ts`, flagged CONFIRM) with a Pobal/NCS SME before enabling for a live crèche.
+
+### Security considerations (funding)
+
+- PPSN stays **encrypted at rest** (`pps_number_encrypted`, `src/lib/crypto`) and is **never revealed** in the funding UI
+  (presence boolean only); CHICK is not surfaced. Controlled reveal + audit remain **TODO** before those identifiers are
+  ever displayed/exported.
+- All funding queries scope by authenticated `school_id` (service-role bypasses RLS); 084–087 tables have RLS + explicit
+  grants (SELECT→`authenticated`, full→`service_role`); anon blocked. **Finish isolation coverage** for the three Phase 2–4
+  tables above before go-live.
+- Weekly + core snapshots are **immutable** (no `updated_at` trigger) so rule changes never rewrite history.
+- Action/notification text must never contain PPSN/CHICK (current descriptions comply).
+
+### Exact commands to continue (funding)
+
+```bash
+# repo root: E:\First Stack Solutions\Creche_Mgt_System
+npm run test -- run src/lib/funding                 # 47 funding unit tests
+npm run type-check && npm run lint && npm run format:check
+node scripts/verify-tenant-isolation.mjs           # extend first for claim/readiness/core tables (needs .env.local DB)
+
+# enable the module for the test tenant, then exercise it in the browser
+#   SQL: UPDATE public.tenant_funding_settings SET hive_centre_enabled = true WHERE school_id = '<angels-nest-uuid>';
+npm run dev                                         # http://localhost:3000/admin/funding  (manager@angelsnest.ie)
+
+# fire the weekly cron locally
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/ncs-weekly-compliance
+
+# recommended next build: Phase 5 (AIM) OR event-wiring (§9) — both on a feature branch off main
+git checkout -b feat/funding-aim         # or feat/funding-event-wiring
+```
+
+**Recommended next for funding:** (1) extend the isolation script to the three uncovered tables (release-blocker);
+(2) wire operational mutations → compliance (§9) so the queue is truly proactive; (3) Phase 5 AIM behind its own
+permission + privacy review; (4) immutable submission snapshots/evidence packs.
 
 ---
 
@@ -392,7 +504,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 ```bash
 # repo root: E:\First Stack Solutions\Creche_Mgt_System
 npm ci                          # install deps (first time)
-npm run test -- run             # full vitest suite (810 tests / 68 files)
+npm run test -- run             # full vitest suite (897 tests / 78 files as of 2026-10-06)
 npm run type-check              # tsc --noEmit
 npm run lint                    # eslint src
 npm run format:check            # prettier --check  (CI blocks on this)
@@ -417,7 +529,9 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
 **Recommended next:**
-1. **Enable branch protection** on `main` (checklist in `docs/setup/github-branch-protection.md`) so red PRs stop merging.
+1. **Funding & Hive Centre** (see the dedicated section above): extend tenant-isolation to the three uncovered Phase 2–4
+   tables (release-blocker), wire operational mutations → compliance (addendum §9), then Phase 5 (AIM) behind its own
+   permission + privacy review. (Branch protection on `main` is already **enabled** — ruleset "protect-main".)
 2. **Set up providers** (Resend → Twilio → payments) per [provider-setup.md](provider-setup.md), then **deploy to Vercel**
    per [deploy-checklist.md](deploy-checklist.md) + [domain-setup-crechewise.md](domain-setup-crechewise.md). Payments are
    **per crèche**: set the platform-level Stripe/Revolut prod keys in Vercel as the fallback, then **each crèche** connects
