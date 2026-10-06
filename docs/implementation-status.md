@@ -122,9 +122,16 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
   `funding.export`, mark-submitted = `funding.mark_submitted`. ⚠️ **Write path pending migration 089** (page renders + the
   gate is correct; verified in-browser). Rendered PDF export + claims/ECCE snapshot kinds are a follow-up (the table's
   `kind` column is ready for them).
-- **Sensitive-identifier controlled reveal + audit:** PPSN is shown as **presence-only** (`ppsnPresent`, never revealed) —
-  safe by default — but the permission-gated reveal, the reveal/export **audit events**, and CHICK surfacing are not built.
-  No funding-specific writes to the audit log yet (`FundingAuditService` not implemented).
+- **Sensitive-identifier controlled reveal + audit — ✅ BUILT (PPSN; CHICK via the same action).** PPSN stays
+  presence-only by default; a **controlled reveal** is gated behind `funding.view_sensitive_identifiers` (ungranted by
+  default — ships dark, like AIM) and every reveal writes an **audit event** (`funding.ppsn_revealed` /
+  `funding.chick_revealed`, recording *which* identifier, never the value). `sensitive-actions.revealIdentifierAction`
+  decrypts the PPSN (`decryptSecret`) / returns CHICK, school-scoped; `EccePanel` shows a **Reveal** button only to a
+  holder of the permission and displays the value transiently (never persisted). Migration **090** adds the audit enum
+  values. ⚠️ Verified in-browser that the gate is dark (a registration with PPSN on file shows **no** Reveal button for an
+  admin without the permission). **Full reveal + audit E2E pending** the owner applying migration 090 **and** deliberately
+  granting `funding.view_sensitive_identifiers` after a privacy review. CHICK is currently revealable via the same action
+  but not yet surfaced in a UI (follow-up).
 - **`HiveIntegrationAdapter` interface + `ManualHiveAdapter`** as a named abstraction: not implemented (CSV export is the
   de-facto manual path; formalise before any future Phase 6 import adapter).
 - **Child-profile Funding panel/tab**: not built (funding lives only under `/admin/funding/*`).
@@ -176,10 +183,11 @@ git checkout -b feat/funding-aim         # or feat/funding-event-wiring
 
 **Recommended next for funding** (items 1–3 below are **done** — isolation coverage ✅, §9 event-wiring ✅, AIM built &
 gate-verified ✅): (1) **enable AIM** — grant `funding.manage_aim` after a privacy review, then verify the case lifecycle
-E2E; (2) the last §9 piece — a service-calendar/closure trigger (needs a calendar/closures model); (3) sensitive-identifier
-controlled reveal + audit; (4) wire `funding_programme_config` into `resolveNcsRules`. (Done since last revision: award-expiry
-+ readiness-drift scans ✅, child-profile funding panel ✅, submission snapshots ✅ pending migration 089, PDF/claims/ECCE
-snapshot kinds as follow-ups.)
+E2E; (2) the last §9 piece — a service-calendar/closure trigger (needs a calendar/closures model); (3) wire
+`funding_programme_config` into `resolveNcsRules`; (4) surface CHICK reveal in the UI + submission PDF/claims/ECCE kinds.
+(Done since last revision: award-expiry + readiness-drift scans ✅, child-profile funding panel ✅, submission snapshots ✅
+[mig 089 applied, verified], sensitive-identifier PPSN reveal + audit ✅ [mig 090, gate verified; full reveal pending the
+permission grant].)
 
 ---
 

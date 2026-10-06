@@ -10,6 +10,7 @@ export default async function EccePage() {
   const user = await requireFundingAdmin()
   const registrations = await getEcceRegistrations(user.schoolId!)
   const canManage = hasFundingPermission(user, 'funding.manage_ecce')
+  const canViewSensitive = hasFundingPermission(user, 'funding.view_sensitive_identifiers')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -21,7 +22,11 @@ export default async function EccePage() {
           Nothing is submitted to Hive automatically.
         </p>
       </div>
-      <EccePanel registrations={registrations} canManage={canManage} />
+      <EccePanel
+        registrations={registrations}
+        canManage={canManage}
+        canViewSensitive={canViewSensitive}
+      />
     </div>
   )
 }

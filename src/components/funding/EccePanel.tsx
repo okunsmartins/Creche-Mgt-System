@@ -9,20 +9,34 @@ import {
   markEcceReadyAction,
   markEcceSubmittedAction,
 } from '@/lib/funding/ecce-actions'
+import { revealIdentifierAction } from '@/lib/funding/sensitive-actions'
 import { ECCE_SESSIONS, ECCE_SESSION_LABELS } from '@/lib/funding/ecce'
 import type { EcceRegistrationView } from '@/lib/funding/queries'
 
 export function EccePanel({
   registrations,
   canManage,
+  canViewSensitive = false,
 }: {
   registrations: EcceRegistrationView[]
   canManage: boolean
+  canViewSensitive?: boolean
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  // Revealed PPSN values are held transiently in component state only — never persisted.
+  const [revealedPpsn, setRevealedPpsn] = useState<Record<string, string>>({})
+
+  function reveal(id: string) {
+    setError(null)
+    startTransition(async () => {
+      const res = await revealIdentifierAction({ registrationId: id, field: 'PPSN' })
+      if (!res.ok) setError(res.error ?? 'Could not reveal the PPSN.')
+      else setRevealedPpsn((prev) => ({ ...prev, [id]: res.value }))
+    })
+  }
 
   function run(id: string, fn: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null)
@@ -66,8 +80,22 @@ export function EccePanel({
                 <tr key={r.id} className="border-b border-border/50 align-top">
                   <td className="px-4 py-3 font-medium text-text-primary">{r.childName}</td>
                   <td className="px-4 py-3">
-                    {r.ppsnPresent ? (
-                      <Badge variant="success">On file</Badge>
+                    {revealedPpsn[r.id] ? (
+                      <span className="font-mono text-text-primary">{revealedPpsn[r.id]}</span>
+                    ) : r.ppsnPresent ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="success">On file</Badge>
+                        {canViewSensitive && (
+                          <button
+                            type="button"
+                            onClick={() => reveal(r.id)}
+                            disabled={isPending}
+                            className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                          >
+                            Reveal
+                          </button>
+                        )}
+                      </div>
                     ) : (
                       <Badge variant="error">Missing</Badge>
                     )}
