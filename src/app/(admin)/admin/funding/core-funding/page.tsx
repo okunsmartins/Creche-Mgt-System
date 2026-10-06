@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requireFundingAdmin, hasFundingPermission } from '@/lib/funding/access'
 import { getCoreFundingView } from '@/lib/funding/queries'
 import { CoreFundingPanel } from '@/components/funding/CoreFundingPanel'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'Core Funding | Admin' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export default async function CoreFundingPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <FundingBackLink />
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Core Funding {PROGRAMME_YEAR}</h1>
         <p className="mt-1 text-sm text-text-muted">

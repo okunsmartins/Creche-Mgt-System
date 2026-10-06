@@ -6,6 +6,7 @@ import { latestCompletedWeekStart, reportingWeekStart, weekEnd } from '@/lib/fun
 import { PrintButton } from '@/components/ui/PrintButton'
 import { Badge } from '@/components/ui/Badge'
 import { formatDate } from '@/lib/utils'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'NCS Weekly Return | Admin' }
 export const dynamic = 'force-dynamic'
@@ -37,6 +38,7 @@ export default async function NcsWeeklyReturnPage({
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <FundingBackLink />
       <div className="no-print flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">NCS weekly return</h1>

@@ -3,6 +3,7 @@ import { requireFundingAdmin, hasFundingPermission } from '@/lib/funding/access'
 import { getSubmissionSnapshots } from '@/lib/funding/queries'
 import { latestCompletedWeekStart } from '@/lib/funding/week'
 import { SubmissionsPanel } from '@/components/funding/SubmissionsPanel'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'Submissions & evidence | Admin' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export default async function SubmissionsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      <FundingBackLink />
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Submissions &amp; evidence</h1>
         <p className="mt-1 text-sm text-text-muted">
