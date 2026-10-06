@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requireFundingAdmin, hasFundingPermission } from '@/lib/funding/access'
 import { getReadinessItems } from '@/lib/funding/queries'
 import { ReadinessPanel } from '@/components/funding/ReadinessPanel'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'Programme Readiness | Admin' }
 export const dynamic = 'force-dynamic'
@@ -15,6 +16,7 @@ export default async function ReadinessPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <FundingBackLink />
       <div>
         <h1 className="text-2xl font-bold text-text-primary">
           Programme readiness {PROGRAMME_YEAR}

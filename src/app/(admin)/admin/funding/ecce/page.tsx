@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requireFundingAdmin, hasFundingPermission } from '@/lib/funding/access'
 import { getEcceRegistrations } from '@/lib/funding/queries'
 import { EccePanel } from '@/components/funding/EccePanel'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'ECCE Registrations | Admin' }
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,7 @@ export default async function EccePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <FundingBackLink />
       <div>
         <h1 className="text-2xl font-bold text-text-primary">ECCE registrations</h1>
         <p className="mt-1 text-sm text-text-muted">

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requireFundingAimAdmin } from '@/lib/funding/access'
 import { getAimCases, getAimChildOptions } from '@/lib/funding/queries'
 import { AimPanel } from '@/components/funding/AimPanel'
+import { FundingBackLink } from '@/components/funding/FundingBackLink'
 
 export const metadata: Metadata = { title: 'AIM | Admin' }
 export const dynamic = 'force-dynamic'
@@ -16,6 +17,7 @@ export default async function AimPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
+      <FundingBackLink />
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Access and Inclusion Model (AIM)</h1>
         <p className="mt-1 text-sm text-text-muted">
