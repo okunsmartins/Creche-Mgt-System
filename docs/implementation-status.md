@@ -24,9 +24,9 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 | Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean (2026-10-06) |
 | Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean (2026-10-06) |
 | Format | `npm run format:check` (`prettier --check`) | ✅ all files match (funding + teachers re-checked 2026-10-06) |
-| DB migrations 068–087 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–087** Funding & Hive Centre (Phases 1–4); user-applied, "Success" |
+| DB migrations 068–088 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–088** Funding & Hive Centre (Phases 1–5, 088 = AIM); user-applied, "Success" |
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
-| Tenant isolation + idempotency (fee + collection + part of funding) | `node scripts/verify-tenant-isolation.mjs` | ✅ scoping/RLS/dup-reject; funding tables **partially** covered (`funding_programme_config`, `ncs_weekly_compliance_snapshots`, `hive_action_items`). ⚠️ `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots` **not yet in the script** |
+| Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
@@ -48,20 +48,20 @@ Build] + up-to-date + conversation resolution; direct pushes rejected). Phases 1
 merged green through this gate.
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–087 applied (**081 collection register; 082 SMS allowance; 083 child observations; 084–087 Funding &
-Hive Centre Phases 1–4** — all applied + DB-verified; 087 `core_funding_snapshots` confirmed by a successful write in
-the browser E2E). Test tenant: **Angels Nest Crèche**
+Migrations 001–088 applied (**081 collection register; 082 SMS allowance; 083 child observations; 084–088 Funding &
+Hive Centre Phases 1–5** — all applied + DB-verified; 087 `core_funding_snapshots` confirmed by a browser-E2E write;
+088 `aim_cases` confirmed by the re-run isolation script passing). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
 
 ---
 
-## Funding & Hive Centre — Phases 1–4 (Hive & Funding Automation Addendum)
+## Funding & Hive Centre — Phases 1–5 (Hive & Funding Automation Addendum)
 
 > Additive layer, **feature-flagged per tenant** (`tenant_funding_settings.hive_centre_enabled`, ships **dark**).
 > Governing rule: **proactive compliance, not competitor parity**, and **no direct Hive automation** — there is no Hive
-> API, so the only "integration" is prepare / validate / export for the human to submit. Migrations **084–087** applied.
+> API, so the only "integration" is prepare / validate / export for the human to submit. Migrations **084–088** applied.
 > Phase-0 map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 > Code: `src/lib/funding/*`, `src/components/funding/*`, `src/app/(admin)/admin/funding/*`,
 > `src/app/api/{cron/ncs-weekly-compliance,admin/funding/*}`.
@@ -79,18 +79,22 @@ permission gates). The outstanding items below are **unbuilt features**, not bug
 | **2 — Claims & co-payment** | Claim status machine (DRAFT⇄READY→VERIFIED→SUBMITTED_EXTERNALLY / SUPERSEDED); co-payment = fee − NCS − ECCE − discount (floored); mandatory-fields from 31 Jul 2026; **3-way billing reconciliation** → deduped mismatch action, **never mutates invoice/claim**; versioned claim snapshots; CSV export | `copayment.ts`, `reconcile.ts`, `claim-actions.ts`, `ClaimsPanel.tsx`, `/admin/funding/claims`, `api/admin/funding/claims` (mig 085) | 12 unit tests; browser E2E: €75.40 co-payment; lifecycle Draft→Submitted; €200 vs €75.40 mismatch action |
 | **3 — ECCE + Programme Readiness** | ECCE prep (sessions AM/PM/OTHER, Eircode check, **AIM-Level-7 gate** requiring confirmed session before "ready"); mark prepared/submitted; 2026/2027 readiness checklist (10 items, statuses + due dates) | `ecce.ts`, `readiness.ts`, `ecce-actions.ts`, `EccePanel.tsx`, `ReadinessPanel.tsx`, `/admin/funding/ecce` + `/readiness` (mig 086) | 9 unit tests; browser E2E: AIM-L7 "ready" blocked without session, passes with AM; checklist seeded |
 | **4 — Core Funding shadow/drift** | Last **verified** service profile snapshot vs **live** staff/room counts (+ manager-held capacity/weeks); drift detection; "Flag for review" → explainable `CORE_FUNDING_DRIFT` action; immutable snapshots | `core-funding.ts`, `core-funding-actions.ts`, `queries.getCoreFundingView`, `CoreFundingPanel.tsx`, `/admin/funding/core-funding` (mig 087) | 5 unit tests; browser E2E: capture → "Matches current" → add staff → "Drift detected (Staff 3→4)" → flag → queue item |
+| **5 — AIM (restricted/sensitive)** | AIM levels 1–7; case status machine (`PREPARING→CONSENT_RECORDED→READY→SUBMITTED_EXTERNALLY`, `CLOSED` terminal); hard **consent gate** + level + support summary before Hive prep; stored data = case fields + **brief non-clinical** summary only (never PPSN/CHICK/health); dedicated audit events; gated behind its own `funding.manage_aim` (stricter `requireFundingAimAdmin`) | `aim.ts`, `aim-actions.ts`, `queries.getAimCases`, `AimPanel.tsx`, `/admin/funding/aim` (mig 088) | 11 unit tests; browser E2E of the **restricted gate**: admin without `manage_aim` → 404 + no AIM link. ⚠️ **write path (create/consent/submit) NOT yet exercised** — needs `manage_aim` granted after the privacy review (see 🟡 below) |
 
-**Cross-cutting, done:** `funding.*` permissions seeded (mig 084) with non-sensitive ones mapped to `super_admin`/`school_admin`;
+**Cross-cutting, done:** cross-tenant isolation now covers **all six** funding tables (`funding_programme_config`,
+`ncs_weekly_compliance_snapshots`, `hive_action_items`, `ncs_claim_versions`, `funding_readiness_items`,
+`core_funding_snapshots`, `aim_cases`) in `scripts/verify-tenant-isolation.mjs` — seed + scoping + action-guard + anon-RLS;
+**re-ran live against the dev DB after mig 088 → ALL CHECKS PASSED**. Also: `funding.*` permissions seeded (mig 084) with non-sensitive ones mapped to `super_admin`/`school_admin`;
 **sensitive perms (`view_sensitive_identifiers`, `manage_aim`, `override_calculation`) ungranted by default**; every page
 behind `requireFundingAdmin` (admin + `funding.view` + flag → `notFound()` when off); every mutation/export gated on the
 right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions carry **no PPSN/CHICK** (names + hours/€ only).
 
 ### 🟡 Built but NOT fully verified — do not report as complete
 
-- **Cross-tenant isolation**: only Phase-1 tables (`funding_programme_config`, `ncs_weekly_compliance_snapshots`,
-  `hive_action_items`) are in `scripts/verify-tenant-isolation.mjs`. **`ncs_claim_versions`, `funding_readiness_items`,
-  `core_funding_snapshots` have RLS + grants but no isolation regression test yet.** (Release-blocking per the project's
-  own rule: new tenant table ⇒ negative test in the same PR.)
+- **AIM write path (Phase 5)**: the restricted gate is verified (404 without `funding.manage_aim`), but creating a case,
+  recording consent and submitting have **not** been exercised end-to-end. By design this needs the owner to grant
+  `funding.manage_aim` to a role/user **after a privacy review** (migration 088 is applied). Enable + verify the lifecycle
+  before reporting AIM as done.
 - **Programme-year rule selection**: `resolveNcsRules()` ignores the programme year (single version `ncs-2026.1`);
   `funding_programme_config` exists but the engine does not yet read `rules_version`/deadlines from it.
 - **NCS thresholds/rates** (`NCS_RULES_2026`) are flagged **CONFIRM** against the current Pobal/NCS circular before go-live.
@@ -107,8 +111,6 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
   manual flag click; recapturing auto-resolved it. ⬜ **Still manual/not wired:** the service-calendar/closure trigger,
   and the time-based cron **scans** — CHICK/award-expiry and readiness-drift — have no job yet (only the weekly NCS cron
   exists).
-- **Phase 5 — AIM** (restricted/sensitive domain): not started. Only an `aim_level_7` boolean exists (for the ECCE gate);
-  no `aim_cases` table, consent metadata, restricted workflow, or narrowed permission wiring.
 - **Immutable submission snapshots / evidence packs** (`funding_submission_snapshots`: canonical JSON + rendered PDF/CSV
   + data-source/rule versions + verifier + external-submission evidence): not built. Only CSV exports + a printable
   weekly-return page exist.
@@ -121,14 +123,15 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
 
 ### Manual configuration steps (funding)
 
-1. **Migrations 084–087** — already applied to prod (`xpbavfutfejlfbmnntyl`). Re-apply by pasting each file into the
+1. **Migrations 084–088** — already applied to prod (`xpbavfutfejlfbmnntyl`). Re-apply by pasting each file into the
    Supabase SQL editor if restoring an environment.
 2. **Turn the module on per crèche** (it ships dark):
    `UPDATE public.tenant_funding_settings SET hive_centre_enabled = true WHERE school_id = '<tenant-uuid>';`
 3. **`CRON_SECRET`** must be set in Vercel (already in local `.env.local`). The weekly cron is registered in `vercel.json`
    at `0 7 * * 1` (Mon 07:00) → `/api/cron/ncs-weekly-compliance` (Bearer-authenticated).
-4. **Grant sensitive permissions deliberately** (left unmapped on purpose) when their features are built —
-   `view_sensitive_identifiers`, `manage_aim`, `override_calculation` via `role_permissions`.
+4. **Grant sensitive permissions deliberately** (left unmapped on purpose) via `role_permissions`:
+   `view_sensitive_identifiers`, `override_calculation`, and — to turn on the built AIM module after a **privacy
+   review** — `funding.manage_aim`. Until `manage_aim` is granted, `/admin/funding/aim` returns 404 for everyone.
 5. **Confirm NCS rules** (`src/lib/funding/rules.ts`, flagged CONFIRM) with a Pobal/NCS SME before enabling for a live crèche.
 
 ### Security considerations (funding)
@@ -136,9 +139,11 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
 - PPSN stays **encrypted at rest** (`pps_number_encrypted`, `src/lib/crypto`) and is **never revealed** in the funding UI
   (presence boolean only); CHICK is not surfaced. Controlled reveal + audit remain **TODO** before those identifiers are
   ever displayed/exported.
-- All funding queries scope by authenticated `school_id` (service-role bypasses RLS); 084–087 tables have RLS + explicit
-  grants (SELECT→`authenticated`, full→`service_role`); anon blocked. **Finish isolation coverage** for the three Phase 2–4
-  tables above before go-live.
+- All funding queries scope by authenticated `school_id` (service-role bypasses RLS); 084–088 tables have RLS + explicit
+  grants (SELECT→`authenticated`, full→`service_role`); anon blocked. Cross-tenant isolation for **all six** funding
+  tables is now in `scripts/verify-tenant-isolation.mjs` and passes live.
+- **AIM is the most restricted domain**: gated behind `funding.manage_aim` (ungranted by default), consent-gated before
+  Hive prep, stores only a brief non-clinical summary (never PPSN/CHICK/health), with dedicated `aim.*` audit events.
 - Weekly + core snapshots are **immutable** (no `updated_at` trigger) so rule changes never rewrite history.
 - Action/notification text must never contain PPSN/CHICK (current descriptions comply).
 
@@ -161,9 +166,11 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/ncs-
 git checkout -b feat/funding-aim         # or feat/funding-event-wiring
 ```
 
-**Recommended next for funding:** (1) extend the isolation script to the three uncovered tables (release-blocker);
-(2) wire operational mutations → compliance (§9) so the queue is truly proactive; (3) Phase 5 AIM behind its own
-permission + privacy review; (4) immutable submission snapshots/evidence packs.
+**Recommended next for funding** (items 1–3 below are **done** — isolation coverage ✅, §9 event-wiring ✅, AIM built &
+gate-verified ✅): (1) **enable AIM** — grant `funding.manage_aim` after a privacy review, then verify the case lifecycle
+E2E; (2) the remaining §9 pieces — service-calendar/closure trigger + the award-expiry and readiness-drift cron scans;
+(3) immutable submission snapshots/evidence packs; (4) sensitive-identifier controlled reveal + audit; (5) wire
+`funding_programme_config` into `resolveNcsRules`; (6) child-profile funding panel.
 
 ---
 
