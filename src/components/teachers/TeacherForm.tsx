@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
@@ -22,6 +22,7 @@ export function TeacherForm({
 }: TeacherFormProps) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState<TeacherActionState, FormData>(action, null)
+  const [isActive, setIsActive] = useState(teacher?.is_active ?? true)
 
   useEffect(() => {
     if (state && 'success' in state) router.push('/admin/teachers')
@@ -79,25 +80,18 @@ export function TeacherForm({
         disabled={isPending}
       />
 
-      {/* Hidden input carries the isActive value; checkbox below updates it via onChange */}
-      <input
-        type="hidden"
-        name="isActive"
-        defaultValue={teacher?.is_active !== false ? 'true' : 'false'}
-      />
+      {/* Hidden input carries the isActive value; its value is driven by React state
+          so an unchecked checkbox reliably submits 'false' (plain checkboxes submit
+          nothing when unchecked, which would otherwise silently drop deactivation). */}
+      <input type="hidden" name="isActive" value={isActive ? 'true' : 'false'} />
       <div className="flex items-center gap-3">
         <input
           id="isActive"
           type="checkbox"
-          defaultChecked={teacher?.is_active ?? true}
+          checked={isActive}
+          onChange={(e) => setIsActive(e.currentTarget.checked)}
           disabled={isPending}
           className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-          onChange={(e) => {
-            const hidden = e.currentTarget.form?.elements.namedItem(
-              'isActive',
-            ) as HTMLInputElement | null
-            if (hidden) hidden.value = e.currentTarget.checked ? 'true' : 'false'
-          }}
         />
         <label htmlFor="isActive" className="text-sm font-medium text-text-primary">
           Active
