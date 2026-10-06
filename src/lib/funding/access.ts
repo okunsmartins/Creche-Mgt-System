@@ -31,3 +31,14 @@ export async function requireFundingAdmin(): Promise<SessionUser> {
 export function hasFundingPermission(user: SessionUser, permission: string): boolean {
   return user.permissions.includes(permission)
 }
+
+/**
+ * Stricter gate for the restricted AIM domain: a funding admin who ALSO holds the
+ * dedicated `funding.manage_aim` permission (seeded ungranted by default). Without it
+ * the AIM module is invisible — notFound() — even to other funding admins.
+ */
+export async function requireFundingAimAdmin(): Promise<SessionUser> {
+  const user = await requireFundingAdmin()
+  if (!user.permissions.includes('funding.manage_aim')) notFound()
+  return user
+}
