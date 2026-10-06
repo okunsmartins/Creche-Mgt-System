@@ -8,8 +8,11 @@
  *
  *   node scripts/verify-tenant-isolation.mjs
  *
- * It checks, for `fee_schedules` / `child_funding_registrations` / `invoices` /
- * `authorised_collectors`:
+ * Coverage: `fee_schedules`, `child_funding_registrations`, `invoices`,
+ * `authorised_collectors`, the collection tables, and the Funding & Hive Centre
+ * tables `funding_programme_config`, `ncs_weekly_compliance_snapshots`,
+ * `hive_action_items`, `ncs_claim_versions`, `funding_readiness_items`,
+ * `core_funding_snapshots`, `aim_cases`. For each:
  *   1. App-layer scoping — a query scoped to Tenant B never returns Tenant A's rows.
  *   1b. Action guard — a Tenant-B-scoped mutation can't modify Tenant A's collector
  *       (mirrors reviewCollectorAction's `.eq('id').eq('school_id')`).
@@ -267,6 +270,69 @@ async function main() {
   created.hiveAction = hact.data?.id
   ok('seed: hive_action_item for Tenant A', !hact.error, hact.error?.message)
 
+  // Funding & Hive Centre Phase 2 (claim), Phase 3 (readiness), Phase 4 (core) rows.
+  const claim = await admin
+    .from('ncs_claim_versions')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      funding_registration_id: registrationId,
+      status: 'DRAFT',
+      start_date: '2026-09-01',
+      term_minutes: 2400,
+      non_term_minutes: 0,
+      weekly_fee_cents: 24000,
+      ncs_subsidy_cents: 8560,
+      calculated_copayment_cents: 15440,
+      source_fee_schedule_id: created.schedule,
+      calculation_version: 'ncs-2026.1',
+    })
+    .select('id')
+    .single()
+  created.claimVersion = claim.data?.id
+  ok('seed: ncs_claim_version for Tenant A', !claim.error, claim.error?.message)
+
+  const ritem = await admin
+    .from('funding_readiness_items')
+    .insert({
+      school_id: tenantA,
+      programme_year: '2026/2027',
+      item_key: 'ISO_TEST_ITEM',
+      label: 'ISO-TEST readiness item',
+      status: 'MISSING',
+    })
+    .select('id')
+    .single()
+  created.readinessItem = ritem.data?.id
+  ok('seed: funding_readiness_item for Tenant A', !ritem.error, ritem.error?.message)
+
+  const csnap = await admin
+    .from('core_funding_snapshots')
+    .insert({
+      school_id: tenantA,
+      programme_year: '2026/2027',
+      profile: { staffCount: 3, roomCount: 4, totalCapacity: 60, operatingWeeks: 52 },
+    })
+    .select('id')
+    .single()
+  created.coreSnapshot = csnap.data?.id
+  ok('seed: core_funding_snapshot for Tenant A', !csnap.error, csnap.error?.message)
+
+  // Funding & Hive Centre Phase 5 (restricted AIM) row for Tenant A.
+  const aimCase = await admin
+    .from('aim_cases')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      aim_level: 7,
+      status: 'PREPARING',
+      consent_status: 'NOT_REQUESTED',
+    })
+    .select('id')
+    .single()
+  created.aimCase = aimCase.data?.id
+  ok('seed: aim_case for Tenant A', !aimCase.error, aimCase.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
   const tenantAIds = [
@@ -281,6 +347,10 @@ async function main() {
     created.fundingConfig,
     created.ncsSnapshot,
     created.hiveAction,
+    created.claimVersion,
+    created.readinessItem,
+    created.coreSnapshot,
+    created.aimCase,
   ]
   for (const table of [
     'fee_schedules',
@@ -294,6 +364,10 @@ async function main() {
     'funding_programme_config',
     'ncs_weekly_compliance_snapshots',
     'hive_action_items',
+    'ncs_claim_versions',
+    'funding_readiness_items',
+    'core_funding_snapshots',
+    'aim_cases',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -412,6 +486,91 @@ async function main() {
     )
   }
 
+  // ── 1g. Action guard: Tenant B can't transition Tenant A's NCS claim ──────────
+  // Mirrors transitionClaimAction `.eq('id', claimId).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('ncs_claim_versions')
+      .update({ status: 'SUPERSEDED' })
+      .eq('id', created.claimVersion)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot transition Tenant A claim', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('ncs_claim_versions')
+      .select('status')
+      .eq('id', created.claimVersion)
+      .single()
+    ok(
+      'cross-tenant: Tenant A claim left intact',
+      still?.status === 'DRAFT',
+      `status=${still?.status}`,
+    )
+  }
+
+  // ── 1h. Action guard: Tenant B can't set Tenant A's readiness item ────────────
+  // Mirrors setReadinessItemAction `.eq('id', itemId).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('funding_readiness_items')
+      .update({ status: 'CURRENT' })
+      .eq('id', created.readinessItem)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot set Tenant A readiness item', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('funding_readiness_items')
+      .select('status')
+      .eq('id', created.readinessItem)
+      .single()
+    ok(
+      'cross-tenant: Tenant A readiness item left intact',
+      still?.status === 'MISSING',
+      `status=${still?.status}`,
+    )
+  }
+
+  // ── 1i. Action guard: Tenant B can't delete Tenant A's core snapshot ──────────
+  // Snapshots are immutable (insert-only); captureCoreSnapshotAction scopes its reads/
+  // resolves by school_id. A Tenant-B-scoped delete must touch ZERO rows.
+  {
+    const { data: touched } = await admin
+      .from('core_funding_snapshots')
+      .delete()
+      .eq('id', created.coreSnapshot)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot delete Tenant A core snapshot', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('core_funding_snapshots')
+      .select('id')
+      .eq('id', created.coreSnapshot)
+      .maybeSingle()
+    ok('cross-tenant: Tenant A core snapshot left intact', !!still?.id)
+  }
+
+  // ── 1j. Action guard: Tenant B can't transition Tenant A's AIM case ───────────
+  // Mirrors transitionAimCaseAction `.eq('id', caseId).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('aim_cases')
+      .update({ status: 'CLOSED' })
+      .eq('id', created.aimCase)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot transition Tenant A AIM case', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('aim_cases')
+      .select('status')
+      .eq('id', created.aimCase)
+      .single()
+    ok(
+      'cross-tenant: Tenant A AIM case left intact',
+      still?.status === 'PREPARING',
+      `status=${still?.status}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
@@ -425,6 +584,10 @@ async function main() {
     'funding_programme_config',
     'ncs_weekly_compliance_snapshots',
     'hive_action_items',
+    'ncs_claim_versions',
+    'funding_readiness_items',
+    'core_funding_snapshots',
+    'aim_cases',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -453,6 +616,13 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.aimCase) await admin.from('aim_cases').delete().eq('id', created.aimCase)
+  if (created.coreSnapshot)
+    await admin.from('core_funding_snapshots').delete().eq('id', created.coreSnapshot)
+  if (created.readinessItem)
+    await admin.from('funding_readiness_items').delete().eq('id', created.readinessItem)
+  if (created.claimVersion)
+    await admin.from('ncs_claim_versions').delete().eq('id', created.claimVersion)
   if (created.hiveAction)
     await admin.from('hive_action_items').delete().eq('id', created.hiveAction)
   if (created.ncsSnapshot)
