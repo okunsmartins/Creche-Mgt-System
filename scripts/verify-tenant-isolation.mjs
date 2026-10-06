@@ -12,7 +12,7 @@
  * `authorised_collectors`, the collection tables, and the Funding & Hive Centre
  * tables `funding_programme_config`, `ncs_weekly_compliance_snapshots`,
  * `hive_action_items`, `ncs_claim_versions`, `funding_readiness_items`,
- * `core_funding_snapshots`. For each:
+ * `core_funding_snapshots`, `aim_cases`. For each:
  *   1. App-layer scoping — a query scoped to Tenant B never returns Tenant A's rows.
  *   1b. Action guard — a Tenant-B-scoped mutation can't modify Tenant A's collector
  *       (mirrors reviewCollectorAction's `.eq('id').eq('school_id')`).
@@ -318,6 +318,21 @@ async function main() {
   created.coreSnapshot = csnap.data?.id
   ok('seed: core_funding_snapshot for Tenant A', !csnap.error, csnap.error?.message)
 
+  // Funding & Hive Centre Phase 5 (restricted AIM) row for Tenant A.
+  const aimCase = await admin
+    .from('aim_cases')
+    .insert({
+      school_id: tenantA,
+      student_id: childA,
+      aim_level: 7,
+      status: 'PREPARING',
+      consent_status: 'NOT_REQUESTED',
+    })
+    .select('id')
+    .single()
+  created.aimCase = aimCase.data?.id
+  ok('seed: aim_case for Tenant A', !aimCase.error, aimCase.error?.message)
+
   // ── 1. App-layer scoping: Tenant B's scoped queries never see Tenant A's rows ──
   // Known Tenant A ids (created or reused) that must never appear in a Tenant B query.
   const tenantAIds = [
@@ -335,6 +350,7 @@ async function main() {
     created.claimVersion,
     created.readinessItem,
     created.coreSnapshot,
+    created.aimCase,
   ]
   for (const table of [
     'fee_schedules',
@@ -351,6 +367,7 @@ async function main() {
     'ncs_claim_versions',
     'funding_readiness_items',
     'core_funding_snapshots',
+    'aim_cases',
   ]) {
     const { data } = await admin.from(table).select('id').eq('school_id', tenantB)
     const leaked = (data ?? []).some((r) => tenantAIds.includes(r.id))
@@ -532,6 +549,28 @@ async function main() {
     ok('cross-tenant: Tenant A core snapshot left intact', !!still?.id)
   }
 
+  // ── 1j. Action guard: Tenant B can't transition Tenant A's AIM case ───────────
+  // Mirrors transitionAimCaseAction `.eq('id', caseId).eq('school_id', <my school>)`.
+  {
+    const { data: touched } = await admin
+      .from('aim_cases')
+      .update({ status: 'CLOSED' })
+      .eq('id', created.aimCase)
+      .eq('school_id', tenantB)
+      .select('id')
+    ok('cross-tenant: Tenant B cannot transition Tenant A AIM case', (touched?.length ?? 0) === 0)
+    const { data: still } = await admin
+      .from('aim_cases')
+      .select('status')
+      .eq('id', created.aimCase)
+      .single()
+    ok(
+      'cross-tenant: Tenant A AIM case left intact',
+      still?.status === 'PREPARING',
+      `status=${still?.status}`,
+    )
+  }
+
   // ── 2. RLS backstop: anon/authenticated key sees ZERO rows (deny-by-default) ──
   for (const table of [
     'fee_schedules',
@@ -548,6 +587,7 @@ async function main() {
     'ncs_claim_versions',
     'funding_readiness_items',
     'core_funding_snapshots',
+    'aim_cases',
   ]) {
     const { data, error } = await anon.from(table).select('id').limit(5)
     const blocked = !!error || (data ?? []).length === 0
@@ -576,6 +616,7 @@ async function main() {
   )
 
   // ── Cleanup ──────────────────────────────────────────────────────────────────
+  if (created.aimCase) await admin.from('aim_cases').delete().eq('id', created.aimCase)
   if (created.coreSnapshot)
     await admin.from('core_funding_snapshots').delete().eq('id', created.coreSnapshot)
   if (created.readinessItem)
