@@ -458,3 +458,82 @@ export async function getCoreFundingView(
     changes,
   }
 }
+
+// ── AIM (restricted domain — Phase 5) ──────────────────────────────────────────
+export interface AimCaseView {
+  id: string
+  studentId: string
+  childName: string
+  aimLevel: number | null
+  status: string
+  consentStatus: string
+  consentRecordedAt: string | null
+  supportSummary: string | null
+  submittedAt: string | null
+  updatedAt: string
+}
+
+/**
+ * AIM cases for a school. Returns only the restricted case fields + the child's name —
+ * NO PPSN/CHICK and no health/developmental data. Callers must already hold
+ * funding.manage_aim (enforced by requireFundingAimAdmin at the page/action layer).
+ */
+export async function getAimCases(schoolId: string): Promise<AimCaseView[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('aim_cases')
+    .select(
+      'id, student_id, aim_level, status, consent_status, consent_recorded_at, support_summary, submitted_at, updated_at, students(first_name, last_name)',
+    )
+    .eq('school_id', schoolId)
+    .order('updated_at', { ascending: false })
+  const rows =
+    (data as unknown as
+      | {
+          id: string
+          student_id: string
+          aim_level: number | null
+          status: string
+          consent_status: string
+          consent_recorded_at: string | null
+          support_summary: string | null
+          submitted_at: string | null
+          updated_at: string
+          students: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+  return rows.map((r) => ({
+    id: r.id,
+    studentId: r.student_id,
+    childName: [r.students?.first_name, r.students?.last_name].filter(Boolean).join(' ') || '—',
+    aimLevel: r.aim_level,
+    status: r.status,
+    consentStatus: r.consent_status,
+    consentRecordedAt: r.consent_recorded_at,
+    supportSummary: r.support_summary,
+    submittedAt: r.submitted_at,
+    updatedAt: r.updated_at,
+  }))
+}
+
+/** Active children who don't yet have an AIM case (for the AIM case composer). */
+export async function getAimChildOptions(schoolId: string): Promise<NcsChildOption[]> {
+  const db = createSupabaseAdminClient()
+  const [{ data: students }, { data: cases }] = await Promise.all([
+    db
+      .from('students')
+      .select('id, first_name, last_name')
+      .eq('school_id', schoolId)
+      .eq('is_active', true),
+    db.from('aim_cases').select('student_id').eq('school_id', schoolId),
+  ])
+  const taken = new Set(((cases as { student_id: string }[] | null) ?? []).map((c) => c.student_id))
+  const rows =
+    (students as { id: string; first_name: string | null; last_name: string | null }[] | null) ?? []
+  return rows
+    .filter((r) => !taken.has(r.id))
+    .map((r) => ({
+      id: r.id,
+      name: [r.first_name, r.last_name].filter(Boolean).join(' ') || 'Unnamed child',
+    }))
+}

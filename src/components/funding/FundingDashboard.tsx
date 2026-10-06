@@ -24,10 +24,12 @@ export function FundingDashboard({
   data,
   weekStart,
   canManage,
+  canManageAim = false,
 }: {
   data: DashboardData
   weekStart: string
   canManage: boolean
+  canManageAim?: boolean
 }) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState<FundingActionState, FormData>(
@@ -121,6 +123,14 @@ export function FundingDashboard({
             >
               Core Funding →
             </a>
+            {canManageAim && (
+              <a
+                href="/admin/funding/aim"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+              >
+                AIM →
+              </a>
+            )}
             {canManage && (
               <form action={formAction}>
                 <input type="hidden" name="weekStart" value={weekStart} />

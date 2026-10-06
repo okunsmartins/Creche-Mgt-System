@@ -121,6 +121,11 @@ export type AuditAction =
   | 'time_off.requested'
   | 'time_off.approved'
   | 'time_off.rejected'
+  | 'aim.case_created'
+  | 'aim.case_updated'
+  | 'aim.consent_recorded'
+  | 'aim.submitted'
+  | 'aim.closed'
 
 // ─── Standalone Row Interfaces ────────────────────────────────────────────────
 // Defined before Database to avoid circular type references.
