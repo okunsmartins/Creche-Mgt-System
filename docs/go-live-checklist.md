@@ -144,6 +144,27 @@ npm run type-check && npm run lint && npx vitest run && npx prettier --check .
 - [ ] No secrets reachable from the client bundle (only `NEXT_PUBLIC_*`)
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL`; 404 (not 403) to non-owners
 
+### 4a. AIM privacy review — REQUIRED before enabling the AIM module
+
+AIM (Access and Inclusion Model) data concerns a child's **additional needs** — **special-category personal data about a
+vulnerable person** (GDPR Art. 9). The AIM module is built but ships **off**: the `funding.manage_aim` permission is
+**ungranted by default**, so `/admin/funding/aim` returns 404 for everyone until someone deliberately turns it on. Do **not**
+grant `funding.manage_aim` until the items below are signed off (involve the DPO / get legal advice — this list is a
+practical prompt, not legal advice):
+
+- [ ] **Lawful basis + consent** — a clear lawful basis is documented, and the parental/guardian consent the module records
+      is genuinely obtained (the case cannot be marked Ready/Submitted without recorded `GRANTED` consent — enforced in code).
+- [ ] **DPIA** completed for AIM (children's special-category data) — ties into the DPIA already tracked for go-live.
+- [ ] **Least-privilege access** — decide exactly which role/people receive `funding.manage_aim` (e.g. manager / AIM
+      coordinator only), not all admins. Record who and why.
+- [ ] **Data minimisation briefing** — staff know the support summary is **brief + non-clinical**; no health/diagnostic
+      detail is pasted in. (The schema stores only a summary + optional evidence-doc reference; it never copies health records.)
+- [ ] **Retention & deletion** — how long AIM cases are kept and when/how they are removed is defined.
+- [ ] **Audit** — confirm the `aim.*` audit events (`aim.case_created/case_updated/consent_recorded/submitted/closed`) are
+      being written and are reviewable.
+- [ ] **Enable** — only then grant `funding.manage_aim` via `role_permissions`, and verify the case lifecycle
+      (open → record consent → prepare → submit) end-to-end in a controlled test before real children's data is entered.
+
 ---
 
 ## 5. Domain / infrastructure
