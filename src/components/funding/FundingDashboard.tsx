@@ -123,6 +123,12 @@ export function FundingDashboard({
             >
               Core Funding →
             </a>
+            <a
+              href="/admin/funding/submissions"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+            >
+              Submissions →
+            </a>
             {canManageAim && (
               <a
                 href="/admin/funding/aim"
