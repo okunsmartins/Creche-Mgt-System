@@ -126,6 +126,8 @@ export type AuditAction =
   | 'aim.consent_recorded'
   | 'aim.submitted'
   | 'aim.closed'
+  | 'funding.ppsn_revealed'
+  | 'funding.chick_revealed'
 
 // ─── Standalone Row Interfaces ────────────────────────────────────────────────
 // Defined before Database to avoid circular type references.
