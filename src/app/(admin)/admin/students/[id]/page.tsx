@@ -16,6 +16,9 @@ import { DocumentFileRow } from '@/components/documents/DocumentFileRow'
 import { DocumentDeleteButton } from '@/components/documents/DocumentDeleteButton'
 import { StudentDocumentUploader } from '@/components/documents/StudentDocumentUploader'
 import { getStudentDocuments } from '@/lib/documents/queries'
+import { fundingEnabled, hasFundingPermission } from '@/lib/funding/access'
+import { getChildFundingSummary } from '@/lib/funding/queries'
+import { ChildFundingPanel } from '@/components/funding/ChildFundingPanel'
 import { updateStudentAction } from '@/lib/students/actions'
 import type {
   StudentRow,
@@ -116,6 +119,13 @@ export default async function EditStudentPage({ params }: PageProps) {
   const assignments = await getStudentAssignments(student.id, admin.schoolId)
   const testResults = await getStudentDocuments(student.id, 'test_result', admin.schoolId)
   const reportCards = await getStudentDocuments(student.id, 'report_card', admin.schoolId)
+
+  // Funding summary — only for tenants with the Hive Centre enabled, to funding.view admins.
+  const showFunding =
+    hasFundingPermission(admin, 'funding.view') && (await fundingEnabled(admin.schoolId))
+  const fundingSummary = showFunding
+    ? await getChildFundingSummary(admin.schoolId, student.id)
+    : null
 
   const classOptions: SelectOption[] = (rawClasses ?? []).map((c) => ({
     value: c.id,
@@ -318,6 +328,13 @@ export default async function EditStudentPage({ params }: PageProps) {
           </div>
         )}
       </section>
+
+      {fundingSummary && (
+        <>
+          <hr className="my-8 border-border" />
+          <ChildFundingPanel summary={fundingSummary} />
+        </>
+      )}
 
       <hr className="my-8 border-border" />
 
