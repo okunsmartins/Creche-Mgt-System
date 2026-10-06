@@ -28,6 +28,7 @@ import {
   Mail,
   MessageSquare,
   CalendarOff,
+  CalendarClock,
   Building2,
   FileText,
   Banknote,
@@ -82,6 +83,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/teachers', label: 'Staff', icon: GraduationCap },
       { href: '/admin/classes', label: 'Rooms', icon: BookOpen },
+      { href: '/admin/rota', label: 'Rota', icon: CalendarClock },
       { href: '/admin/ratios', label: 'Ratios', icon: Scale },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
     ],
