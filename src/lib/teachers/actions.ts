@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import { teacherSchema, type TeacherActionState } from './schemas'
+import { onStaffOrRoomChanged } from '@/lib/funding/events'
 import type { AuditAction } from '@/types/database'
 
 async function audit(params: {
@@ -91,6 +92,7 @@ export async function createTeacherAction(
   })
 
   revalidatePath('/admin/teachers')
+  await onStaffOrRoomChanged(user.schoolId)
   return { success: true, teacherId }
 }
 
@@ -154,6 +156,7 @@ export async function updateTeacherAction(
 
   revalidatePath('/admin/teachers')
   revalidatePath(`/admin/teachers/${teacherId}`)
+  await onStaffOrRoomChanged(user.schoolId)
   return { success: true, teacherId }
 }
 

@@ -8,6 +8,7 @@ import { logger } from '@/lib/logging'
 import { buildInvoiceDrafts } from './invoice'
 import { type FeeFrequency } from './schedule'
 import { type EcceAward, type NcsAward } from '@/lib/payments/subvention'
+import { onFeePlanChanged } from '@/lib/funding/events'
 
 // ─── Fee schedules ────────────────────────────────────────────────────────────
 
@@ -76,6 +77,7 @@ export async function createFeeScheduleAction(
 
   logger.info('fee_schedule_created', { schoolId, feeScheduleId: (data as { id: string }).id })
   revalidatePath('/admin/fees')
+  await onFeePlanChanged(schoolId, input.studentId)
   return { ok: true, id: (data as { id: string }).id }
 }
 
@@ -297,6 +299,7 @@ export async function generateInvoicesForScheduleAction(
   const totalNet = drafts.reduce((sum, d) => sum + d.netParentCents, 0)
   logger.info('invoices_generated', { schoolId, feeScheduleId, created, totalNet })
   revalidatePath('/admin/fees')
+  await onFeePlanChanged(schoolId, s.student_id)
   return { ok: true, created, totalNetCents: totalNet }
 }
 

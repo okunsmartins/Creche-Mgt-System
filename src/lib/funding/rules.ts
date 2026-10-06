@@ -20,6 +20,9 @@ export interface NcsRules {
 /** Identifier stamped onto every snapshot so a calculation can be reproduced. */
 export const CURRENT_NCS_RULES_VERSION = 'ncs-2026.1'
 
+/** The programme year the funding screens + event handlers operate on. */
+export const CURRENT_PROGRAMME_YEAR = '2026/2027'
+
 /**
  * NCS rules effective for the 2026 policy (guidelines effective 5 June 2026):
  * 4-week continuous absence, 8-week under-attendance, 12-week continued

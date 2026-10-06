@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
+import { onStaffOrRoomChanged } from '@/lib/funding/events'
 import type { AuditAction } from '@/types/database'
 
 export type ClassActionState = {
@@ -86,5 +87,6 @@ export async function updateClassAction(
     metadata: { teacher_id: teacherId, academic_year: academicYear, is_active: isActive },
   })
 
+  await onStaffOrRoomChanged(user.schoolId)
   return { success: true }
 }
