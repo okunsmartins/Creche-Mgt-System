@@ -13,6 +13,7 @@ export default async function FundingCentrePage() {
   const user = await requireFundingAdmin()
   const data = await getFundingDashboard(user.schoolId!)
   const canManage = hasFundingPermission(user, 'funding.manage_ncs')
+  const canManageAim = hasFundingPermission(user, 'funding.manage_aim')
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -24,7 +25,12 @@ export default async function FundingCentrePage() {
           portal; nothing is submitted automatically.
         </p>
       </div>
-      <FundingDashboard data={data} weekStart={latestCompletedWeekStart()} canManage={canManage} />
+      <FundingDashboard
+        data={data}
+        weekStart={latestCompletedWeekStart()}
+        canManage={canManage}
+        canManageAim={canManageAim}
+      />
     </div>
   )
 }
