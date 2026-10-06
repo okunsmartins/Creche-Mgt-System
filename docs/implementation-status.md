@@ -114,9 +114,14 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
   (MISSING/REVIEW_REQUIRED items overdue or due within 14d → deduped per-item action). Verified E2E on localhost: an
   overdue readiness item → cron raised the action (1), re-run deduped (0), action shown on the dashboard. ⬜ **Still not
   wired:** the service-calendar/closure trigger (needs a calendar/closures model).
-- **Immutable submission snapshots / evidence packs** (`funding_submission_snapshots`: canonical JSON + rendered PDF/CSV
-  + data-source/rule versions + verifier + external-submission evidence): not built. Only CSV exports + a printable
-  weekly-return page exist.
+- **Immutable submission snapshots / evidence packs** — ✅ BUILT (NCS weekly return) via `submissions.ts` (pure, 5 tests:
+  status machine + deterministic canonical payload), migration **089** `funding_submission_snapshots` (immutable payload,
+  one live PREPARED per week via partial-unique, RLS + grants), `submission-actions.ts` (prepare = freeze the week's return
+  JSON + rules version + preparer, superseding any prior PREPARED; mark-submitted records the external Hive reference),
+  `getSubmissionSnapshots`, `/admin/funding/submissions` + `SubmissionsPanel` + dashboard link. Gated: prepare =
+  `funding.export`, mark-submitted = `funding.mark_submitted`. ⚠️ **Write path pending migration 089** (page renders + the
+  gate is correct; verified in-browser). Rendered PDF export + claims/ECCE snapshot kinds are a follow-up (the table's
+  `kind` column is ready for them).
 - **Sensitive-identifier controlled reveal + audit:** PPSN is shown as **presence-only** (`ppsnPresent`, never revealed) —
   safe by default — but the permission-gated reveal, the reveal/export **audit events**, and CHICK surfacing are not built.
   No funding-specific writes to the audit log yet (`FundingAuditService` not implemented).
@@ -171,9 +176,10 @@ git checkout -b feat/funding-aim         # or feat/funding-event-wiring
 
 **Recommended next for funding** (items 1–3 below are **done** — isolation coverage ✅, §9 event-wiring ✅, AIM built &
 gate-verified ✅): (1) **enable AIM** — grant `funding.manage_aim` after a privacy review, then verify the case lifecycle
-E2E; (2) the last §9 piece — a service-calendar/closure trigger (needs a calendar/closures model); (award-expiry +
-readiness-drift scans now ✅ done); (3) immutable submission snapshots/evidence packs; (4) sensitive-identifier controlled
-reveal + audit; (5) wire `funding_programme_config` into `resolveNcsRules`; (6) child-profile funding panel.
+E2E; (2) the last §9 piece — a service-calendar/closure trigger (needs a calendar/closures model); (3) sensitive-identifier
+controlled reveal + audit; (4) wire `funding_programme_config` into `resolveNcsRules`. (Done since last revision: award-expiry
++ readiness-drift scans ✅, child-profile funding panel ✅, submission snapshots ✅ pending migration 089, PDF/claims/ECCE
+snapshot kinds as follow-ups.)
 
 ---
 

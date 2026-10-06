@@ -649,3 +649,54 @@ export async function getChildFundingSummary(
       : null,
   }
 }
+
+// ── Submission snapshots / evidence packs ──────────────────────────────────────
+export interface SubmissionSnapshotView {
+  id: string
+  kind: string
+  reference: string
+  status: string
+  itemCount: number
+  rulesVersion: string | null
+  preparedAt: string
+  submittedAt: string | null
+  submissionReference: string | null
+}
+
+/** Submission snapshots for a school, newest first (non-sensitive metadata only). */
+export async function getSubmissionSnapshots(schoolId: string): Promise<SubmissionSnapshotView[]> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('funding_submission_snapshots')
+    .select(
+      'id, kind, reference, status, item_count, rules_version, prepared_at, submitted_at, submission_reference',
+    )
+    .eq('school_id', schoolId)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  const rows =
+    (data as
+      | {
+          id: string
+          kind: string
+          reference: string
+          status: string
+          item_count: number
+          rules_version: string | null
+          prepared_at: string
+          submitted_at: string | null
+          submission_reference: string | null
+        }[]
+      | null) ?? []
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    reference: r.reference,
+    status: r.status,
+    itemCount: r.item_count,
+    rulesVersion: r.rules_version,
+    preparedAt: r.prepared_at,
+    submittedAt: r.submitted_at,
+    submissionReference: r.submission_reference,
+  }))
+}
