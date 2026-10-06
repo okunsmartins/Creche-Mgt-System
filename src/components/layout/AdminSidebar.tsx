@@ -13,6 +13,7 @@ import {
   RotateCcw,
   BarChart2,
   Shield,
+  ShieldCheck,
   LogOut,
   Menu,
   X,
@@ -88,6 +89,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/timesheets', label: 'Timesheets', icon: ClipboardList },
       { href: '/admin/ratios', label: 'Ratios', icon: Scale },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
+      { href: '/admin/vetting', label: 'Garda Vetting', icon: ShieldCheck },
     ],
   },
   {
