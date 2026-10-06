@@ -537,3 +537,115 @@ export async function getAimChildOptions(schoolId: string): Promise<NcsChildOpti
       name: [r.first_name, r.last_name].filter(Boolean).join(' ') || 'Unnamed child',
     }))
 }
+
+// ── Child-profile funding summary (read-only, non-sensitive) ───────────────────
+export interface ChildFundingSummary {
+  registrations: {
+    scheme: string
+    status: string
+    ncsAwardExpiry: string | null
+    ecceSession: string | null
+    ppsnPresent: boolean
+  }[]
+  latestWeekly: {
+    weekStart: string
+    underAttended: boolean
+    thresholdEvent: string
+    consecutiveUnderWeeks: number
+  } | null
+  openActions: { id: string; severity: string; description: string }[]
+  latestClaim: { status: string; copaymentCents: number | null } | null
+}
+
+/**
+ * Funding summary for one child, for the admin child-profile panel. Read-only and
+ * non-sensitive: PPSN is presence-only (never the value), CHICK is not surfaced, and
+ * AIM is deliberately excluded (it lives behind its own restricted permission).
+ */
+export async function getChildFundingSummary(
+  schoolId: string,
+  studentId: string,
+): Promise<ChildFundingSummary> {
+  const db = createSupabaseAdminClient()
+  const [{ data: regData }, { data: weekData }, { data: actionData }, { data: claimData }] =
+    await Promise.all([
+      db
+        .from('child_funding_registrations')
+        .select('scheme, status, ncs_award_expiry, ecce_session, pps_number_encrypted')
+        .eq('school_id', schoolId)
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false }),
+      db
+        .from('ncs_weekly_compliance_snapshots')
+        .select('week_start, under_attended, threshold_event, consecutive_under_attendance_weeks')
+        .eq('school_id', schoolId)
+        .eq('student_id', studentId)
+        .order('week_start', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      db
+        .from('hive_action_items')
+        .select('id, severity, description')
+        .eq('school_id', schoolId)
+        .eq('entity_id', studentId)
+        .in('status', ['OPEN', 'IN_REVIEW'])
+        .order('created_at', { ascending: false }),
+      db
+        .from('ncs_claim_versions')
+        .select('status, calculated_copayment_cents, manual_override_cents')
+        .eq('school_id', schoolId)
+        .eq('student_id', studentId)
+        .neq('status', 'SUPERSEDED')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
+
+  const regs =
+    (regData as
+      | {
+          scheme: string
+          status: string
+          ncs_award_expiry: string | null
+          ecce_session: string | null
+          pps_number_encrypted: string | null
+        }[]
+      | null) ?? []
+  const week = weekData as {
+    week_start: string
+    under_attended: boolean
+    threshold_event: string
+    consecutive_under_attendance_weeks: number
+  } | null
+  const claim = claimData as {
+    status: string
+    calculated_copayment_cents: number | null
+    manual_override_cents: number | null
+  } | null
+
+  return {
+    registrations: regs.map((r) => ({
+      scheme: r.scheme,
+      status: r.status,
+      ncsAwardExpiry: r.ncs_award_expiry,
+      ecceSession: r.ecce_session,
+      ppsnPresent: !!r.pps_number_encrypted,
+    })),
+    latestWeekly: week
+      ? {
+          weekStart: week.week_start,
+          underAttended: week.under_attended,
+          thresholdEvent: week.threshold_event,
+          consecutiveUnderWeeks: week.consecutive_under_attendance_weeks,
+        }
+      : null,
+    openActions:
+      (actionData as { id: string; severity: string; description: string }[] | null) ?? [],
+    latestClaim: claim
+      ? {
+          status: claim.status,
+          copaymentCents: claim.manual_override_cents ?? claim.calculated_copayment_cents,
+        }
+      : null,
+  }
+}
