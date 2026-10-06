@@ -13,6 +13,7 @@ import { parseStudentCsv } from './csv'
 import {
   createStudentSchema,
   updateStudentSchema,
+  parseStudentCareFields,
   linkRequestSchema,
   rejectLinkRequestSchema,
   approveLinkRequestSchema,
@@ -312,11 +313,27 @@ export async function updateStudentAction(
   }
 
   const { studentId, firstName, lastName, classId } = result.data
+  // Care record (emergency contact, allergies, dietary, medical, medication, session).
+  // Values may be sensitive (health) — saved here, never logged or put in audit metadata.
+  const care = parseStudentCareFields(formData)
   const adminClient = createSupabaseAdminClient()
 
   const { error } = await adminClient
     .from('students')
-    .update({ first_name: firstName, last_name: lastName, class_id: classId })
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      class_id: classId,
+      emergency_contact_name: care.emergencyContactName,
+      emergency_contact_phone: care.emergencyContactPhone,
+      emergency_contact_relationship: care.emergencyContactRelationship,
+      allergies: care.allergies,
+      dietary_needs: care.dietaryNeeds,
+      medical_conditions: care.medicalConditions,
+      medication_consent: care.medicationConsent,
+      medication_notes: care.medicationNotes,
+      session: care.session,
+    })
     .eq('id', studentId)
     .eq('school_id', admin.schoolId)
 

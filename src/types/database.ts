@@ -267,6 +267,15 @@ export interface StudentRow {
   class_id: string
   pupil_payment_code: string
   is_active: boolean
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  emergency_contact_relationship: string | null
+  allergies: string | null
+  dietary_needs: string | null
+  medical_conditions: string | null
+  medication_consent: boolean
+  medication_notes: string | null
+  session: 'FULL_DAY' | 'MORNING' | 'AFTERNOON' | 'OTHER' | null
   created_at: string
   updated_at: string
 }
