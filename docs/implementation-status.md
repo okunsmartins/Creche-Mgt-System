@@ -98,12 +98,15 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
 
 ### ⬜ Outstanding (not started)
 
-- **Proactive event wiring (addendum §9) — the core differentiator, largely NOT automatic.** Compliance runs only from
-  the manual **"Run this week's compliance"** button and the weekly cron; Core-Funding drift and co-payment mismatch are
-  raised **on manual action / on claim-save**, not automatically when the operational record changes. No operational
-  mutation (attendance edit, fee/discount change, staff/room change, calendar change) publishes a domain event today
-  (verified: nothing outside `src/lib/funding` imports a funding service except the admin layout nav-gate + the cron).
-  **Missing time-based scans:** CHICK/award-expiry scan, readiness-drift scan, service-calendar/closure triggers.
+- **Proactive event wiring (addendum §9) — PARTIALLY DONE.** ✅ The three operational-mutation paths are now automatic
+  via `src/lib/funding/events.ts` (flag-gated, best-effort, tenant-safe, idempotent), wired into the operational actions:
+  **attendance** (check-in/out/undo → recompute that child's NCS week), **fee plan / invoices** (create fee schedule,
+  generate invoices → re-run co-payment reconciliation vs the latest claim), and **staff/rooms** (teacher create/update,
+  class update → re-evaluate Core-Funding drift and auto-raise/auto-resolve the drift action). Verified E2E on localhost:
+  deactivating a staff member auto-raised "Core Funding profile has drifted (Staff 4 → 3)" on the dashboard with **no**
+  manual flag click; recapturing auto-resolved it. ⬜ **Still manual/not wired:** the service-calendar/closure trigger,
+  and the time-based cron **scans** — CHICK/award-expiry and readiness-drift — have no job yet (only the weekly NCS cron
+  exists).
 - **Phase 5 — AIM** (restricted/sensitive domain): not started. Only an `aim_level_7` boolean exists (for the ECCE gate);
   no `aim_cases` table, consent metadata, restricted workflow, or narrowed permission wiring.
 - **Immutable submission snapshots / evidence packs** (`funding_submission_snapshots`: canonical JSON + rendered PDF/CSV

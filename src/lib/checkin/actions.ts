@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
+import { onAttendanceChanged } from '@/lib/funding/events'
 
 type Result = { ok: true } | { ok: false; error: string }
 
@@ -48,6 +49,7 @@ export async function checkInAction(studentId: string): Promise<Result> {
   logger.info('child_checked_in', { schoolId })
   revalidatePath('/admin/check-in')
   revalidatePath('/admin/ratios')
+  await onAttendanceChanged(schoolId, studentId, todayISO())
   return { ok: true }
 }
 
@@ -71,6 +73,7 @@ export async function checkOutAction(studentId: string): Promise<Result> {
   if ((data ?? []).length === 0) return { ok: false, error: 'No check-in for today to close.' }
   revalidatePath('/admin/check-in')
   revalidatePath('/admin/ratios')
+  await onAttendanceChanged(schoolId, studentId, todayISO())
   return { ok: true }
 }
 
@@ -89,5 +92,6 @@ export async function undoCheckInAction(studentId: string): Promise<Result> {
   if (error) return { ok: false, error: 'Could not undo the check-in.' }
   revalidatePath('/admin/check-in')
   revalidatePath('/admin/ratios')
+  await onAttendanceChanged(schoolId, studentId, todayISO())
   return { ok: true }
 }

@@ -171,6 +171,94 @@ async function ensureAction(
 }
 
 /**
+ * Recompute + persist one child's immutable weekly snapshot and (deduped) action for a
+ * reporting week. Shared by the full weekly build and the event-driven recompute.
+ * Idempotent: upserts the snapshot and relies on the live-dedupe index for actions.
+ * Reads raw attendance from daily_check_ins; never writes attendance back.
+ */
+async function recomputeChild(
+  db: AdminClient,
+  schoolId: string,
+  child: ActiveNcsChild,
+  weekStart: string,
+  rules: ReturnType<typeof resolveNcsRules>,
+): Promise<{ outcome: 'clear' | 'review'; actionCreated: boolean } | null> {
+  const dates = weekDates(weekStart)
+
+  const { data: ciData } = await db
+    .from('daily_check_ins')
+    .select('date, checked_in_at, checked_out_at, status')
+    .eq('school_id', schoolId)
+    .eq('student_id', child.studentId)
+    .in('date', dates)
+  const checkIns =
+    (ciData as
+      | {
+          date: string
+          checked_in_at: string | null
+          checked_out_at: string | null
+          status: string
+        }[]
+      | null) ?? []
+
+  const attendedMinutes = checkIns.reduce(
+    (sum, c) => sum + minutesBetween(c.checked_in_at, c.checked_out_at),
+    0,
+  )
+  const daysPresent = checkIns.filter((c) => c.checked_in_at && c.status !== 'absent').length
+  const fullWeekAbsent = daysPresent === 0
+
+  // ECCE/non-subsidised exclusion hook — Phase 1 excludes 0 (wired in Phase 3).
+  const ncsAttendedMinutes = ncsEligibleMinutes(attendedMinutes, 0)
+
+  const prior = await loadPriorState(db, schoolId, child.studentId, weekStart)
+  const result = advanceWeek(
+    prior,
+    { ncsAttendedMinutes, claimedMinutes: child.claimedMinutes, fullWeekAbsent },
+    rules,
+  )
+
+  const { error: snapErr } = await db.from('ncs_weekly_compliance_snapshots').upsert(
+    {
+      school_id: schoolId,
+      student_id: child.studentId,
+      week_start: weekStart,
+      actual_attendance_minutes: attendedMinutes,
+      ncs_monitoring_minutes: ncsAttendedMinutes,
+      claimed_minutes: child.claimedMinutes,
+      under_attended: result.underAttended,
+      full_week_absent: result.fullWeekAbsent,
+      consecutive_under_attendance_weeks: result.consecutiveUnderAttendanceWeeks,
+      consecutive_absence_weeks: result.consecutiveAbsenceWeeks,
+      threshold_event: result.thresholdEvent,
+      risk_state: result.riskState,
+      service_closure_effect: result.closureEffect,
+      calculation_version: CURRENT_NCS_RULES_VERSION,
+    },
+    { onConflict: 'school_id,student_id,week_start' },
+  )
+  if (snapErr) {
+    logger.error('ncs_snapshot_upsert_failed', { schoolId, error: snapErr.message })
+    return null
+  }
+
+  const needsAction = result.thresholdEvent !== 'NONE' || result.riskState !== 'NONE'
+  if (!needsAction) return { outcome: 'clear', actionCreated: false }
+  const created = await ensureAction(
+    db,
+    schoolId,
+    child,
+    weekStart,
+    result.thresholdEvent,
+    result.riskState,
+    ncsAttendedMinutes,
+    result.consecutiveUnderAttendanceWeeks,
+    result.consecutiveAbsenceWeeks,
+  )
+  return { outcome: 'review', actionCreated: created }
+}
+
+/**
  * Build the NCS weekly compliance snapshots + actions for one school and reporting
  * week. Idempotent: re-running recomputes the week's snapshot (upsert) and relies on
  * the live-dedupe index so actions are not duplicated. Reads raw attendance from
@@ -183,87 +271,17 @@ export async function buildWeeklyCompliance(
   const db = createSupabaseAdminClient()
   const rules = resolveNcsRules()
   const children = await loadActiveNcsChildren(db, schoolId)
-  const dates = weekDates(weekStart)
 
   let clear = 0
   let review = 0
   let actionsCreated = 0
 
   for (const child of children) {
-    // Raw attendance for the week.
-    const { data: ciData } = await db
-      .from('daily_check_ins')
-      .select('date, checked_in_at, checked_out_at, status')
-      .eq('school_id', schoolId)
-      .eq('student_id', child.studentId)
-      .in('date', dates)
-    const checkIns =
-      (ciData as
-        | {
-            date: string
-            checked_in_at: string | null
-            checked_out_at: string | null
-            status: string
-          }[]
-        | null) ?? []
-
-    const attendedMinutes = checkIns.reduce(
-      (sum, c) => sum + minutesBetween(c.checked_in_at, c.checked_out_at),
-      0,
-    )
-    const daysPresent = checkIns.filter((c) => c.checked_in_at && c.status !== 'absent').length
-    const fullWeekAbsent = daysPresent === 0
-
-    // ECCE/non-subsidised exclusion hook — Phase 1 excludes 0 (wired in Phase 3).
-    const ncsAttendedMinutes = ncsEligibleMinutes(attendedMinutes, 0)
-
-    const prior = await loadPriorState(db, schoolId, child.studentId, weekStart)
-    const result = advanceWeek(
-      prior,
-      { ncsAttendedMinutes, claimedMinutes: child.claimedMinutes, fullWeekAbsent },
-      rules,
-    )
-
-    // Persist the (idempotent) weekly snapshot.
-    const { error: snapErr } = await db.from('ncs_weekly_compliance_snapshots').upsert(
-      {
-        school_id: schoolId,
-        student_id: child.studentId,
-        week_start: weekStart,
-        actual_attendance_minutes: attendedMinutes,
-        ncs_monitoring_minutes: ncsAttendedMinutes,
-        claimed_minutes: child.claimedMinutes,
-        under_attended: result.underAttended,
-        full_week_absent: result.fullWeekAbsent,
-        consecutive_under_attendance_weeks: result.consecutiveUnderAttendanceWeeks,
-        consecutive_absence_weeks: result.consecutiveAbsenceWeeks,
-        threshold_event: result.thresholdEvent,
-        risk_state: result.riskState,
-        service_closure_effect: result.closureEffect,
-        calculation_version: CURRENT_NCS_RULES_VERSION,
-      },
-      { onConflict: 'school_id,student_id,week_start' },
-    )
-    if (snapErr) {
-      logger.error('ncs_snapshot_upsert_failed', { schoolId, error: snapErr.message })
-      continue
-    }
-
-    const needsAction = result.thresholdEvent !== 'NONE' || result.riskState !== 'NONE'
-    if (needsAction) {
+    const r = await recomputeChild(db, schoolId, child, weekStart, rules)
+    if (!r) continue
+    if (r.outcome === 'review') {
       review++
-      const created = await ensureAction(
-        db,
-        schoolId,
-        child,
-        weekStart,
-        result.thresholdEvent,
-        result.riskState,
-        ncsAttendedMinutes,
-        result.consecutiveUnderAttendanceWeeks,
-        result.consecutiveAbsenceWeeks,
-      )
-      if (created) actionsCreated++
+      if (r.actionCreated) actionsCreated++
     } else {
       clear++
     }
@@ -277,6 +295,24 @@ export async function buildWeeklyCompliance(
     actionsCreated,
   })
   return { weekStart, totalChildren: children.length, clear, review, actionsCreated }
+}
+
+/**
+ * Event-driven recompute of a single active-NCS child's weekly snapshot + action for
+ * the reporting week containing `weekStart`. No-op when the child isn't an active NCS
+ * child. Reuses the exact weekly-build logic so manual, cron and event paths agree.
+ */
+export async function recomputeChildWeekById(
+  schoolId: string,
+  studentId: string,
+  weekStart: string,
+): Promise<void> {
+  const db = createSupabaseAdminClient()
+  const rules = resolveNcsRules()
+  const children = await loadActiveNcsChildren(db, schoolId)
+  const child = children.find((c) => c.studentId === studentId)
+  if (!child) return // not an active NCS child — nothing to compute
+  await recomputeChild(db, schoolId, child, weekStart, rules)
 }
 
 /**
