@@ -132,6 +132,8 @@ export async function createStudentAction(
   }
 
   const { firstName, lastName, classId, parentFirstName, parentLastName, parentEmail } = result.data
+  // Optional care record captured at creation (may be sensitive — never logged/audited).
+  const care = parseStudentCareFields(formData)
   const adminClient = createSupabaseAdminClient()
 
   // Generate a unique pupil payment code via the DB function, prefixed with
@@ -156,6 +158,15 @@ export async function createStudentAction(
       class_id: classId,
       pupil_payment_code: pupilCode,
       is_active: true,
+      emergency_contact_name: care.emergencyContactName,
+      emergency_contact_phone: care.emergencyContactPhone,
+      emergency_contact_relationship: care.emergencyContactRelationship,
+      allergies: care.allergies,
+      dietary_needs: care.dietaryNeeds,
+      medical_conditions: care.medicalConditions,
+      medication_consent: care.medicationConsent,
+      medication_notes: care.medicationNotes,
+      session: care.session,
     })
     .select('id')
     .single()

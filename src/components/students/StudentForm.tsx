@@ -79,7 +79,7 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
         disabled={isPending}
       />
 
-      {isEdit && (
+      {
         <>
           <Select
             label="Session"
@@ -186,7 +186,7 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
             </label>
           </div>
         </>
-      )}
+      }
 
       {!isEdit && (
         <div className="space-y-5 border-t border-border pt-5">

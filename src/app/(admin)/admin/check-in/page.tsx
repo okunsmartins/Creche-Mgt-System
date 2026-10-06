@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { checkInState, type CheckInRow } from '@/lib/checkin/checkin'
 import { CheckInBoard, type CheckInRoom } from '@/components/checkin/CheckInBoard'
+import type { StudentCareFields } from '@/lib/students/schemas'
 
 export const metadata: Metadata = { title: 'Daily check-in' }
 
@@ -15,6 +16,15 @@ interface ChildRow {
   first_name: string
   last_name: string
   class_id: string | null
+  emergency_contact_name: string | null
+  emergency_contact_phone: string | null
+  emergency_contact_relationship: string | null
+  allergies: string | null
+  dietary_needs: string | null
+  medical_conditions: string | null
+  medication_consent: boolean
+  medication_notes: string | null
+  session: StudentCareFields['session']
 }
 interface CheckInRecord extends CheckInRow {
   student_id: string
@@ -41,7 +51,9 @@ export default async function CheckInPage() {
       .order('display_order'),
     db
       .from('students')
-      .select('id, first_name, last_name, class_id')
+      .select(
+        'id, first_name, last_name, class_id, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, dietary_needs, medical_conditions, medication_consent, medication_notes, session',
+      )
       .eq('school_id', admin.schoolId)
       .eq('is_active', true)
       .order('last_name'),
@@ -67,6 +79,17 @@ export default async function CheckInPage() {
           id: c.id,
           name: `${c.first_name} ${c.last_name}`,
           state: checkInState(byStudent.get(c.id)),
+          care: {
+            emergencyContactName: c.emergency_contact_name,
+            emergencyContactPhone: c.emergency_contact_phone,
+            emergencyContactRelationship: c.emergency_contact_relationship,
+            allergies: c.allergies,
+            dietaryNeeds: c.dietary_needs,
+            medicalConditions: c.medical_conditions,
+            medicationConsent: c.medication_consent,
+            medicationNotes: c.medication_notes,
+            session: c.session,
+          },
         })),
     }))
     .filter((room) => room.children.length > 0)
