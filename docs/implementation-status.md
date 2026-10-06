@@ -108,9 +108,12 @@ right `funding.*` permission; cron guarded by `CRON_SECRET`; action descriptions
   generate invoices → re-run co-payment reconciliation vs the latest claim), and **staff/rooms** (teacher create/update,
   class update → re-evaluate Core-Funding drift and auto-raise/auto-resolve the drift action). Verified E2E on localhost:
   deactivating a staff member auto-raised "Core Funding profile has drifted (Staff 4 → 3)" on the dashboard with **no**
-  manual flag click; recapturing auto-resolved it. ⬜ **Still manual/not wired:** the service-calendar/closure trigger,
-  and the time-based cron **scans** — CHICK/award-expiry and readiness-drift — have no job yet (only the weekly NCS cron
-  exists).
+  manual flag click; recapturing auto-resolved it. ✅ **Time-based scans now wired** via `src/lib/funding/scans.ts` (pure,
+  6 tests) + `scans-service.ts` + the daily `/api/cron/funding-scans` cron (`30 6 * * *`, `CRON_SECRET`-guarded): **NCS
+  award/CHICK expiry** (APPROACHING within 30d / EXPIRED → deduped per-child action) and **Programme Readiness drift**
+  (MISSING/REVIEW_REQUIRED items overdue or due within 14d → deduped per-item action). Verified E2E on localhost: an
+  overdue readiness item → cron raised the action (1), re-run deduped (0), action shown on the dashboard. ⬜ **Still not
+  wired:** the service-calendar/closure trigger (needs a calendar/closures model).
 - **Immutable submission snapshots / evidence packs** (`funding_submission_snapshots`: canonical JSON + rendered PDF/CSV
   + data-source/rule versions + verifier + external-submission evidence): not built. Only CSV exports + a printable
   weekly-return page exist.
@@ -168,9 +171,9 @@ git checkout -b feat/funding-aim         # or feat/funding-event-wiring
 
 **Recommended next for funding** (items 1–3 below are **done** — isolation coverage ✅, §9 event-wiring ✅, AIM built &
 gate-verified ✅): (1) **enable AIM** — grant `funding.manage_aim` after a privacy review, then verify the case lifecycle
-E2E; (2) the remaining §9 pieces — service-calendar/closure trigger + the award-expiry and readiness-drift cron scans;
-(3) immutable submission snapshots/evidence packs; (4) sensitive-identifier controlled reveal + audit; (5) wire
-`funding_programme_config` into `resolveNcsRules`; (6) child-profile funding panel.
+E2E; (2) the last §9 piece — a service-calendar/closure trigger (needs a calendar/closures model); (award-expiry +
+readiness-drift scans now ✅ done); (3) immutable submission snapshots/evidence packs; (4) sensitive-identifier controlled
+reveal + audit; (5) wire `funding_programme_config` into `resolveNcsRules`; (6) child-profile funding panel.
 
 ---
 
