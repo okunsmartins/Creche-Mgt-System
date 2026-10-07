@@ -9,6 +9,7 @@ import {
   Plus,
   Repeat,
   ShoppingBag,
+  ShieldAlert,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -19,6 +20,7 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { BarChart } from '@/components/charts/BarChart'
 import { DonutChart } from '@/components/charts/DonutChart'
 import { collectedByDay, ordersByStatus } from '@/lib/charts/aggregate'
+import { getVettingOverview } from '@/lib/vetting/queries'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 
@@ -172,6 +174,25 @@ export default async function AdminDashboardPage() {
     { href: '/admin/teachers/new', label: 'Add Staff' },
   ]
 
+  // Garda vetting renewal reminder: staff whose vetting has expired or is due within 60 days.
+  // (Tolerant of the garda_vetting table being absent — then no rows qualify and no banner shows.)
+  const vettingToday = new Date().toISOString().slice(0, 10)
+  const vettingOverview = await getVettingOverview(admin.schoolId!, vettingToday)
+  const vettingRenewals = vettingOverview.rows
+    .filter((r) => r.status === 'expired' || r.status === 'expiring')
+    .sort((a, b) => (a.status === 'expired' ? 0 : 1) - (b.status === 'expired' ? 0 : 1))
+  const vettingExpired = vettingRenewals.filter((r) => r.status === 'expired').length
+  const vettingExpiring = vettingRenewals.length - vettingExpired
+  const vettingParts: string[] = []
+  if (vettingExpired > 0) vettingParts.push(`${vettingExpired} expired`)
+  if (vettingExpiring > 0) vettingParts.push(`${vettingExpiring} due for renewal within 60 days`)
+  const vettingNames = vettingRenewals.slice(0, 3).map((r) => r.name)
+  const vettingMore = vettingRenewals.length - vettingNames.length
+  const vettingAlertText =
+    `${vettingParts.join(', ')} — ${vettingNames.join(', ')}` +
+    (vettingMore > 0 ? ` +${vettingMore} more` : '') +
+    '.'
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -229,6 +250,31 @@ export default async function AdminDashboardPage() {
           </span>
         </Link>
       ) : null}
+
+      {/* Garda vetting renewal reminder — staff whose vetting is expired or due within 60 days. */}
+      {vettingRenewals.length > 0 && (
+        <Link
+          href="/admin/vetting"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-warning/40 bg-warning-light px-5 py-4 transition-all hover:border-warning/60"
+        >
+          <div className="flex items-start gap-3">
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                Garda vetting due for renewal
+              </p>
+              <p className="mt-0.5 text-xs text-text-muted">{vettingAlertText}</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+            Review
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </Link>
+      )}
 
       {/* Stat cards — 2 rows of 3: row 1 = availability, row 2 = financials */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

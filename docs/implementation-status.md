@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-10-06
+**Last updated:** 2026-10-07
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -54,6 +54,45 @@ Hive Centre Phases 1–5** — all applied + DB-verified; 087 `core_funding_snap
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
+
+---
+
+## Staff Workforce module — Phases 1–5 (rosters, timesheets, cover, payroll, vetting)
+
+> Built 2026-10-06/07 from the master spec "staff section" request: rosters/shift planning,
+> timesheets, ratio & cover alerts, payroll export, and Garda vetting renewal. Pure-logic-first
+> + vitest; each phase its own branch/PR off `main`. All gates green on each branch
+> (`tsc --noEmit` clean on source; `eslint` clean; `prettier --check` clean; full suite **944 passed / 85 files**).
+
+| Phase | What | Key files | Migration | Status |
+|---|---|---|---|---|
+| **1 — Weekly rota** | Shift planner per staff/room/day; overlap + time validation; week nav | `lib/rota/rota.ts` (8 tests), `rota/queries.ts`, `rota/actions.ts`, `RotaBoard.tsx`, `/admin/rota` | **092** `staff_shifts` ✅ applied | ✅ merged **PR #55**, browser-E2E |
+| **2 — Timesheets** | Seed PENDING from the week's shifts (actual=planned, idempotent), edit actual hours, approve/reopen; weekly hours by staff | `rota/timesheets.ts` (5 tests), `timesheet-actions.ts`, `timesheet-queries.ts`, `TimesheetBoard.tsx`, `/admin/timesheets` | **093** `staff_timesheets` ✅ applied | ✅ merged **PR #56**, browser-E2E (generate → approve) |
+| **3 — Ratio & cover alerts** | Per-room required-vs-rostered staff per day (uses `roomStaffingRequirement` + child DOBs); flags room-days under ratio | `rota/cover.ts` (2 tests), `cover-queries.ts`, `CoverAlertsPanel.tsx` (on `/admin/rota`) | none (reads shifts + children) | 🟡 PR **open** `feat/staff-cover-alerts`, browser-E2E done |
+| **4 — Payroll export** | Per-staff APPROVED timesheet hours for a pay period; preview table + CSV download for payroll providers | `rota/payroll.ts` (3 tests), `payroll-queries.ts`, `/api/admin/staff/payroll` (CSV), `/admin/payroll` | none (reuses 093) | 🟡 PR **open** `feat/staff-payroll`, browser-E2E (seed approved → preview + CSV 200) |
+| **5 — Garda vetting renewal** | Per-staff NVB disclosure + renewal date; status (valid / renewal-due ≤60d / expired / no-date / not-recorded); attention banner; inline record/edit/clear; **renewal reminder on the admin dashboard** (warning banner for expired/soon-due staff → /admin/vetting) | `lib/vetting/vetting.ts` (9 tests), `vetting/queries.ts`, `vetting/actions.ts`, `VettingBoard.tsx`, `/admin/vetting`, `admin/dashboard/page.tsx` | **094** `garda_vetting` ✅ **applied 2026-10-07** | ✅ PR **open** `feat/staff-garda-vetting`; **read + write paths browser-verified** (recorded disclosure → "Renewal due"/"Expired" statuses + DB-persisted with correct `created_by`; dashboard banner shows "1 due for renewal"/"1 expired"); cleaned up |
+
+**Outstanding / to continue:**
+- ~~Apply migration 094~~ ✅ **applied 2026-10-07**; vetting write path + dashboard reminder verified E2E.
+- **Open + merge the 4 open PRs** (#55 and #56 already merged). Merge order matters: all four touch
+  `AdminSidebar.tsx` (STAFF nav). Merge one, then **re-sync each other branch** with `main`
+  (the app's `sync_with_base_branch`, or `git merge main`) before merging the next — otherwise the
+  branch-up-to-date CI rule blocks them and the nav array conflicts.
+- After 094 is applied: verify the vetting **write path** (record a disclosure for a staff member →
+  status flips to Valid/Renewal-due/Expired; Clear removes it).
+
+**Security / tenancy:** every query/action is `school_id`-scoped through `createSupabaseAdminClient`
+(RLS bypassed → manual scoping); vetting upsert/delete and timesheet approval use verify-then-write
+(`.eq('id').eq('school_id')`). Migrations 092–094 are RLS-on with explicit grants (SELECT→authenticated,
+full→service_role) + `set_updated_at` trigger, matching house convention. CSV cells are all quoted/escaped.
+
+**Commands to continue (per branch):**
+```bash
+npx tsc --noEmit        # source clean; ignore stale .next/types stubs for routes on other branches
+npx eslint src
+npx prettier --check "src/**/*.{ts,tsx}"
+npx vitest run          # 944 passed / 85 files
+```
 
 ---
 
