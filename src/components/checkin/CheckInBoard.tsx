@@ -12,6 +12,21 @@ export interface CheckInChild {
   id: string
   name: string
   state: CheckInState
+  checkedInAt: string | null
+  checkedOutAt: string | null
+}
+
+/** Format a stored timestamp as HH:MM in Irish wall-clock time (fixed tz → no hydration drift). */
+function fmtTime(iso: string | null): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleTimeString('en-IE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: 'Europe/Dublin',
+  })
 }
 export interface CheckInRoom {
   id: string
@@ -76,11 +91,21 @@ export function CheckInBoard({ rooms, dateLabel }: { rooms: CheckInRoom[]; dateL
               <ul className="mt-3 divide-y divide-border/60">
                 {room.children.map((c) => {
                   const badge = STATE_BADGE[c.state]
+                  const inTime = fmtTime(c.checkedInAt)
+                  const outTime = fmtTime(c.checkedOutAt)
                   return (
                     <li key={c.id} className="flex items-center justify-between gap-2 py-2">
-                      <span className="flex items-center gap-2 text-sm">
-                        <Badge variant={badge.variant}>{badge.text}</Badge>
-                        {c.name}
+                      <span className="flex flex-col gap-0.5">
+                        <span className="flex items-center gap-2 text-sm">
+                          <Badge variant={badge.variant}>{badge.text}</Badge>
+                          {c.name}
+                        </span>
+                        {(inTime || outTime) && (
+                          <span className="pl-0.5 text-xs text-text-muted">
+                            {inTime && <>In {inTime}</>}
+                            {outTime && <> · Out {outTime}</>}
+                          </span>
+                        )}
                       </span>
                       <span className="flex gap-1.5">
                         {c.state !== 'in' && (
