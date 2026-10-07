@@ -106,16 +106,14 @@ export async function isSubdomainAvailable(
   return !data
 }
 
-// Standard Irish primary class list seeded for every new school.
+// Standard crèche room list seeded for every new tenant. Age-banded rooms covering the
+// full 0–5+ span; a new crèche can rename, add or remove these in-app during onboarding.
 const DEFAULT_CLASSES = [
-  'Junior Infants',
-  'Senior Infants',
-  'First Class',
-  'Second Class',
-  'Third Class',
-  'Fourth Class',
-  'Fifth Class',
-  'Sixth Class',
+  'Babies Room (0–1 yrs)',
+  'Wobblers Room (1–2 yrs)',
+  'Toddlers Room (2–3 yrs)',
+  'Preschool Room (3–5 yrs)',
+  'School-Age Service (5+ yrs)',
 ]
 
 export interface ProvisionSchoolInput {
