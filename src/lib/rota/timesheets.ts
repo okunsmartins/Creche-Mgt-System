@@ -60,3 +60,42 @@ export function formatVariance(minutes: number): string {
   const sign = minutes > 0 ? '+' : '-'
   return `${sign}${parseFloat((Math.abs(minutes) / 60).toFixed(2))}h`
 }
+
+// ── Timesheet report (period summary) ──────────────────────────────────────────
+export interface TimesheetReportRecord {
+  teacherId: string
+  name: string
+  status: string
+  actualStart: string
+  actualEnd: string
+}
+export interface TimesheetReportLine {
+  teacherId: string
+  name: string
+  approvedMinutes: number
+  pendingMinutes: number
+  totalMinutes: number
+  entries: number
+}
+
+/** Per-staff hours over a set of timesheet records: approved vs pending vs total. */
+export function summariseTimesheets(records: TimesheetReportRecord[]): TimesheetReportLine[] {
+  const byTeacher = new Map<string, TimesheetReportLine>()
+  for (const r of records) {
+    const line = byTeacher.get(r.teacherId) ?? {
+      teacherId: r.teacherId,
+      name: r.name,
+      approvedMinutes: 0,
+      pendingMinutes: 0,
+      totalMinutes: 0,
+      entries: 0,
+    }
+    const mins = actualMinutes(r.actualStart, r.actualEnd)
+    line.totalMinutes += mins
+    if (r.status === 'APPROVED') line.approvedMinutes += mins
+    else line.pendingMinutes += mins
+    line.entries += 1
+    byTeacher.set(r.teacherId, line)
+  }
+  return [...byTeacher.values()].sort((a, b) => a.name.localeCompare(b.name))
+}

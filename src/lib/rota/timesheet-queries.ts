@@ -1,7 +1,12 @@
 import 'server-only'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { weekDays } from './rota'
-import { actualMinutes, varianceMinutes } from './timesheets'
+import {
+  actualMinutes,
+  varianceMinutes,
+  summariseTimesheets,
+  type TimesheetReportLine,
+} from './timesheets'
 
 export interface TimesheetEntry {
   id: string
@@ -135,4 +140,86 @@ export async function getWeekTimesheets(
   const staffTotals = [...totalsMap.values()].sort((a, b) => a.name.localeCompare(b.name))
 
   return { weekStart, entries, staffTotals }
+}
+
+// ── Timesheet report (day / week / month) ───────────────────────────────────────
+export interface TimesheetReportDailyEntry {
+  teacherName: string
+  workDate: string
+  plannedStart: string
+  plannedEnd: string
+  actualStart: string
+  actualEnd: string
+  status: string
+  actualMinutes: number
+}
+export interface TimesheetReport {
+  from: string
+  to: string
+  lines: TimesheetReportLine[] // per-staff summary over [from, to]
+  daily: TimesheetReportDailyEntry[] // entries on the `from` date (day view)
+}
+
+/**
+ * Timesheet report over [from, to]: per-staff approved/pending/total hours, plus the
+ * individual entries on the `from` date for the day view. School-scoped.
+ */
+export async function getTimesheetReport(
+  schoolId: string,
+  from: string,
+  to: string,
+): Promise<TimesheetReport> {
+  const db = createSupabaseAdminClient()
+  const { data } = await db
+    .from('staff_timesheets')
+    .select(
+      'teacher_id, work_date, planned_start, planned_end, actual_start, actual_end, status, teachers(first_name, last_name)',
+    )
+    .eq('school_id', schoolId)
+    .gte('work_date', from)
+    .lte('work_date', to)
+    .order('work_date')
+
+  const rows =
+    (data as unknown as
+      | {
+          teacher_id: string
+          work_date: string
+          planned_start: string
+          planned_end: string
+          actual_start: string
+          actual_end: string
+          status: string
+          teachers: { first_name: string | null; last_name: string | null } | null
+        }[]
+      | null) ?? []
+
+  const nameOf = (t: { first_name: string | null; last_name: string | null } | null) =>
+    [t?.first_name, t?.last_name].filter(Boolean).join(' ') || 'Staff member'
+
+  const lines = summariseTimesheets(
+    rows.map((r) => ({
+      teacherId: r.teacher_id,
+      name: nameOf(r.teachers),
+      status: r.status,
+      actualStart: r.actual_start,
+      actualEnd: r.actual_end,
+    })),
+  )
+
+  const daily: TimesheetReportDailyEntry[] = rows
+    .filter((r) => r.work_date === from)
+    .map((r) => ({
+      teacherName: nameOf(r.teachers),
+      workDate: r.work_date,
+      plannedStart: r.planned_start,
+      plannedEnd: r.planned_end,
+      actualStart: r.actual_start,
+      actualEnd: r.actual_end,
+      status: r.status,
+      actualMinutes: actualMinutes(r.actual_start, r.actual_end),
+    }))
+    .sort((a, b) => a.teacherName.localeCompare(b.teacherName))
+
+  return { from, to, lines, daily }
 }
