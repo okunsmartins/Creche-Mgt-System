@@ -35,7 +35,7 @@ export default async function PrivacyPage() {
           <div className="rounded-lg border border-warning/30 bg-warning-light p-4 text-sm text-warning">
             <strong>Development notice:</strong> This is a placeholder privacy notice for the proof
             of concept. A full GDPR-compliant privacy notice must be prepared by{' '}
-            {controller ? `${controller}` : 'each school'} in consultation with their Data
+            {controller ? `${controller}` : 'each crèche'} in consultation with their Data
             Protection Officer before the portal is used in production.
           </div>
 
@@ -62,9 +62,9 @@ export default async function PrivacyPage() {
             ) : (
               <p>
                 This portal is operated by <strong>First Stack Solutions</strong>, which acts as a
-                data processor for the crèches that use it. Each school is the data controller for
-                its own pupils&apos; and parents&apos; data — open your crèche&apos;s portal to see
-                its specific privacy notice and contact details.
+                data processor for the crèches that use it. Each crèche is the data controller for
+                its own children&apos;s and parents&apos; data — open your crèche&apos;s portal to
+                see its specific privacy notice and contact details.
               </p>
             )}
           </section>
@@ -73,7 +73,7 @@ export default async function PrivacyPage() {
             <h2 className="text-lg font-semibold text-text-primary">What information we collect</h2>
             <ul className="list-disc pl-5">
               <li>Parent / guardian name and email address</li>
-              <li>Pupil first name, surname and class</li>
+              <li>Child first name, surname and room</li>
               <li>Payment references and amounts</li>
               <li>
                 We do <strong>not</strong> store card numbers or payment-card details
@@ -84,8 +84,8 @@ export default async function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-text-primary">How we use your information</h2>
             <p>
-              We use your information solely to process school payments, send receipts, and allow
-              school administrators to reconcile payments. We do not share your information with
+              We use your information solely to process crèche payments, send receipts, and allow
+              crèche administrators to reconcile payments. We do not share your information with
               third parties except as required to process payments (Stripe) and send emails
               (Resend).
             </p>

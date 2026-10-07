@@ -70,7 +70,7 @@ export default async function PublicActivitiesPage() {
             <Link href="/guest-payment" className="text-primary hover:underline">
               pay as a guest
             </Link>{' '}
-            using your child&apos;s pupil payment code.
+            using your child&apos;s payment code.
           </p>
         </div>
       </section>

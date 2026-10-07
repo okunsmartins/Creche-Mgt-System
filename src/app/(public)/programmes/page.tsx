@@ -83,7 +83,7 @@ export default async function PublicProgrammesPage() {
             <Link href="/login" className="text-primary hover:underline">
               sign in
             </Link>{' '}
-            for a personalised view, or enrol as a guest using your child&apos;s pupil payment code.
+            for a personalised view, or enrol as a guest using your child&apos;s payment code.
           </p>
         </div>
       </section>
