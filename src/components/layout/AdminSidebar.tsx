@@ -86,6 +86,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/classes', label: 'Rooms', icon: BookOpen },
       { href: '/admin/rota', label: 'Rota', icon: CalendarClock },
       { href: '/admin/timesheets', label: 'Timesheets', icon: ClipboardList },
+      { href: '/admin/payroll', label: 'Payroll', icon: Banknote },
       { href: '/admin/ratios', label: 'Ratios', icon: Scale },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
     ],
