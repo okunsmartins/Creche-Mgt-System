@@ -78,3 +78,24 @@ describe('roomStaffingRequirement', () => {
     expect(r.byBand).toEqual([])
   })
 })
+
+describe('configurable bands', () => {
+  // A crèche tightens 1–2 years from 1:5 to 1:4.
+  const custom = [
+    { label: '0–1 year', minMonths: 0, maxMonths: 12, childrenPerAdult: 3 },
+    { label: '1–2 years', minMonths: 12, maxMonths: 24, childrenPerAdult: 4 },
+  ]
+  it('ratioBandForAgeMonths uses the provided bands', () => {
+    expect(ratioBandForAgeMonths(18, custom)?.childrenPerAdult).toBe(4)
+    expect(ratioBandForAgeMonths(30, custom)).toBeNull() // outside custom bands
+  })
+  it('roomStaffingRequirement applies the custom ratio', () => {
+    // 8 toddlers (18m) at 1:4 => 2 staff (reference 1:5 would be 2 as well → use 9 to differ)
+    const req = roomStaffingRequirement([18, 18, 18, 18, 18, 18, 18, 18, 18], custom) // 9 kids
+    expect(req.requiredStaff).toBe(3) // ceil(9/4)=3 (reference 1:5 would be ceil(9/5)=2)
+    expect(req.totalPlaced).toBe(9)
+  })
+  it('defaults to the reference set when no bands passed', () => {
+    expect(roomStaffingRequirement([18, 18, 18, 18, 18, 18, 18, 18, 18]).requiredStaff).toBe(2) // 1:5
+  })
+})

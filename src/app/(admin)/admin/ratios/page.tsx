@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { ageInMonthsAt } from '@/lib/age/age'
 import { roomStaffingRequirement } from '@/lib/ratios/ratio'
+import { getRatioBands } from '@/lib/ratios/config'
+import { getStaffOnDuty } from '@/lib/ratios/staff-on-duty'
 import { isPresentNow, type CheckInRow } from '@/lib/checkin/checkin'
 import { RatioBoard, type RoomRatio } from '@/components/ratios/RatioBoard'
 
@@ -53,6 +55,11 @@ export default async function RatiosPage() {
     ((ciData ?? []) as CheckInRecord[]).filter(isPresentNow).map((r) => r.student_id),
   )
 
+  const [bands, savedStaff] = await Promise.all([
+    getRatioBands(admin.schoolId),
+    getStaffOnDuty(admin.schoolId, todayISO),
+  ])
+
   // Ratio basis = children PRESENT NOW (from daily check-in); enrolled shown for context.
   const presentAgesByRoom = new Map<string, (number | null)[]>()
   const enrolledByRoom = new Map<string, number>()
@@ -66,7 +73,7 @@ export default async function RatiosPage() {
   }
 
   const roomRatios: RoomRatio[] = rooms.map((r) => {
-    const req = roomStaffingRequirement(presentAgesByRoom.get(r.id) ?? [])
+    const req = roomStaffingRequirement(presentAgesByRoom.get(r.id) ?? [], bands)
     return {
       id: r.id,
       name: r.name,
@@ -80,6 +87,7 @@ export default async function RatiosPage() {
         children: b.children,
         required: b.required,
       })),
+      savedStaff: savedStaff.get(r.id) ?? null,
     }
   })
 
@@ -89,11 +97,12 @@ export default async function RatiosPage() {
         <h1 className="text-2xl font-bold text-text-primary">Room ratios</h1>
         <p className="mt-1 text-sm text-text-muted">
           Live staffing based on children <strong>present now</strong> (from daily check-in) and
-          their ages. Enter staff on duty to check compliance. Reference Irish ratios —{' '}
-          <strong>confirm against current Tusla regulations</strong>.
+          their ages, against your configured ratios. Save staff on duty per room — rooms under
+          ratio are flagged on the dashboard.{' '}
+          <strong>Confirm ratios against current Tusla regulations.</strong>
         </p>
       </div>
-      <RatioBoard rooms={roomRatios} />
+      <RatioBoard rooms={roomRatios} bands={bands} today={todayISO} />
     </div>
   )
 }
