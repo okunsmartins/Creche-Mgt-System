@@ -63,11 +63,16 @@ export default async function CheckInPage() {
       name: room.name,
       children: children
         .filter((c) => c.class_id === room.id)
-        .map((c) => ({
-          id: c.id,
-          name: `${c.first_name} ${c.last_name}`,
-          state: checkInState(byStudent.get(c.id)),
-        })),
+        .map((c) => {
+          const rec = byStudent.get(c.id)
+          return {
+            id: c.id,
+            name: `${c.first_name} ${c.last_name}`,
+            state: checkInState(rec),
+            checkedInAt: rec?.checked_in_at ?? null,
+            checkedOutAt: rec?.checked_out_at ?? null,
+          }
+        }),
     }))
     .filter((room) => room.children.length > 0)
 
