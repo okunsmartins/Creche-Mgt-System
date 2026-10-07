@@ -131,7 +131,15 @@ export async function createStudentAction(
     }
   }
 
-  const { firstName, lastName, classId, parentFirstName, parentLastName, parentEmail } = result.data
+  const {
+    firstName,
+    lastName,
+    classId,
+    parentFirstName,
+    parentLastName,
+    parentEmail,
+    parentMobile,
+  } = result.data
   const adminClient = createSupabaseAdminClient()
 
   // Generate a unique pupil payment code via the DB function, prefixed with
@@ -155,6 +163,7 @@ export async function createStudentAction(
       last_name: lastName,
       class_id: classId,
       pupil_payment_code: pupilCode,
+      parent_mobile: parentMobile?.trim() || null,
       is_active: true,
     })
     .select('id')
@@ -324,6 +333,7 @@ export async function updateStudentAction(
       first_name: firstName,
       last_name: lastName,
       class_id: classId,
+      parent_mobile: care.parentMobile,
       emergency_contact_name: care.emergencyContactName,
       emergency_contact_phone: care.emergencyContactPhone,
       emergency_contact_relationship: care.emergencyContactRelationship,
