@@ -1,7 +1,7 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { parentIdsForAudience } from '@/lib/messages/recipients'
 import type { ParentMessageAudienceInput } from '@/lib/messages/schemas'
-import { normalizeIrishMobile } from './phone'
+import { normalizeIrishMobile, pickSmsPhone } from './phone'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
 
@@ -40,6 +40,28 @@ export async function resolveSmsRecipients(
     .in('id', parentIds)
     .eq('is_active', true)
 
+  // Fallback number: the child-level `parent_mobile` captured on a linked child, used when
+  // a parent has no usable mobile on their own profile. (Common in a crèche: staff enter
+  // the parent's number on the child, but the parent account has no phone set.)
+  const { data: linkData } = await adminClient
+    .from('parent_student_links')
+    .select('parent_id, students(parent_mobile)')
+    .eq('school_id', schoolId)
+    .eq('is_active', true)
+    .in('parent_id', parentIds)
+
+  type LinkRow = {
+    parent_id: string
+    students: { parent_mobile: string | null } | { parent_mobile: string | null }[] | null
+  }
+  const fallbackByParent = new Map<string, string>()
+  for (const row of (linkData as LinkRow[] | null) ?? []) {
+    if (fallbackByParent.has(row.parent_id)) continue
+    const stu = Array.isArray(row.students) ? row.students[0] : row.students
+    const mobile = normalizeIrishMobile(stu?.parent_mobile ?? null)
+    if (mobile) fallbackByParent.set(row.parent_id, mobile)
+  }
+
   type Row = {
     id: string
     first_name: string | null
@@ -53,18 +75,15 @@ export async function resolveSmsRecipients(
   let optedOutCount = 0
 
   for (const p of (data as Row[] | null) ?? []) {
-    if (p.sms_opt_out) {
-      optedOutCount += 1
-      continue
-    }
-    const phone = normalizeIrishMobile(p.phone)
-    if (!phone) {
-      noPhoneCount += 1
+    const pick = pickSmsPhone(p.phone, fallbackByParent.get(p.id) ?? null, p.sms_opt_out)
+    if ('skip' in pick) {
+      if (pick.skip === 'opted_out') optedOutCount += 1
+      else noPhoneCount += 1
       continue
     }
     recipients.push({
       parentId: p.id,
-      phone,
+      phone: pick.phone,
       name: [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || 'Parent/Guardian',
     })
   }

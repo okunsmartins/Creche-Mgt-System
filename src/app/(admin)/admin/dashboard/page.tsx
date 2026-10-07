@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Award,
   CalendarOff,
+  Scale,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -25,6 +26,7 @@ import { collectedByDay, ordersByStatus } from '@/lib/charts/aggregate'
 import { getVettingOverview } from '@/lib/vetting/queries'
 import { getCertifications } from '@/lib/certifications/queries'
 import { getUpcomingTimeOffClashes } from '@/lib/timeoff/clash-queries'
+import { getRoomRatioAlerts } from '@/lib/ratios/alerts'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 
@@ -223,6 +225,18 @@ export default async function AdminDashboardPage() {
   const clashMore = clashDays.length - clashLabels.length
   const clashAlertText = `${clashLabels.join(', ')}${clashMore > 0 ? ` +${clashMore} more` : ''}.`
 
+  // Room ratio alert: rooms under their required ratio right now (present children at the
+  // configured ratios vs staff on duty — saved for today, else rostered from the rota).
+  const ratio = await getRoomRatioAlerts(admin.schoolId!, vettingToday)
+  const ratioLabels = ratio.alerts
+    .slice(0, 3)
+    .map(
+      (a) =>
+        `${a.roomName} (${a.available} of ${a.required}${a.source === 'rostered' ? ', rostered' : ''})`,
+    )
+  const ratioMore = ratio.alerts.length - ratioLabels.length
+  const ratioAlertText = `${ratioLabels.join(', ')}${ratioMore > 0 ? ` +${ratioMore} more` : ''}.`
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -319,6 +333,32 @@ export default async function AdminDashboardPage() {
                 Qualifications &amp; training due for renewal
               </p>
               <p className="mt-0.5 text-xs text-text-muted">{certAlertText}</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+            Review
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </Link>
+      )}
+
+      {/* Room ratio alert — rooms under the required adult:child ratio right now. */}
+      {ratio.alerts.length > 0 && (
+        <Link
+          href="/admin/ratios"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-error/40 bg-error-light px-5 py-4 transition-all hover:border-error/60"
+        >
+          <div className="flex items-start gap-3">
+            <Scale className="mt-0.5 h-5 w-5 shrink-0 text-error" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                {ratio.alerts.length} room{ratio.alerts.length === 1 ? '' : 's'} under the required
+                ratio
+              </p>
+              <p className="mt-0.5 text-xs text-text-muted">{ratioAlertText}</p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
