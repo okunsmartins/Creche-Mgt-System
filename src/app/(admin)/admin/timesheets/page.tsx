@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
+import { BarChart2 } from 'lucide-react'
 import { requireAdmin } from '@/lib/auth/guards'
 import { getWeekTimesheets } from '@/lib/rota/timesheet-queries'
 import { mondayOf, addDays } from '@/lib/rota/rota'
@@ -22,12 +24,20 @@ export default async function TimesheetsPage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Timesheets</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Generate timesheets from the rota, record the hours actually worked, and approve them.
-          Approved hours feed the payroll export.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Timesheets</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Generate timesheets from the rota, record the hours actually worked, and approve them.
+            Approved hours feed the payroll export.
+          </p>
+        </div>
+        <Link
+          href="/admin/timesheets/report"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+        >
+          <BarChart2 className="h-4 w-4" /> Report
+        </Link>
       </div>
       <TimesheetBoard
         week={data}
