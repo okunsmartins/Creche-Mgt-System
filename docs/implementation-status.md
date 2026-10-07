@@ -16,18 +16,18 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
-## Verification snapshot (2026-10-06)
+## Verification snapshot (2026-10-07)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **897 passed / 78 files** (re-run 2026-10-06, exit 0) |
-| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean (2026-10-06) |
-| Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean (2026-10-06) |
-| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (funding + teachers re-checked 2026-10-06) |
-| DB migrations 068–088 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–088** Funding & Hive Centre (Phases 1–5, 088 = AIM); user-applied, "Success" |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **946 passed / 86 files** (re-run 2026-10-07 on `main`, exit 0) |
+| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ source clean (2026-10-07; ignore stale `.next/types` route stubs) |
+| Lint | `npm run lint` (`eslint src`) | ✅ clean (2026-10-07) |
+| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (2026-10-07) |
+| DB migrations 068–094 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–088** Funding & Hive Centre, **089–091** (submission snapshots, sensitive-reveal audit, student care fields), **092–094** Staff Workforce (shifts / timesheets / garda_vetting); user-applied, "Success" |
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
-| Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
+| Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075); **staff tables `staff_shifts`/`staff_timesheets`/`garda_vetting` re-proven 2026-10-07** — seeded rows readable by service-role, 0 rows to anon |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
 | Security scans (SAST/SCA/DAST/SBOM) | — | ⬜ **not set up** (spec §11.4) |
@@ -48,9 +48,11 @@ Build] + up-to-date + conversation resolution; direct pushes rejected). Phases 1
 merged green through this gate.
 
 **Database:** Supabase project `xpbavfutfejlfbmnntyl` (the crèche dev project — NOT the school prod DB).
-Migrations 001–088 applied (**081 collection register; 082 SMS allowance; 083 child observations; 084–088 Funding &
-Hive Centre Phases 1–5** — all applied + DB-verified; 087 `core_funding_snapshots` confirmed by a browser-E2E write;
-088 `aim_cases` confirmed by the re-run isolation script passing). Test tenant: **Angels Nest Crèche**
+Migrations 001–094 applied (**081 collection register; 082 SMS allowance; 083 child observations; 084–088 Funding &
+Hive Centre Phases 1–5; 089 funding submission snapshots; 090 sensitive-reveal audit; 091 student care fields;
+092–094 Staff Workforce = staff_shifts / staff_timesheets / garda_vetting** — all applied + DB-verified; 087
+`core_funding_snapshots` confirmed by a browser-E2E write; 088 `aim_cases` confirmed by the re-run isolation
+script passing; 094 `garda_vetting` confirmed by browser-E2E write + anon-sweep). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
@@ -59,39 +61,79 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 
 ## Staff Workforce module — Phases 1–5 (rosters, timesheets, cover, payroll, vetting)
 
-> Built 2026-10-06/07 from the master spec "staff section" request: rosters/shift planning,
-> timesheets, ratio & cover alerts, payroll export, and Garda vetting renewal. Pure-logic-first
-> + vitest; each phase its own branch/PR off `main`. All gates green on each branch
-> (`tsc --noEmit` clean on source; `eslint` clean; `prettier --check` clean; full suite **944 passed / 85 files**).
+> Built 2026-10-06/07 for master-spec **§7.5 "Staff, rota, timesheets and compliance"** (and the
+> §2.1/§7.4 staff-attendance/ratio lines). Pure-logic-first + vitest; five phases, each its own PR.
+> **All merged to `main` (PRs #55–#59)**, each green through branch-protection CI (Lint & Type Check /
+> Unit Tests / Production Build). Reviewed against the master spec 2026-10-07.
+>
+> **Verification snapshot (2026-10-07, on `main`):** `tsc --noEmit` source-clean · `eslint` clean ·
+> `prettier --check` clean · **full suite 946 passed / 86 files** · staff-module subset 36 tests ·
+> DB-level tenant isolation on all three new tables proven (see Security below).
 
-| Phase | What | Key files | Migration | Status |
-|---|---|---|---|---|
-| **1 — Weekly rota** | Shift planner per staff/room/day; overlap + time validation; week nav | `lib/rota/rota.ts` (8 tests), `rota/queries.ts`, `rota/actions.ts`, `RotaBoard.tsx`, `/admin/rota` | **092** `staff_shifts` ✅ applied | ✅ merged **PR #55**, browser-E2E |
-| **2 — Timesheets** | Seed PENDING from the week's shifts (actual=planned, idempotent), edit actual hours, approve/reopen; weekly hours by staff | `rota/timesheets.ts` (5 tests), `timesheet-actions.ts`, `timesheet-queries.ts`, `TimesheetBoard.tsx`, `/admin/timesheets` | **093** `staff_timesheets` ✅ applied | ✅ merged **PR #56**, browser-E2E (generate → approve) |
-| **3 — Ratio & cover alerts** | Per-room required-vs-rostered staff per day (uses `roomStaffingRequirement` + child DOBs); flags room-days under ratio | `rota/cover.ts` (2 tests), `cover-queries.ts`, `CoverAlertsPanel.tsx` (on `/admin/rota`) | none (reads shifts + children) | 🟡 PR **open** `feat/staff-cover-alerts`, browser-E2E done |
-| **4 — Payroll export** | Per-staff APPROVED timesheet hours for a pay period; preview table + CSV download for payroll providers | `rota/payroll.ts` (3 tests), `payroll-queries.ts`, `/api/admin/staff/payroll` (CSV), `/admin/payroll` | none (reuses 093) | 🟡 PR **open** `feat/staff-payroll`, browser-E2E (seed approved → preview + CSV 200) |
-| **5 — Garda vetting renewal** | Per-staff NVB disclosure + renewal date; status (valid / renewal-due ≤60d / expired / no-date / not-recorded); attention banner; inline record/edit/clear; **renewal reminder on the admin dashboard** (warning banner for expired/soon-due staff → /admin/vetting) | `lib/vetting/vetting.ts` (9 tests), `vetting/queries.ts`, `vetting/actions.ts`, `VettingBoard.tsx`, `/admin/vetting`, `admin/dashboard/page.tsx` | **094** `garda_vetting` ✅ **applied 2026-10-07** | ✅ PR **open** `feat/staff-garda-vetting`; **read + write paths browser-verified** (recorded disclosure → "Renewal due"/"Expired" statuses + DB-persisted with correct `created_by`; dashboard banner shows "1 due for renewal"/"1 expired"); cleaned up |
+### Spec §7.5 requirement coverage (honest mapping)
 
-**Outstanding / to continue:**
-- ~~Apply migration 094~~ ✅ **applied 2026-10-07**; vetting write path + dashboard reminder verified E2E.
-- **Open + merge the 4 open PRs** (#55 and #56 already merged). Merge order matters: all four touch
-  `AdminSidebar.tsx` (STAFF nav). Merge one, then **re-sync each other branch** with `main`
-  (the app's `sync_with_base_branch`, or `git merge main`) before merging the next — otherwise the
-  branch-up-to-date CI rule blocks them and the nav array conflicts.
-- After 094 is applied: verify the vetting **write path** (record a disclosure for a staff member →
-  status flips to Valid/Renewal-due/Expired; Clear removes it).
+| Spec §7.5 requirement | Status | Notes |
+|---|---|---|
+| Weekly rota builder with dropdown room/shift assignments | ✅ **done** | `/admin/rota`; per staff/room/day, overlap + time validation, week nav. Browser-E2E. |
+| Timesheets + manager adjustments | 🟡 **partial** | `/admin/timesheets`: seeded from the **rota** (not live clock-in/out), actual hours editable, approve/reopen, weekly totals. Browser-E2E. **Gaps vs spec:** (a) source is rota, not **staff clock-in/out**; (b) edits take an optional note, **not an enforced audit reason**. |
+| Ratio / cover alerts | ✅ **done** | `/admin/rota` panel: per-room required (ratio engine + child DOBs) vs rostered staff per day; flags under-ratio room-days. Browser-E2E. |
+| Payroll-ready CSV/export | ✅ **done** (export) | `/admin/payroll` + `GET /api/admin/staff/payroll`: APPROVED hours per staff for a period, CSV download (quoted/escaped, CRLF). Browser-E2E (CSV `200`, correct totals). **Accounting/payroll *adapter* = explicitly future** per spec §3.2/§line 294. |
+| Garda-vetting expiry reminders | ✅ **done** | `/admin/vetting` (record/edit/clear, status valid / renewal-due ≤60d / expired / no-date / not-recorded) **+ admin-dashboard renewal banner**. Read **and write** paths browser-verified + DB-persisted; cleaned up. |
+| Qualification & **training** expiry reminders | ❌ **not built** | Spec §7.5 asks for qualification + training expiry alongside Garda vetting. Only Garda vetting exists. |
+| Leave request + approval showing **ratio/cover impact before approval** | 🟡 **partial** | Time Off (leave) request/approve pre-exists (`/admin/time-off`, mig 046). The **cover-impact preview before approving leave is NOT wired** (the cover engine exists but isn't surfaced in the approval flow). |
+| Staff directory: role, **contracted hours**, qualifications, compliance dates | 🟡 **partial** | Staff directory + role pre-exist (`teachers`). **Contracted hours and qualifications columns NOT built**; only one compliance date (Garda vetting) is tracked. |
+| Staffing **forecast** by room from expected occupancy + ratios | 🟡 **partial** | Cover alerts compute required-vs-rostered from **currently enrolled** children per room, not a forward **expected-occupancy** forecast. |
 
-**Security / tenancy:** every query/action is `school_id`-scoped through `createSupabaseAdminClient`
-(RLS bypassed → manual scoping); vetting upsert/delete and timesheet approval use verify-then-write
-(`.eq('id').eq('school_id')`). Migrations 092–094 are RLS-on with explicit grants (SELECT→authenticated,
-full→service_role) + `set_updated_at` trigger, matching house convention. CSV cells are all quoted/escaped.
+### Phase → artefacts
 
-**Commands to continue (per branch):**
+| Phase | Key files | Migration | PR |
+|---|---|---|---|
+| 1 Rota | `lib/rota/rota.ts` (8 tests), `rota/queries.ts`, `rota/actions.ts`, `RotaBoard.tsx`, `/admin/rota` | **092** `staff_shifts` ✅ | #55 |
+| 2 Timesheets | `rota/timesheets.ts` (5 tests), `timesheet-actions.ts`, `timesheet-queries.ts`, `TimesheetBoard.tsx`, `/admin/timesheets` | **093** `staff_timesheets` ✅ | #56 |
+| 3 Cover alerts | `rota/cover.ts` (2 tests), `cover-queries.ts`, `CoverAlertsPanel.tsx` | none (reads shifts+children) | #57 |
+| 4 Payroll | `rota/payroll.ts` (3 tests), `payroll-queries.ts`, `api/admin/staff/payroll/route.ts`, `/admin/payroll` | none (reuses 093) | #58 |
+| 5 Garda vetting | `lib/vetting/vetting.ts` (9 tests), `vetting/queries.ts`, `vetting/actions.ts`, `VettingBoard.tsx`, `/admin/vetting`, `admin/dashboard/page.tsx` | **094** `garda_vetting` ✅ | #59 |
+
+### Outstanding work (not done — do **not** report as complete)
+1. **Staff clock-in/out** (spec §2.1, §7.4, Day-7 plan) — timesheets currently seed from the rota; a real clock-in/out source is unbuilt.
+2. **Timesheet audit reason** — make the manager-adjustment reason a required, recorded field (spec §7.5 "with audit reason").
+3. **Qualification & training expiry reminders** — generalise the vetting pattern to other compliance dates (new table or extend `garda_vetting` → a `staff_compliance` table).
+4. **Leave cover-impact preview** — surface the cover engine inside the Time Off approval flow (show ratio/cover impact before approve).
+5. **Staff directory fields** — contracted hours + qualifications columns, and surface compliance dates in the directory.
+6. **Expected-occupancy staffing forecast** — forward forecast from projected occupancy, not just current enrolment.
+7. **Payroll/accounting adapter** — provider integration beyond CSV (explicitly deferred by the spec; keep as future).
+
+### Manual configuration steps
+- **Migrations 092, 093, 094** — ✅ all applied to the real project `xpbavfutfejlfbmnntyl` (Supabase SQL editor). No further migration needed for what's built. Any new table from the Outstanding list must be applied the same way (migrations are applied manually; CI has no DB).
+- No new environment variables, secrets, or third-party accounts are required for Phases 1–5 (payroll is CSV-only; no payroll-provider keys yet).
+
+### Security considerations
+- **Tenant isolation (spec §1.1 non-negotiable):** every query/action is `school_id`-scoped through
+  `createSupabaseAdminClient` (service-role bypasses RLS → manual scoping), and writes use
+  verify-then-write (`.eq('id').eq('school_id')` — vetting upsert/delete, timesheet approval).
+  Migrations 092–094 are **RLS-on with explicit grants** (SELECT→authenticated, full→service_role) +
+  `set_updated_at` trigger. **Proven 2026-10-07:** seeded a row in each of `staff_shifts`,
+  `staff_timesheets`, `garda_vetting` via service-role → the **anon key reads 0 rows** from all three
+  (RLS default-deny; no anon/authenticated policy) while service-role sees them; rows cleaned up.
+  ⚠️ These three tables are **not yet in `scripts/verify-tenant-isolation.mjs`** — add them for regression cover.
+- **Access control:** all staff admin pages/route use `requireAdmin()` (super_admin / school_admin /
+  finance_admin). Room Leader / Staff Member roles get **no** rota/payroll/vetting access (deny-by-default),
+  matching spec §4 ("No full financial or payroll configuration" for non-admins).
+- **Bulk export / step-up (spec §4.1):** the payroll CSV is a **bulk export of staff PII** (names, emails,
+  hours). The spec lists bulk export among high-risk actions requiring **step-up auth/reauthentication** —
+  currently it is admin-gated only, **no step-up**. Add step-up before go-live, or restrict to finance_admin.
+- **Minor tz note:** vetting "today" and payroll "this week" derive from the server's UTC date; during Irish
+  summer time a request in the first hour after local midnight can resolve to the previous UTC day. Negligible
+  for a 60-day renewal window; note it if exact-day behaviour ever matters.
+
+### Commands to continue (run from the project root on `main`)
 ```bash
-npx tsc --noEmit        # source clean; ignore stale .next/types stubs for routes on other branches
+npx tsc --noEmit                              # source clean (ignore stale .next/types stubs)
 npx eslint src
 npx prettier --check "src/**/*.{ts,tsx}"
-npx vitest run          # 944 passed / 85 files
+npx vitest run                                # 946 passed / 86 files
+npx vitest run src/lib/rota src/lib/vetting src/lib/ratios   # staff subset: 36 tests
+node scripts/verify-tenant-isolation.mjs      # fee/collection/funding tables (staff tables TODO: add)
 ```
 
 ---
