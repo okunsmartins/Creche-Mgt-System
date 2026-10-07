@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
@@ -42,16 +42,34 @@ function TimesheetRow({
 }) {
   const [start, setStart] = useState(hhmm(e.actualStart))
   const [end, setEnd] = useState(hhmm(e.actualEnd))
+  const [reason, setReason] = useState('')
   const status = e.status as TimesheetStatus
   const locked = status === 'APPROVED'
 
-  function saveIfChanged() {
-    if (start === hhmm(e.actualStart) && end === hhmm(e.actualEnd)) return
-    run(() => updateTimesheetAction({ id: e.id, actualStart: start, actualEnd: end }))
+  // Reset local edits to the server values after a successful save (props change).
+  useEffect(() => {
+    setStart(hhmm(e.actualStart))
+    setEnd(hhmm(e.actualEnd))
+    setReason('')
+  }, [e.actualStart, e.actualEnd])
+
+  const dirty = start !== hhmm(e.actualStart) || end !== hhmm(e.actualEnd)
+  const canSave = dirty && reason.trim() !== ''
+
+  function save() {
+    if (!canSave) return
+    run(() =>
+      updateTimesheetAction({
+        id: e.id,
+        actualStart: start,
+        actualEnd: end,
+        reason: reason.trim(),
+      }),
+    )
   }
 
   return (
-    <tr className="border-b border-border/50">
+    <tr className="border-b border-border/50 align-top">
       <td className="px-3 py-2 font-medium text-text-primary">{e.teacherName}</td>
       <td className="px-3 py-2 text-text-secondary">{dayLabel(e.workDate)}</td>
       <td className="px-3 py-2 text-text-muted">
@@ -65,7 +83,6 @@ function TimesheetRow({
             value={start}
             disabled={isPending || locked}
             onChange={(ev) => setStart(ev.target.value)}
-            onBlur={saveIfChanged}
           />
           <span className="text-text-muted">–</span>
           <input
@@ -74,9 +91,26 @@ function TimesheetRow({
             value={end}
             disabled={isPending || locked}
             onChange={(ev) => setEnd(ev.target.value)}
-            onBlur={saveIfChanged}
           />
         </div>
+        {dirty && !locked && (
+          <div className="mt-1.5">
+            <input
+              type="text"
+              className="input-base w-full text-xs"
+              placeholder="Reason for adjustment (required)"
+              value={reason}
+              disabled={isPending}
+              onChange={(ev) => setReason(ev.target.value)}
+              aria-label="Reason for adjustment"
+            />
+          </div>
+        )}
+        {!dirty && e.lastAdjustmentReason && (
+          <p className="mt-1 text-xs text-text-muted" title={e.lastAdjustmentReason}>
+            Adjusted ({e.adjustmentCount}): {e.lastAdjustmentReason}
+          </p>
+        )}
       </td>
       <td className="px-3 py-2 text-text-secondary">
         {formatHours(e.actualMinutes)}
@@ -89,10 +123,21 @@ function TimesheetRow({
       </td>
       <td className="px-3 py-2 text-right">
         <div className="flex justify-end gap-2 text-xs font-medium">
+          {dirty && !locked && (
+            <button
+              type="button"
+              onClick={save}
+              disabled={isPending || !canSave}
+              className="text-primary hover:underline disabled:opacity-40"
+              title={canSave ? 'Save adjustment' : 'Enter a reason to save'}
+            >
+              Save
+            </button>
+          )}
           <button
             type="button"
             onClick={() => run(() => setTimesheetApprovalAction({ id: e.id, approved: !locked }))}
-            disabled={isPending}
+            disabled={isPending || dirty}
             className="text-primary hover:underline disabled:opacity-50"
           >
             {locked ? 'Reopen' : 'Approve'}

@@ -5,6 +5,8 @@ import {
   actualMinutes,
   varianceMinutes,
   formatVariance,
+  normalizeTime,
+  actualTimesChanged,
 } from '../timesheets'
 
 describe('timesheet status', () => {
@@ -12,6 +14,18 @@ describe('timesheet status', () => {
     expect(TIMESHEET_STATUSES).toEqual(['PENDING', 'APPROVED'])
     expect(isTimesheetStatus('APPROVED')).toBe(true)
     expect(isTimesheetStatus('nope')).toBe(false)
+  })
+})
+
+describe('normalizeTime + actualTimesChanged', () => {
+  it('normalises HH:MM:SS and HH:MM to HH:MM', () => {
+    expect(normalizeTime('09:00:00')).toBe('09:00')
+    expect(normalizeTime('09:00')).toBe('09:00')
+  })
+  it('detects a change at minute precision, ignoring seconds', () => {
+    expect(actualTimesChanged('09:00:00', '17:00:00', '09:00', '17:00')).toBe(false)
+    expect(actualTimesChanged('09:00:00', '17:00:00', '09:15', '17:00')).toBe(true)
+    expect(actualTimesChanged('09:00:00', '17:00:00', '09:00', '16:30')).toBe(true)
   })
 })
 

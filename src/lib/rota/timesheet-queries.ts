@@ -15,6 +15,9 @@ export interface TimesheetEntry {
   status: string
   actualMinutes: number
   varianceMinutes: number
+  /** Reason for the most recent actual-hours adjustment, if any (audit trail). */
+  lastAdjustmentReason: string | null
+  adjustmentCount: number
 }
 
 export interface TimesheetStaffTotal {
@@ -67,6 +70,26 @@ export async function getWeekTimesheets(
         }[]
       | null) ?? []
 
+  // Latest adjustment reason + count per timesheet (audit trail). Tolerant of the
+  // staff_timesheet_adjustments table being absent (migration 095 not yet applied).
+  const sheetIds = rows.map((r) => r.id)
+  const lastReason = new Map<string, string>()
+  const adjCount = new Map<string, number>()
+  if (sheetIds.length > 0) {
+    const { data: adjData } = await db
+      .from('staff_timesheet_adjustments')
+      .select('timesheet_id, reason, adjusted_at')
+      .eq('school_id', schoolId)
+      .in('timesheet_id', sheetIds)
+      .order('adjusted_at', { ascending: false })
+    for (const a of (adjData as
+      | { timesheet_id: string; reason: string; adjusted_at: string }[]
+      | null) ?? []) {
+      adjCount.set(a.timesheet_id, (adjCount.get(a.timesheet_id) ?? 0) + 1)
+      if (!lastReason.has(a.timesheet_id)) lastReason.set(a.timesheet_id, a.reason) // first = latest (desc)
+    }
+  }
+
   const entries: TimesheetEntry[] = rows
     .map((r) => ({
       id: r.id,
@@ -86,6 +109,8 @@ export async function getWeekTimesheets(
         r.actual_start,
         r.actual_end,
       ),
+      lastAdjustmentReason: lastReason.get(r.id) ?? null,
+      adjustmentCount: adjCount.get(r.id) ?? 0,
     }))
     .sort((a, b) =>
       a.workDate === b.workDate

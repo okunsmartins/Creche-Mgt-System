@@ -14,6 +14,7 @@ import {
   BarChart2,
   Shield,
   ShieldCheck,
+  Award,
   LogOut,
   Menu,
   X,
@@ -91,6 +92,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/ratios', label: 'Ratios', icon: Scale },
       { href: '/admin/time-off', label: 'Time Off', icon: CalendarOff },
       { href: '/admin/vetting', label: 'Garda Vetting', icon: ShieldCheck },
+      { href: '/admin/certifications', label: 'Quals & Training', icon: Award },
     ],
   },
   {
