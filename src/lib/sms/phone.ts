@@ -26,3 +26,22 @@ export function normalizeIrishMobile(raw: string | null | undefined): string | n
   const e164 = `+${s}`
   return /^\+3538[0-9]{8}$/.test(e164) ? e164 : null
 }
+
+export type SmsPhonePick = { phone: string } | { skip: 'opted_out' | 'no_phone' }
+
+/**
+ * Choose which number to text a parent, or why they're skipped. Precedence: the parent's
+ * own profile mobile, then the child-level `parent_mobile` captured on their linked child
+ * (passed already-normalised). Opted-out parents are skipped regardless of any number.
+ */
+export function pickSmsPhone(
+  profilePhone: string | null | undefined,
+  fallbackMobile: string | null | undefined,
+  optedOut: boolean,
+): SmsPhonePick {
+  if (optedOut) return { skip: 'opted_out' }
+  const own = normalizeIrishMobile(profilePhone)
+  if (own) return { phone: own }
+  if (fallbackMobile) return { phone: fallbackMobile }
+  return { skip: 'no_phone' }
+}
