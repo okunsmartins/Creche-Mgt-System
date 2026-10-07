@@ -7,6 +7,7 @@ import {
   formatVariance,
   normalizeTime,
   actualTimesChanged,
+  summariseTimesheets,
 } from '../timesheets'
 
 describe('timesheet status', () => {
@@ -51,5 +52,25 @@ describe('varianceMinutes + formatVariance', () => {
     const v = varianceMinutes('09:00', '17:00', '09:00', '17:00')
     expect(v).toBe(0)
     expect(formatVariance(v)).toBe('on plan')
+  })
+})
+
+describe('summariseTimesheets', () => {
+  it('aggregates approved vs pending hours per staff, sorted by name', () => {
+    const lines = summariseTimesheets([
+      { teacherId: 'b', name: 'Bea', status: 'APPROVED', actualStart: '09:00', actualEnd: '17:00' }, // 480
+      { teacherId: 'b', name: 'Bea', status: 'PENDING', actualStart: '09:00', actualEnd: '12:00' }, // 180
+      { teacherId: 'a', name: 'Ann', status: 'APPROVED', actualStart: '09:00', actualEnd: '13:00' }, // 240
+    ])
+    expect(lines.map((l) => l.name)).toEqual(['Ann', 'Bea'])
+    expect(lines[1]).toEqual({
+      teacherId: 'b',
+      name: 'Bea',
+      approvedMinutes: 480,
+      pendingMinutes: 180,
+      totalMinutes: 660,
+      entries: 2,
+    })
+    expect(lines[0]?.approvedMinutes).toBe(240)
   })
 })
