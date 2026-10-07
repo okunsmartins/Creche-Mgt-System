@@ -16,15 +16,15 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
-## Verification snapshot (2026-10-06)
+## Verification snapshot (2026-10-07)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **897 passed / 78 files** (re-run 2026-10-06, exit 0) |
-| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ exit 0, clean (2026-10-06) |
-| Lint | `npm run lint` (`eslint src`) | ✅ exit 0, clean (2026-10-06) |
-| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (funding + teachers re-checked 2026-10-06) |
-| DB migrations 068–088 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. **084–088** Funding & Hive Centre (Phases 1–5, 088 = AIM); user-applied, "Success" |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **983 passed / 90 files** (combined staff+reporting branch, 2026-10-07) |
+| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ source clean (2026-10-07; ignore stale `.next/types` route stubs) |
+| Lint | `npm run lint` (`eslint src`) | ✅ clean (2026-10-07) |
+| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (2026-10-07) |
+| DB migrations 068–099 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. 084–088 Funding & Hive, 089–091, 092–094 Staff Workforce, 095 timesheet-adjustments, 096 certifications, 097 parent_mobile, **098 ratio_bands + 099 room_staff_on_duty**. ⚠️ **100 `staff_attendance` PENDING** (staff clock-in). |
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
@@ -93,6 +93,45 @@ npx eslint src
 npx prettier --check "src/**/*.{ts,tsx}"
 npx vitest run          # 944 passed / 85 files
 ```
+
+---
+
+## Staff & reporting enhancements (2026-10-07) — ratio config, reports, clocking, leave clash
+
+> Built 2026-10-07 against master spec **§2.1/§2.2 (staff clocking, ratio/cover alerts, leave
+> impact), §7.4 (ratio warnings using tenant-configurable ratios; staff clock-in/out), §7.5
+> (timesheets, leave impact before approval), §3.2 (staff clocking, ratio alerts, reporting)**.
+> Pure-logic-first + vitest. Combined build verified: `tsc --noEmit` source-clean · `eslint src`
+> clean · `prettier --check` clean · **full suite 983 passed / 90 files** (2026-10-07).
+
+| Feature | Spec | Status | Verification |
+|---|---|---|---|
+| **Configurable room ratios + dashboard alert** | §7.4 "ratio warnings using **tenant-configurable** regulatory ratios"; §3.2 ratio alerts | ✅ **done + merged (PR #67)** | Configurable children-per-adult per age band on `/admin/ratios` (defaults to Irish reference); persisted staff-on-duty per room/day; dashboard flags rooms under ratio (present children at configured ratios vs saved staff-on-duty **else** rostered). mig **098 `ratio_bands` + 099 `room_staff_on_duty` applied**. **Browser-E2E:** custom 1:4 read back + applied; dashboard alert fired ("Wobblers 0 of 1, rostered"); staff-on-duty saved. Pure engine +3 tests. |
+| **Timesheet report (day/week/month + CSV)** | §7.5 payroll-ready export; reporting | ✅ **done** (PR `feat/timesheet-report`) | `/admin/timesheets/report`: per-staff approved/pending/total hours by day/week/month + CSV. **Browser-E2E with real data** (Aoife 16h, Sean 8h+8h, Total 40h/48h). `summariseTimesheets` +1 test. No migration. |
+| **Time-off clash (dashboard + before approval)** | §7.5 "leave request and approval; **show ratio/cover impact before approval**"; §2.2 leave impact | 🟡 **partial — done as a clash/shortage flag** (PR `feat/timeoff-clash`) | Dashboard banner for upcoming days where **2+ staff on approved leave**; each pending request shows a clash warning naming who's already off, **before** approving. **Browser-E2E** (banner "3 days … 21–23 Oct (Aoife, Mary)"; approval warning rendered). `clash.ts` +6 tests. No migration. **Gap vs spec:** flags staff-overlap, not a precise "this leave drops Room X below ratio" calculation. |
+| **Staff clock-in/out + attendance report** | §2.1/§7.4 "staff clock-in/out"; §3.2 staff clocking | 🟡 **built; write path needs migration 100** (PR `feat/staff-clock-in`) | Manager-recorded clock board `/admin/staff-attendance` + day/week/month report + CSV. **Read paths SSR-verified** (board lists staff, tolerant pre-migration). `clocking.ts` +3 tests. ⚠️ **mig 100 `staff_attendance` NOT applied** → clocking won't save and the **write path is unverified**. Standalone (does not feed timesheets, by design); **no room captured at clock-in**. |
+
+**Outstanding (not done — do not report as complete):**
+1. **Leave cover-impact precision** — compute whether approving a request puts a specific room under ratio (today it flags staff overlap only).
+2. **Staff clocking write path** — verify after mig 100 (clock a staff member in/out → appears on the report).
+3. **Clocking → timesheets** — feed actual clocked hours into timesheet actuals (deferred by choice; timesheets still seed from the rota).
+4. **Current room at clock-in** — the spec pairs clock-in/out with "current room assignment"; not captured.
+5. Still open from the prior review: **contracted hours / qualifications** staff-directory fields; **expected-occupancy staffing forecast**.
+
+**Manual configuration steps:** apply **migration 100** (`supabase/migrations/100_staff_attendance.sql`) for staff clocking. Migrations **098/099** (ratio config) are **already applied**. The other two features need no migration. No new env/secrets.
+
+**Security considerations:** every query/action is `school_id`-scoped through `createSupabaseAdminClient`; clock + staff-on-duty + ratio-band writes use verify-then-write (`.eq('id'/'class_id').eq('school_id')`). New tables (098/099/100) are RLS-on with explicit grants (SELECT→authenticated, full→service_role) + `set_updated_at` trigger; **anon-sweep of 098/099/100 still TODO** (pattern proven on the earlier staff tables). CSV cells quoted/escaped. The time-off "before approval" impact reads the 100 most-recent requests (an older approved overlap could be missed) — acceptable for the shortage hint.
+
+**Exact commands to continue (combined branch / main):**
+```bash
+npx tsc --noEmit                                   # source clean (ignore stale .next/types)
+npx eslint src
+npx prettier --check "src/**/*.{ts,tsx}"
+npx vitest run                                     # 983 passed / 90 files (combined)
+npx vitest run src/lib/rota src/lib/timeoff src/lib/staff-attendance src/lib/ratios
+node scripts/verify-tenant-isolation.mjs           # add ratio_bands/room_staff_on_duty/staff_attendance
+```
+PRs: `feat/timesheet-report`, `feat/timeoff-clash`, `feat/staff-clock-in` (all re-synced to main, conflict-free; merge in any order).
 
 ---
 
