@@ -77,9 +77,15 @@ export const REFERENCE_EY_RATIOS: readonly EyRatioBand[] = [
   { label: '3–6 years', minMonths: 36, maxMonths: 72, childrenPerAdult: 8 },
 ]
 
-/** Pick the reference ratio band for an age in months (null if out of range). */
-export function ratioBandForAgeMonths(months: number): EyRatioBand | null {
-  return REFERENCE_EY_RATIOS.find((b) => months >= b.minMonths && months < b.maxMonths) ?? null
+/**
+ * Pick the ratio band for an age in months from a band set (defaults to the reference set;
+ * callers pass the crèche's configured bands). Null if the age is outside every band.
+ */
+export function ratioBandForAgeMonths(
+  months: number,
+  bands: ReadonlyArray<EyRatioBand> = REFERENCE_EY_RATIOS,
+): EyRatioBand | null {
+  return bands.find((b) => months >= b.minMonths && months < b.maxMonths) ?? null
 }
 
 export interface RoomStaffing {
@@ -99,11 +105,14 @@ export interface RoomStaffing {
  * map to a band (null, or outside 0–72m) are counted as `unknownAge` and excluded
  * from the requirement (the UI surfaces them so a human decides).
  */
-export function roomStaffingRequirement(agesMonths: ReadonlyArray<number | null>): RoomStaffing {
+export function roomStaffingRequirement(
+  agesMonths: ReadonlyArray<number | null>,
+  bands: ReadonlyArray<EyRatioBand> = REFERENCE_EY_RATIOS,
+): RoomStaffing {
   const counts = new Map<string, { band: EyRatioBand; children: number }>()
   let unknownAge = 0
   for (const m of agesMonths) {
-    const band = m == null ? null : ratioBandForAgeMonths(m)
+    const band = m == null ? null : ratioBandForAgeMonths(m, bands)
     if (!band) {
       unknownAge++
       continue
@@ -112,10 +121,12 @@ export function roomStaffingRequirement(agesMonths: ReadonlyArray<number | null>
     entry.children++
     counts.set(band.label, entry)
   }
-  const byBand = REFERENCE_EY_RATIOS.filter((b) => counts.has(b.label)).map((b) => {
-    const c = counts.get(b.label)!.children
-    return { band: b, children: c, required: requiredStaff(c, b.childrenPerAdult) }
-  })
+  const byBand = bands
+    .filter((b) => counts.has(b.label))
+    .map((b) => {
+      const c = counts.get(b.label)!.children
+      return { band: b, children: c, required: requiredStaff(c, b.childrenPerAdult) }
+    })
   return {
     totalPlaced: byBand.reduce((s, x) => s + x.children, 0),
     unknownAge,
