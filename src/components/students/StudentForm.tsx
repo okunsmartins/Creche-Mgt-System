@@ -90,6 +90,16 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
             disabled={isPending}
           />
 
+          <Input
+            label="Parent mobile"
+            name="parentMobile"
+            type="tel"
+            defaultValue={student?.parentMobile ?? ''}
+            disabled={isPending}
+            autoComplete="off"
+            hint="Used to text the parent (e.g. reminders)."
+          />
+
           <div className="space-y-5 border-t border-border pt-5">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
               Emergency contact
@@ -219,6 +229,15 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
             error={state?.fieldErrors?.parentEmail}
             disabled={isPending}
             autoComplete="off"
+          />
+          <Input
+            label="Parent mobile"
+            name="parentMobile"
+            type="tel"
+            error={state?.fieldErrors?.parentMobile}
+            disabled={isPending}
+            autoComplete="off"
+            hint="So you can text the parent (optional)."
           />
         </div>
       )}

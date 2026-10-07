@@ -39,6 +39,7 @@ type StudentDetail = Pick<
   | 'class_id'
   | 'pupil_payment_code'
   | 'is_active'
+  | 'parent_mobile'
   | 'emergency_contact_name'
   | 'emergency_contact_phone'
   | 'emergency_contact_relationship'
@@ -75,7 +76,7 @@ export default async function EditStudentPage({ params }: PageProps) {
     supabase
       .from('students')
       .select(
-        'id, first_name, last_name, class_id, pupil_payment_code, is_active, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, dietary_needs, medical_conditions, medication_consent, medication_notes, session',
+        'id, first_name, last_name, class_id, pupil_payment_code, is_active, parent_mobile, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, dietary_needs, medical_conditions, medication_consent, medication_notes, session',
       )
       .eq('id', id)
       .eq('school_id', admin.schoolId)
@@ -171,6 +172,7 @@ export default async function EditStudentPage({ params }: PageProps) {
           firstName: student.first_name,
           lastName: student.last_name,
           classId: student.class_id,
+          parentMobile: student.parent_mobile,
           emergencyContactName: student.emergency_contact_name,
           emergencyContactPhone: student.emergency_contact_phone,
           emergencyContactRelationship: student.emergency_contact_relationship,

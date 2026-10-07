@@ -267,6 +267,7 @@ export interface StudentRow {
   class_id: string
   pupil_payment_code: string
   is_active: boolean
+  parent_mobile: string | null
   emergency_contact_name: string | null
   emergency_contact_phone: string | null
   emergency_contact_relationship: string | null

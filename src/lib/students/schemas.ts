@@ -15,6 +15,7 @@ export const createStudentSchema = z.object({
   parentFirstName: z.string().min(1, 'Parent first name is required').max(50, 'Max 50 characters'),
   parentLastName: z.string().min(1, 'Parent last name is required').max(50, 'Max 50 characters'),
   parentEmail: z.string().email('Enter a valid email address'),
+  parentMobile: z.string().trim().max(30, 'Max 30 characters').optional(),
 })
 
 export const updateStudentSchema = z.object({
@@ -37,6 +38,7 @@ export const CHILD_SESSION_LABELS: Record<ChildSession, string> = {
 
 /** The editable care fields on a child record. All optional; values may be sensitive. */
 export interface StudentCareFields {
+  parentMobile: string | null
   emergencyContactName: string | null
   emergencyContactPhone: string | null
   emergencyContactRelationship: string | null
@@ -61,6 +63,7 @@ export function parseStudentCareFields(formData: FormData): StudentCareFields {
     ? (sessionRaw as ChildSession)
     : null
   return {
+    parentMobile: str('parentMobile'),
     emergencyContactName: str('emergencyContactName'),
     emergencyContactPhone: str('emergencyContactPhone'),
     emergencyContactRelationship: str('emergencyContactRelationship'),
