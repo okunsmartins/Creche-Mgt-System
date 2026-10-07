@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   ShieldAlert,
   Award,
+  CalendarOff,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -23,6 +24,7 @@ import { DonutChart } from '@/components/charts/DonutChart'
 import { collectedByDay, ordersByStatus } from '@/lib/charts/aggregate'
 import { getVettingOverview } from '@/lib/vetting/queries'
 import { getCertifications } from '@/lib/certifications/queries'
+import { getUpcomingTimeOffClashes } from '@/lib/timeoff/clash-queries'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 
@@ -213,6 +215,14 @@ export default async function AdminDashboardPage() {
     (certMore > 0 ? ` +${certMore} more` : '') +
     '.'
 
+  // Time-off clash: upcoming days where 2+ staff are on approved leave (shortage risk).
+  const clashDays = await getUpcomingTimeOffClashes(admin.schoolId!, vettingToday)
+  const clashLabels = clashDays
+    .slice(0, 3)
+    .map((d) => `${formatDate(d.date)} (${d.names.join(', ')})`)
+  const clashMore = clashDays.length - clashLabels.length
+  const clashAlertText = `${clashLabels.join(', ')}${clashMore > 0 ? ` +${clashMore} more` : ''}.`
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -309,6 +319,34 @@ export default async function AdminDashboardPage() {
                 Qualifications &amp; training due for renewal
               </p>
               <p className="mt-0.5 text-xs text-text-muted">{certAlertText}</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+            Review
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </Link>
+      )}
+
+      {/* Time-off clash — upcoming days where 2+ staff are on approved leave. */}
+      {clashDays.length > 0 && (
+        <Link
+          href="/admin/time-off"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-warning/40 bg-warning-light px-5 py-4 transition-all hover:border-warning/60"
+        >
+          <div className="flex items-start gap-3">
+            <CalendarOff className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                {clashDays.length} day{clashDays.length === 1 ? '' : 's'} with a staff time-off
+                clash (next 30 days)
+              </p>
+              <p className="mt-0.5 text-xs text-text-muted">
+                2+ staff off at once — possible shortage. {clashAlertText}
+              </p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
