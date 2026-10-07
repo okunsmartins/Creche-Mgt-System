@@ -10,6 +10,7 @@ import {
   Repeat,
   ShoppingBag,
   ShieldAlert,
+  Award,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -21,6 +22,7 @@ import { BarChart } from '@/components/charts/BarChart'
 import { DonutChart } from '@/components/charts/DonutChart'
 import { collectedByDay, ordersByStatus } from '@/lib/charts/aggregate'
 import { getVettingOverview } from '@/lib/vetting/queries'
+import { getCertifications } from '@/lib/certifications/queries'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 
@@ -193,6 +195,24 @@ export default async function AdminDashboardPage() {
     (vettingMore > 0 ? ` +${vettingMore} more` : '') +
     '.'
 
+  // Qualification/training renewal reminder: certifications expired or due within 60 days.
+  // (Tolerant of staff_certifications being absent — then no rows qualify and no banner shows.)
+  const certs = await getCertifications(admin.schoolId!, vettingToday)
+  const certRenewals = certs.rows
+    .filter((r) => r.status === 'expired' || r.status === 'expiring')
+    .sort((a, b) => (a.status === 'expired' ? 0 : 1) - (b.status === 'expired' ? 0 : 1))
+  const certExpired = certRenewals.filter((r) => r.status === 'expired').length
+  const certExpiring = certRenewals.length - certExpired
+  const certParts: string[] = []
+  if (certExpired > 0) certParts.push(`${certExpired} expired`)
+  if (certExpiring > 0) certParts.push(`${certExpiring} expiring within 60 days`)
+  const certLabels = certRenewals.slice(0, 3).map((r) => `${r.teacherName} (${r.name})`)
+  const certMore = certRenewals.length - certLabels.length
+  const certAlertText =
+    `${certParts.join(', ')} — ${certLabels.join(', ')}` +
+    (certMore > 0 ? ` +${certMore} more` : '') +
+    '.'
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -264,6 +284,31 @@ export default async function AdminDashboardPage() {
                 Garda vetting due for renewal
               </p>
               <p className="mt-0.5 text-xs text-text-muted">{vettingAlertText}</p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+            Review
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </Link>
+      )}
+
+      {/* Qualification/training renewal reminder — certs expired or due within 60 days. */}
+      {certRenewals.length > 0 && (
+        <Link
+          href="/admin/certifications"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-warning/40 bg-warning-light px-5 py-4 transition-all hover:border-warning/60"
+        >
+          <div className="flex items-start gap-3">
+            <Award className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                Qualifications &amp; training due for renewal
+              </p>
+              <p className="mt-0.5 text-xs text-text-muted">{certAlertText}</p>
             </div>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">

@@ -15,6 +15,27 @@ export function isTimesheetStatus(v: string): v is TimesheetStatus {
   return (TIMESHEET_STATUSES as readonly string[]).includes(v)
 }
 
+/** Normalise a time value to `HH:MM` (DB stores `HH:MM:SS`, inputs send `HH:MM`). */
+export function normalizeTime(t: string): string {
+  return (t ?? '').slice(0, 5)
+}
+
+/**
+ * Whether a timesheet's actual times are being changed (compared at minute precision).
+ * Drives the "a reason is required to adjust the hours" rule.
+ */
+export function actualTimesChanged(
+  oldStart: string,
+  oldEnd: string,
+  newStart: string,
+  newEnd: string,
+): boolean {
+  return (
+    normalizeTime(oldStart) !== normalizeTime(newStart) ||
+    normalizeTime(oldEnd) !== normalizeTime(newEnd)
+  )
+}
+
 /** Actual worked minutes for a timesheet entry (0 if times are invalid). */
 export function actualMinutes(actualStart: string, actualEnd: string): number {
   return shiftMinutes(actualStart, actualEnd)

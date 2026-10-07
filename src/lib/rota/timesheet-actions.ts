@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import { weekDays, validateShiftTimes } from './rota'
+import { actualTimesChanged } from './timesheets'
 
 export type TimesheetActionResult = { ok: boolean; error?: string; created?: number }
 
@@ -79,12 +80,17 @@ export async function generateTimesheetsForWeekAction(
   return { ok: true, created: rows.length }
 }
 
-/** Adjust the actual worked times (and notes) of a timesheet entry. */
+/**
+ * Adjust the actual worked times (and notes) of a timesheet entry. When the actual times
+ * change, an audit reason is REQUIRED (master spec §7.5) and an immutable adjustment row
+ * is appended recording the old → new times, the reason, and who/when.
+ */
 export async function updateTimesheetAction(input: {
   id: string
   actualStart: string
   actualEnd: string
   notes?: string
+  reason?: string
 }): Promise<TimesheetActionResult> {
   const admin = await requireAdmin()
   if (!admin.schoolId) return { ok: false, error: 'No crèche is associated with your account.' }
@@ -92,6 +98,27 @@ export async function updateTimesheetAction(input: {
   if (timeError) return { ok: false, error: timeError }
 
   const db = createSupabaseAdminClient()
+
+  // Read the current actual times (school-scoped) to tell whether this is an adjustment.
+  const { data: current } = await db
+    .from('staff_timesheets')
+    .select('actual_start, actual_end')
+    .eq('id', input.id)
+    .eq('school_id', admin.schoolId)
+    .maybeSingle()
+  if (!current) return { ok: false, error: 'Timesheet not found.' }
+
+  const cur = current as { actual_start: string; actual_end: string }
+  const timesChanged = actualTimesChanged(
+    cur.actual_start,
+    cur.actual_end,
+    input.actualStart,
+    input.actualEnd,
+  )
+  const reason = input.reason?.trim() ?? ''
+  if (timesChanged && reason === '')
+    return { ok: false, error: 'A reason is required to adjust the worked hours.' }
+
   const fields: Record<string, string | null> = {
     actual_start: input.actualStart,
     actual_end: input.actualEnd,
@@ -109,6 +136,27 @@ export async function updateTimesheetAction(input: {
     return { ok: false, error: 'Could not update the timesheet.' }
   }
   if ((data ?? []).length === 0) return { ok: false, error: 'Timesheet not found.' }
+
+  // Append the audit trail row for a genuine time change (best-effort — never blocks the
+  // save; tolerates the adjustments table being absent pre-migration).
+  if (timesChanged) {
+    const { error: auditError } = await db.from('staff_timesheet_adjustments').insert({
+      school_id: admin.schoolId,
+      timesheet_id: input.id,
+      old_actual_start: cur.actual_start,
+      old_actual_end: cur.actual_end,
+      new_actual_start: input.actualStart,
+      new_actual_end: input.actualEnd,
+      reason,
+      adjusted_by: admin.id,
+    })
+    if (auditError)
+      logger.error('timesheet_adjustment_audit_failed', {
+        schoolId: admin.schoolId,
+        error: auditError.message,
+      })
+  }
+
   revalidatePath('/admin/timesheets')
   return { ok: true }
 }
