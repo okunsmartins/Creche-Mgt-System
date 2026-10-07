@@ -100,7 +100,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/admin/check-in', label: 'Daily Check-in', icon: LogIn },
       { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck },
-      { href: '/admin/attendance/summary', label: 'Summary', icon: BarChart2 },
+      { href: '/admin/attendance?view=month', label: 'Monthly Summary', icon: BarChart2 },
     ],
   },
   {
