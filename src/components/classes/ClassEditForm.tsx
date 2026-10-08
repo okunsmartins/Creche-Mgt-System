@@ -7,7 +7,7 @@ import type { ClassActionState } from '@/lib/classes/actions'
 import type { ClassRow, TeacherRow } from '@/types/database'
 
 type Teacher = Pick<TeacherRow, 'id' | 'first_name' | 'last_name' | 'display_name' | 'is_active'>
-type Cls = Pick<ClassRow, 'id' | 'name' | 'academic_year' | 'is_active' | 'teacher_id'>
+type Cls = Pick<ClassRow, 'id' | 'name' | 'academic_year' | 'is_active' | 'teacher_id' | 'capacity'>
 
 interface ClassEditFormProps {
   action: (prev: ClassActionState, formData: FormData) => Promise<ClassActionState>
@@ -52,6 +52,28 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Capacity — maximum places in this room (drives available-places / vacancies) */}
+      <div>
+        <label htmlFor="capacity" className="mb-1 block text-sm font-medium text-text-primary">
+          Capacity (places)
+        </label>
+        <input
+          id="capacity"
+          name="capacity"
+          type="number"
+          min={0}
+          step={1}
+          inputMode="numeric"
+          defaultValue={cls.capacity ?? ''}
+          placeholder="e.g. 12"
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+        <p className="mt-1 text-xs text-text-muted">
+          Maximum children in this room. Leave blank if there is no fixed limit — available places
+          are shown on the Places &amp; Vacancies page.
+        </p>
       </div>
 
       {/* Academic year */}
