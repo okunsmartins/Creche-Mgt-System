@@ -277,6 +277,10 @@ export interface StudentRow {
   medication_consent: boolean
   medication_notes: string | null
   session: 'FULL_DAY' | 'MORNING' | 'AFTERNOON' | 'OTHER' | null
+  meal_breakfast: boolean
+  meal_lunch: boolean
+  meal_tea: boolean
+  meal_notes: string | null
   created_at: string
   updated_at: string
 }

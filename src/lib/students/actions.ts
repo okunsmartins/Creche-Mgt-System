@@ -343,6 +343,10 @@ export async function updateStudentAction(
       medication_consent: care.medicationConsent,
       medication_notes: care.medicationNotes,
       session: care.session,
+      meal_breakfast: formData.get('mealBreakfast') === 'on',
+      meal_lunch: formData.get('mealLunch') === 'on',
+      meal_tea: formData.get('mealTea') === 'on',
+      meal_notes: (formData.get('mealNotes') as string | null)?.trim() || null,
     })
     .eq('id', studentId)
     .eq('school_id', admin.schoolId)

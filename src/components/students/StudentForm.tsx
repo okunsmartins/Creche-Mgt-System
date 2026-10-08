@@ -24,6 +24,10 @@ interface StudentFormProps {
         firstName: string
         lastName: string
         classId: string
+        mealBreakfast?: boolean
+        mealLunch?: boolean
+        mealTea?: boolean
+        mealNotes?: string | null
       } & Partial<StudentCareFields>)
     | undefined
 }
@@ -191,6 +195,41 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
                 className="input-base min-h-[70px]"
                 placeholder="Only complete if consent is given above"
                 defaultValue={student?.medicationNotes ?? ''}
+                disabled={isPending}
+              />
+            </label>
+          </div>
+
+          <div className="space-y-3 border-t border-border pt-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Meals</h2>
+            <p className="text-xs text-text-muted">Meals this child is signed up for.</p>
+            <div className="flex flex-wrap gap-4">
+              {(
+                [
+                  ['mealBreakfast', 'Breakfast', student?.mealBreakfast],
+                  ['mealLunch', 'Lunch', student?.mealLunch],
+                  ['mealTea', 'Tea', student?.mealTea],
+                ] as const
+              ).map(([name, label, checked]) => (
+                <label key={name} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name={name}
+                    defaultChecked={checked ?? false}
+                    disabled={isPending}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span className="text-text-primary">{label}</span>
+                </label>
+              ))}
+            </div>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-text-primary">Meal notes</span>
+              <textarea
+                name="mealNotes"
+                className="input-base min-h-[60px]"
+                placeholder="e.g. no dairy at lunch, brings own breakfast"
+                defaultValue={student?.mealNotes ?? ''}
                 disabled={isPending}
               />
             </label>

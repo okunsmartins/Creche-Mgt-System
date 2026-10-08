@@ -49,6 +49,10 @@ type StudentDetail = Pick<
   | 'medication_consent'
   | 'medication_notes'
   | 'session'
+  | 'meal_breakfast'
+  | 'meal_lunch'
+  | 'meal_tea'
+  | 'meal_notes'
 >
 type ClassOption = Pick<ClassRow, 'id' | 'name' | 'display_order'>
 type LinkedParent = Pick<ParentStudentLinkRow, 'id' | 'created_at'> & {
@@ -76,7 +80,7 @@ export default async function EditStudentPage({ params }: PageProps) {
     supabase
       .from('students')
       .select(
-        'id, first_name, last_name, class_id, pupil_payment_code, is_active, parent_mobile, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, dietary_needs, medical_conditions, medication_consent, medication_notes, session',
+        'id, first_name, last_name, class_id, pupil_payment_code, is_active, parent_mobile, emergency_contact_name, emergency_contact_phone, emergency_contact_relationship, allergies, dietary_needs, medical_conditions, medication_consent, medication_notes, session, meal_breakfast, meal_lunch, meal_tea, meal_notes',
       )
       .eq('id', id)
       .eq('school_id', admin.schoolId)
@@ -182,6 +186,10 @@ export default async function EditStudentPage({ params }: PageProps) {
           medicationConsent: student.medication_consent,
           medicationNotes: student.medication_notes,
           session: student.session,
+          mealBreakfast: student.meal_breakfast,
+          mealLunch: student.meal_lunch,
+          mealTea: student.meal_tea,
+          mealNotes: student.meal_notes,
         }}
       />
 
