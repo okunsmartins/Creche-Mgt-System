@@ -73,6 +73,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Children',
     items: [
       { href: '/admin/students', label: 'Children', icon: Users },
+      { href: '/admin/places', label: 'Places & Vacancies', icon: Building2 },
       { href: '/admin/enquiries', label: 'Enquiries', icon: UserPlus },
       { href: '/admin/import', label: 'Import', icon: Upload },
       { href: '/admin/daily-records', label: 'Daily Records', icon: NotebookPen },

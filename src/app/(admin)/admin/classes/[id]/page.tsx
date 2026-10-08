@@ -17,7 +17,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
   const [classResult, teachersResult] = await Promise.all([
     adminClient
       .from('classes')
-      .select('id, name, display_order, academic_year, is_active, teacher_id')
+      .select('id, name, display_order, academic_year, capacity, is_active, teacher_id')
       .eq('id', id)
       .eq('school_id', admin.schoolId!)
       .single(),
@@ -33,7 +33,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
 
   const cls = classResult.data as Pick<
     ClassRow,
-    'id' | 'name' | 'display_order' | 'academic_year' | 'is_active' | 'teacher_id'
+    'id' | 'name' | 'display_order' | 'academic_year' | 'capacity' | 'is_active' | 'teacher_id'
   >
   const teachers =
     (teachersResult.data as

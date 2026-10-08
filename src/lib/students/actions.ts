@@ -325,6 +325,19 @@ export async function updateStudentAction(
   // Care record (emergency contact, allergies, dietary, medical, medication, session).
   // Values may be sensitive (health) — saved here, never logged or put in audit metadata.
   const care = parseStudentCareFields(formData)
+
+  // Expected leaving date: blank → null; otherwise must be a valid YYYY-MM-DD date.
+  const leavingRaw = (formData.get('leavingDate') as string | null)?.trim() ?? ''
+  let leavingDate: string | null = null
+  if (leavingRaw !== '') {
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(leavingRaw) ||
+      Number.isNaN(Date.parse(`${leavingRaw}T00:00:00Z`))
+    )
+      return { error: 'Leaving date must be a valid date.' }
+    leavingDate = leavingRaw
+  }
+
   const adminClient = createSupabaseAdminClient()
 
   const { error } = await adminClient
@@ -333,6 +346,7 @@ export async function updateStudentAction(
       first_name: firstName,
       last_name: lastName,
       class_id: classId,
+      leaving_date: leavingDate,
       parent_mobile: care.parentMobile,
       emergency_contact_name: care.emergencyContactName,
       emergency_contact_phone: care.emergencyContactPhone,

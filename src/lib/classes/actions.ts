@@ -47,6 +47,16 @@ export async function updateClassAction(
   const academicYear = (formData.get('academicYear') as string | null)?.trim() || null
   const isActive = formData.get('isActive') === 'true'
 
+  // Capacity: blank → null (no limit); otherwise a non-negative integer.
+  const capacityRaw = (formData.get('capacity') as string | null)?.trim() ?? ''
+  let capacity: number | null = null
+  if (capacityRaw !== '') {
+    const n = Number(capacityRaw)
+    if (!Number.isInteger(n) || n < 0)
+      return { error: 'Capacity must be a whole number of 0 or more.' }
+    capacity = n
+  }
+
   const adminClient = createSupabaseAdminClient()
 
   // `.select()` returns the updated rows so we can detect a 0-row no-op (e.g. the
@@ -57,6 +67,7 @@ export async function updateClassAction(
       teacher_id: teacherId,
       academic_year: academicYear,
       is_active: isActive,
+      capacity,
     })
     .eq('id', classId)
     .eq('school_id', user.schoolId)
@@ -84,7 +95,7 @@ export async function updateClassAction(
     actorEmail: user.email,
     action: 'class.updated',
     resourceId: classId,
-    metadata: { teacher_id: teacherId, academic_year: academicYear, is_active: isActive },
+    metadata: { teacher_id: teacherId, academic_year: academicYear, is_active: isActive, capacity },
   })
 
   await onStaffOrRoomChanged(user.schoolId)
