@@ -12,17 +12,17 @@ export const metadata: Metadata = {
 const PLATFORM_CONTACTS: { title: string; email: string; description: string }[] = [
   {
     title: 'General enquiries',
-    email: 'info@skoolbido.com',
+    email: 'info@crechewise.com',
     description: 'Questions about Creche Wise, how it works, or getting started.',
   },
   {
     title: 'Schools & sales',
-    email: 'contact@skoolbido.com',
+    email: 'contact@crechewise.com',
     description: 'Thinking of using Creche Wise for your crèche? Talk to us about setting it up.',
   },
   {
     title: 'Support',
-    email: 'support@skoolbido.com',
+    email: 'support@crechewise.com',
     description: 'Already using Creche Wise? Get help with your portal or report an issue.',
   },
 ]

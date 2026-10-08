@@ -3,6 +3,7 @@ import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
+import { PayInvoiceButton } from '@/components/fees/PayInvoiceButton'
 
 export const metadata: Metadata = { title: 'Fees & Invoices' }
 
@@ -73,8 +74,8 @@ export default async function ParentInvoicesPage() {
         </p>
         {outstandingCents > 0 && (
           <p className="mt-2 text-sm text-text-muted">
-            To pay, contact your crèche or use the payment options they’ve shared. Online payment of
-            invoices is coming soon.
+            Pay online with the <strong>Pay now</strong> button next to each invoice. If card
+            payment isn’t available yet, you’ll see a note — contact your crèche in that case.
           </p>
         )}
       </div>
@@ -94,6 +95,7 @@ export default async function ParentInvoicesPage() {
                 <th className="px-4 py-3">Due</th>
                 <th className="px-4 py-3 text-right">Amount</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right"></th>
               </tr>
             </thead>
             <tbody>
@@ -116,6 +118,11 @@ export default async function ParentInvoicesPage() {
                       <Badge variant={STATUS_VARIANT[inv.status] ?? 'default'}>
                         {inv.status === 'part_paid' ? 'Part paid' : inv.status}
                       </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {inv.status === 'issued' || inv.status === 'part_paid' ? (
+                        <PayInvoiceButton invoiceId={inv.id} />
+                      ) : null}
                     </td>
                   </tr>
                 )
