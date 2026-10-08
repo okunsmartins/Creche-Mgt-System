@@ -111,6 +111,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'Payments',
     items: [
       { href: '/admin/fees', label: 'Fees & Invoices', icon: Receipt },
+      { href: '/admin/fees/due', label: 'Fees Due', icon: CalendarClock },
       { href: '/admin/arrears', label: 'Arrears', icon: AlertCircle },
       { href: '/admin/reminders', label: 'Reminders', icon: Bell },
       { href: '/admin/late-collection', label: 'Late Collection', icon: Timer },

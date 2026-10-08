@@ -128,6 +128,7 @@ export type AuditAction =
   | 'aim.closed'
   | 'funding.ppsn_revealed'
   | 'funding.chick_revealed'
+  | 'invoice.sent'
   | 'late_collection.recorded'
 
 // ─── Standalone Row Interfaces ────────────────────────────────────────────────
