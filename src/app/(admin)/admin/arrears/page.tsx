@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
 import { summariseArrears, type ArrearsInvoice } from '@/lib/fees/arrears'
+import { SendArrearsReminderButton } from '@/components/fees/SendArrearsReminderButton'
 
 export const metadata: Metadata = { title: 'Arrears' }
 
@@ -106,13 +107,20 @@ export default async function ArrearsPage() {
                   </td>
                   <td className="px-4 py-3">{c.oldestDueDate ?? '—'}</td>
                   <td className="px-4 py-3 text-right">{c.invoiceCount}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/fees/${c.studentId}`}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      View →
-                    </Link>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <SendArrearsReminderButton
+                        studentId={c.studentId}
+                        childName={c.studentName}
+                        amountLabel={formatCurrency(c.outstandingCents)}
+                      />
+                      <Link
+                        href={`/admin/fees/${c.studentId}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        View →
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

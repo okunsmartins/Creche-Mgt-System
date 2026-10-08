@@ -67,10 +67,30 @@ export async function schoolIdFromExtRef(
   extRef: string | null | undefined,
 ): Promise<string | null> {
   if (!extRef) return null
+  const adminClient = createSupabaseAdminClient()
+
+  // Fees invoice / late-collection payments use `INVPAY_<id>` / `LFPAY_<id>` so we can
+  // resolve the crèche (they have no order_reference).
+  if (extRef.startsWith('INVPAY_')) {
+    const { data } = await adminClient
+      .from('invoices')
+      .select('school_id')
+      .eq('id', extRef.slice('INVPAY_'.length))
+      .maybeSingle()
+    return (data as { school_id: string | null } | null)?.school_id ?? null
+  }
+  if (extRef.startsWith('LFPAY_')) {
+    const { data } = await adminClient
+      .from('late_collections')
+      .select('school_id')
+      .eq('id', extRef.slice('LFPAY_'.length))
+      .maybeSingle()
+    return (data as { school_id: string | null } | null)?.school_id ?? null
+  }
+
   // Strip the trailing `-<amount_paid_cents>` suffix to recover the order_reference.
   const orderReference = extRef.replace(/-\d+$/, '')
   if (!orderReference) return null
-  const adminClient = createSupabaseAdminClient()
   const { data } = await adminClient
     .from('orders')
     .select('school_id')
