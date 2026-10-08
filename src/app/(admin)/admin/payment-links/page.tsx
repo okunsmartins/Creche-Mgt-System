@@ -9,7 +9,7 @@ import { PaymentLinkActions } from '@/components/payment-links/PaymentLinkAction
 import { CopyLinkButton } from '@/components/payment-links/CopyLinkButton'
 import { UpgradePrompt } from '@/components/subscriptions/UpgradePrompt'
 import { schoolHasProAccess } from '@/lib/subscriptions/access'
-import type { PaymentLinkRow, ActivityRow } from '@/types/database'
+import type { PaymentLinkRow, ActivityRow, ProgrammeRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Payment Links | Admin' }
 
@@ -25,6 +25,7 @@ type LinkWithActivity = Pick<
   | 'created_at'
 > & {
   activities: Pick<ActivityRow, 'name'> | null
+  programmes: Pick<ProgrammeRow, 'name'> | null
 }
 
 export default async function PaymentLinksPage() {
@@ -34,7 +35,7 @@ export default async function PaymentLinksPage() {
   const { data } = await adminClient
     .from('payment_links')
     .select(
-      'id, label, public_token, expires_at, max_uses, use_count, is_active, created_at, activities(name)',
+      'id, label, public_token, expires_at, max_uses, use_count, is_active, created_at, activities(name), programmes(name)',
     )
     .eq('school_id', admin.schoolId!)
     .order('created_at', { ascending: false })
@@ -86,7 +87,12 @@ export default async function PaymentLinksPage() {
                 <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-text-primary">{link.label}</p>
-                    <p className="text-sm text-text-muted">{link.activities?.name ?? '—'}</p>
+                    <p className="text-sm text-text-muted">
+                      {link.programmes?.name ?? link.activities?.name ?? '—'}
+                      <span className="ml-2 rounded bg-surface px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-text-muted ring-1 ring-border">
+                        {link.programmes ? 'Programme' : 'Activity'}
+                      </span>
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     <PaymentLinkActions

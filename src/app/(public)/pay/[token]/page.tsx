@@ -3,8 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { GuestPaymentForm } from '@/components/orders/GuestPaymentForm'
+import { GuestProgrammePaymentForm } from '@/components/orders/GuestProgrammePaymentForm'
 import { incrementPaymentLinkVisitCount } from '@/lib/payment-links/actions'
-import type { ActivityRow, ClassRow, PaymentLinkRow } from '@/types/database'
+import type { ActivityRow, ClassRow, PaymentLinkRow, ProgrammeRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Pay' }
 
@@ -27,7 +28,7 @@ export default async function PayByTokenPage({ params }: { params: Promise<{ tok
   const { data: linkData } = await adminClient
     .from('payment_links')
     .select(
-      'id, activity_id, label, opens_at, expires_at, max_uses, use_count, is_active, school_id',
+      'id, activity_id, programme_id, label, opens_at, expires_at, max_uses, use_count, is_active, school_id',
     )
     .eq('public_token', token)
     .maybeSingle()
@@ -38,6 +39,7 @@ export default async function PayByTokenPage({ params }: { params: Promise<{ tok
     PaymentLinkRow,
     | 'id'
     | 'activity_id'
+    | 'programme_id'
     | 'label'
     | 'opens_at'
     | 'expires_at'
@@ -86,6 +88,74 @@ export default async function PayByTokenPage({ params }: { params: Promise<{ tok
     )
   }
 
+  // ── Programme link ──────────────────────────────────────────────────────────
+  if (link.programme_id) {
+    const { data: progData } = await adminClient
+      .from('programmes')
+      .select('id, name, price_cents, pricing_model, publication_status, is_active')
+      .eq('id', link.programme_id)
+      .eq('school_id', schoolId)
+      .single()
+
+    const prog = progData as Pick<
+      ProgrammeRow,
+      'id' | 'name' | 'price_cents' | 'pricing_model' | 'publication_status' | 'is_active'
+    > | null
+
+    if (!prog || prog.publication_status !== 'published' || !prog.is_active) {
+      return (
+        <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
+          <h1 className="mb-4 text-2xl font-bold text-text-primary">Programme not available</h1>
+          <p className="mb-6 text-text-secondary">
+            This programme is not currently accepting payments.
+          </p>
+          <Link href="/programmes" className="text-primary hover:underline">
+            View all programmes
+          </Link>
+        </div>
+      )
+    }
+
+    const { data: progClassData } = await adminClient
+      .from('classes')
+      .select('id, name, display_order')
+      .eq('school_id', schoolId)
+      .eq('is_active', true)
+      .order('display_order')
+    const progClasses: ClassOption[] = (
+      (progClassData as (ClassOption & { display_order: number })[] | null) ?? []
+    ).map((c) => ({ id: c.id, name: c.name }))
+
+    await incrementPaymentLinkVisitCount(link.id, schoolId)
+
+    return (
+      <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text-primary">Pay for {prog.name}</h1>
+          {link.label && <p className="mt-1 text-sm text-text-muted">{link.label}</p>}
+          <p className="mt-2 text-sm text-text-secondary">
+            No account needed. You will receive an email receipt when payment is complete.{' '}
+            <Link href="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>{' '}
+            for a faster experience.
+          </p>
+        </div>
+        <div className="card p-6">
+          <GuestProgrammePaymentForm
+            programmeId={prog.id}
+            programmeName={prog.name}
+            pricingModel={prog.pricing_model}
+            amountCents={prog.price_cents}
+            classes={progClasses}
+            paymentLinkId={link.id}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Activity link ───────────────────────────────────────────────────────────
   // Fetch the activity — must be published, active, and in this school
   const { data: activityData } = await adminClient
     .from('activities')
