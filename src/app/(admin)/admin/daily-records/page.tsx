@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import {
@@ -64,11 +65,19 @@ export default async function DailyRecordsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Daily records</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Log sleep, nappies, meals, incidents and medication for each child.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Daily records</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Log sleep, nappies, meals, incidents and medication for each child.
+          </p>
+        </div>
+        <Link
+          href="/admin/daily-records/report"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+        >
+          Reports (day / week / month)
+        </Link>
       </div>
 
       <form method="get" className="flex flex-wrap items-end gap-2">

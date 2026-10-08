@@ -43,6 +43,9 @@ export async function updateClassAction(
   const user = await requireAdmin()
   if (!user.schoolId) return { error: 'No school is associated with your account.' }
 
+  const name = (formData.get('name') as string | null)?.trim() ?? ''
+  if (name === '') return { error: 'A room name is required.' }
+  if (name.length > 100) return { error: 'Room name is too long (max 100 characters).' }
   const teacherId = (formData.get('teacherId') as string | null) || null
   const academicYear = (formData.get('academicYear') as string | null)?.trim() || null
   const isActive = formData.get('isActive') === 'true'
@@ -64,6 +67,7 @@ export async function updateClassAction(
   const { data: updated, error } = await adminClient
     .from('classes')
     .update({
+      name,
       teacher_id: teacherId,
       academic_year: academicYear,
       is_active: isActive,
@@ -74,6 +78,9 @@ export async function updateClassAction(
     .select('id')
 
   if (error) {
+    // 23505 = unique_violation on (school_id, name): another room already uses it.
+    if ((error as { code?: string }).code === '23505')
+      return { error: 'Another room already uses that name.' }
     logger.error('update_class_failed', { classId, error: error.message })
     return { error: 'Could not update class. Please try again.' }
   }
@@ -95,7 +102,13 @@ export async function updateClassAction(
     actorEmail: user.email,
     action: 'class.updated',
     resourceId: classId,
-    metadata: { teacher_id: teacherId, academic_year: academicYear, is_active: isActive, capacity },
+    metadata: {
+      name,
+      teacher_id: teacherId,
+      academic_year: academicYear,
+      is_active: isActive,
+      capacity,
+    },
   })
 
   await onStaffOrRoomChanged(user.schoolId)
