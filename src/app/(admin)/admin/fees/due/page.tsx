@@ -61,6 +61,35 @@ export default async function FeesDuePage() {
 
   const { items, totals } = summariseDue(invoices, todayISO)
 
+  // Resolve the linked parent email(s) per child, so "Send to parent" can show
+  // exactly who the email will go to before it's sent. School-scoped.
+  const studentIds = [...new Set(items.map((i) => i.studentId))]
+  const emailsByStudent = new Map<string, string[]>()
+  if (studentIds.length > 0) {
+    const { data: linkData } = await db
+      .from('parent_student_links')
+      .select('student_id, parent_id')
+      .eq('school_id', admin.schoolId)
+      .eq('is_active', true)
+      .in('student_id', studentIds)
+    const links = (linkData ?? []) as { student_id: string; parent_id: string }[]
+    const parentIds = [...new Set(links.map((l) => l.parent_id))]
+    const emailById = new Map<string, string>()
+    if (parentIds.length > 0) {
+      const { data: profData } = await db.from('profiles').select('id, email').in('id', parentIds)
+      for (const p of (profData ?? []) as { id: string; email: string | null }[]) {
+        if (p.email) emailById.set(p.id, p.email)
+      }
+    }
+    for (const l of links) {
+      const email = emailById.get(l.parent_id)
+      if (!email) continue
+      const list = emailsByStudent.get(l.student_id) ?? []
+      if (!list.includes(email)) list.push(email)
+      emailsByStudent.set(l.student_id, list)
+    }
+  }
+
   const cards = [
     { label: 'Overdue', value: totals.overdueCents, danger: true },
     { label: 'Due today', value: totals.todayCents, danger: false },
@@ -139,7 +168,12 @@ export default async function FeesDuePage() {
                       {formatCurrency(it.outstandingCents)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <SendInvoiceButton invoiceId={it.invoiceId} />
+                      <SendInvoiceButton
+                        invoiceId={it.invoiceId}
+                        childName={it.studentName}
+                        amountLabel={formatCurrency(it.outstandingCents)}
+                        recipientEmails={emailsByStudent.get(it.studentId) ?? []}
+                      />
                     </td>
                   </tr>
                 )
