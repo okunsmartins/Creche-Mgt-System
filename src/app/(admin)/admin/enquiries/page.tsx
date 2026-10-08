@@ -15,7 +15,7 @@ export default async function EnquiriesPage() {
   const { data } = await db
     .from('enquiries')
     .select(
-      'id, parent_name, parent_email, parent_phone, child_first_name, child_last_name, desired_start_date, status, notes, created_at',
+      'id, parent_name, parent_email, parent_phone, child_first_name, child_last_name, desired_start_date, status, notes, source, created_at',
     )
     .eq('school_id', admin.schoolId)
     .order('created_at', { ascending: false })

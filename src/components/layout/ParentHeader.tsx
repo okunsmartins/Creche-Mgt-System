@@ -53,6 +53,7 @@ const NAV: NavEntry[] = [
     items: [
       { href: '/parent/messages', label: 'Messages' },
       { href: '/parent/meetings', label: 'Meetings' },
+      { href: '/parent/enquiry', label: 'Make an Enquiry' },
     ],
   },
   {

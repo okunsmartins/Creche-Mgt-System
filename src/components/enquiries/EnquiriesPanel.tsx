@@ -27,6 +27,7 @@ export interface EnquiryRow {
   desired_start_date: string | null
   status: EnquiryStatus
   notes: string | null
+  source: string | null
   created_at: string
 }
 
@@ -133,6 +134,11 @@ export function EnquiriesPanel({ enquiries }: { enquiries: EnquiryRow[] }) {
                 <tr key={e.id} className="border-b border-border/50 align-top">
                   <td className="px-4 py-3 font-medium">
                     {e.parent_name}
+                    {e.source && (
+                      <span className="ml-2 rounded bg-info-light px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-info">
+                        {e.source}
+                      </span>
+                    )}
                     {e.notes && (
                       <p className="mt-0.5 text-xs font-normal text-text-muted">{e.notes}</p>
                     )}
