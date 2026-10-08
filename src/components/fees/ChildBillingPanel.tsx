@@ -10,7 +10,10 @@ import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
 import {
   createFeeScheduleAction,
+  updateFeeScheduleAction,
   upsertFundingRegistrationAction,
+  updateFundingRegistrationAction,
+  updateInvoiceDueDateAction,
   generateInvoicesForScheduleAction,
   issueInvoicesForScheduleAction,
   voidInvoicesForScheduleAction,
@@ -72,6 +75,10 @@ function eurosToCents(v: string): number | null {
   return Math.round(n * 100)
 }
 
+function centsToEuros(c: number | null | undefined): string {
+  return c == null ? '' : (c / 100).toFixed(2)
+}
+
 export function ChildBillingPanel({
   studentId,
   studentName,
@@ -84,7 +91,8 @@ export function ChildBillingPanel({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  // Fee-schedule form state
+  // ── Fee-schedule form state (used for both create and edit) ──
+  const [editingSchedule, setEditingSchedule] = useState(false)
   const [mode, setMode] = useState<'hourly' | 'flat'>('hourly')
   const [name, setName] = useState('Standard fee')
   const [frequency, setFrequency] = useState<FeeFrequency>('weekly')
@@ -94,6 +102,24 @@ export function ChildBillingPanel({
   const [flatAmount, setFlatAmount] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+
+  const scheduleFormOpen = !schedule || editingSchedule
+
+  function beginEditSchedule() {
+    if (!schedule) return
+    setError(null)
+    setNotice(null)
+    setMode(schedule.flat_amount_cents != null ? 'flat' : 'hourly')
+    setName(schedule.name)
+    setFrequency(schedule.frequency)
+    setHourlyRate(centsToEuros(schedule.provider_hourly_rate_cents))
+    setHoursPerDay(String(schedule.contracted_day_hours?.[0] ?? 8))
+    setDaysPerWeek(String(schedule.contracted_day_hours?.length ?? 5))
+    setFlatAmount(centsToEuros(schedule.flat_amount_cents))
+    setStartDate(schedule.start_date)
+    setEndDate(schedule.end_date)
+    setEditingSchedule(true)
+  }
 
   function saveSchedule() {
     setError(null)
@@ -117,16 +143,24 @@ export function ChildBillingPanel({
         : { flatAmountCents: eurosToCents(flatAmount) }),
     }
     startTransition(async () => {
-      const res = await createFeeScheduleAction(input)
+      const res =
+        schedule && editingSchedule
+          ? await updateFeeScheduleAction(schedule.id, input)
+          : await createFeeScheduleAction(input)
       if (!res.ok) setError(res.error)
       else {
-        setNotice('Fee schedule saved.')
+        setNotice(schedule && editingSchedule ? 'Fee schedule updated.' : 'Fee schedule saved.')
+        setEditingSchedule(false)
         router.refresh()
       }
     })
   }
 
-  function saveFunding(scheme: 'ECCE' | 'NCS', form: HTMLFormElement) {
+  // ── Funding ──
+  const [editingEcce, setEditingEcce] = useState(false)
+  const [editingNcs, setEditingNcs] = useState(false)
+
+  function saveFunding(scheme: 'ECCE' | 'NCS', form: HTMLFormElement, existingId: string | null) {
     setError(null)
     setNotice(null)
     const fd = new FormData(form)
@@ -145,10 +179,32 @@ export function ChildBillingPanel({
           }
         : { ...base, higherCapitation: fd.get('higher') === 'on' }
     startTransition(async () => {
-      const res = await upsertFundingRegistrationAction(input)
+      const res = existingId
+        ? await updateFundingRegistrationAction(existingId, input)
+        : await upsertFundingRegistrationAction(input)
       if (!res.ok) setError(res.error)
       else {
-        setNotice(`${scheme} registration saved.`)
+        setNotice(`${scheme} registration ${existingId ? 'updated' : 'saved'}.`)
+        setEditingEcce(false)
+        setEditingNcs(false)
+        router.refresh()
+      }
+    })
+  }
+
+  // ── Invoice due-date editing ──
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null)
+  const [dueDraft, setDueDraft] = useState('')
+
+  function saveDueDate(invoiceId: string) {
+    setError(null)
+    setNotice(null)
+    startTransition(async () => {
+      const res = await updateInvoiceDueDateAction(invoiceId, dueDraft)
+      if (!res.ok) setError(res.error)
+      else {
+        setNotice('Due date updated.')
+        setEditingInvoiceId(null)
         router.refresh()
       }
     })
@@ -186,6 +242,8 @@ export function ChildBillingPanel({
 
   function voidAll() {
     if (!schedule) return
+    if (!window.confirm('Void all invoices for this schedule? You can regenerate afterwards.'))
+      return
     setError(null)
     setNotice(null)
     startTransition(async () => {
@@ -208,8 +266,16 @@ export function ChildBillingPanel({
 
       {/* ─── Fee schedule ─── */}
       <section className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="text-base font-semibold text-text-primary">Fee schedule</h2>
-        {schedule ? (
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="text-base font-semibold text-text-primary">Fee schedule</h2>
+          {schedule && !editingSchedule && (
+            <Button type="button" variant="secondary" onClick={beginEditSchedule}>
+              Edit
+            </Button>
+          )}
+        </div>
+
+        {schedule && !editingSchedule && (
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
             <Badge variant="success">{schedule.status}</Badge>
             <span className="font-medium">{schedule.name}</span>
@@ -221,13 +287,15 @@ export function ChildBillingPanel({
               · {schedule.start_date} → {schedule.end_date}
             </span>
           </div>
-        ) : (
+        )}
+
+        {!schedule && !editingSchedule && (
           <p className="mt-1 text-sm text-text-muted">
             No fee schedule yet for {studentName}. Add one below.
           </p>
         )}
 
-        {!schedule && (
+        {scheduleFormOpen && (
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Select
@@ -302,11 +370,27 @@ export function ChildBillingPanel({
               onChange={(e) => setEndDate(e.target.value)}
               required
             />
-            <div className="sm:col-span-2">
+            <div className="flex items-center gap-2 sm:col-span-2">
               <Button type="button" onClick={saveSchedule} disabled={isPending}>
-                Save fee schedule
+                {schedule && editingSchedule ? 'Save changes' : 'Save fee schedule'}
               </Button>
+              {editingSchedule && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setEditingSchedule(false)}
+                  disabled={isPending}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
+            {schedule && editingSchedule && invoices.length > 0 && (
+              <p className="text-xs text-text-muted sm:col-span-2">
+                Note: already-generated invoices keep their amounts. To apply the new schedule to
+                outstanding periods, void the invoices below and regenerate.
+              </p>
+            )}
           </div>
         )}
       </section>
@@ -324,25 +408,57 @@ export function ChildBillingPanel({
             className="space-y-3"
             onSubmit={(e) => {
               e.preventDefault()
-              saveFunding('ECCE', e.currentTarget)
+              saveFunding('ECCE', e.currentTarget, editingEcce && ecce ? ecce.id : null)
             }}
           >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">ECCE</h3>
-              {ecce && <Badge variant="success">{ecce.status}</Badge>}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">ECCE</h3>
+                {ecce && <Badge variant="success">{ecce.status}</Badge>}
+              </div>
+              {ecce && !editingEcce && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setError(null)
+                    setNotice(null)
+                    setEditingEcce(true)
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
             </div>
-            {ecce ? (
+            {ecce && !editingEcce ? (
               <p className="text-sm text-text-muted">
                 Registered{ecce.higher_capitation ? ' · higher capitation' : ''}.
               </p>
             ) : (
               <>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" name="higher" /> Higher (graduate-led) capitation
+                  <input
+                    type="checkbox"
+                    name="higher"
+                    defaultChecked={editingEcce ? ecce?.higher_capitation : false}
+                  />{' '}
+                  Higher (graduate-led) capitation
                 </label>
-                <Button type="submit" variant="secondary" disabled={isPending}>
-                  Add ECCE registration
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="submit" variant="secondary" disabled={isPending}>
+                    {editingEcce ? 'Save changes' : 'Add ECCE registration'}
+                  </Button>
+                  {editingEcce && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setEditingEcce(false)}
+                      disabled={isPending}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </>
             )}
           </form>
@@ -352,14 +468,29 @@ export function ChildBillingPanel({
             className="space-y-3"
             onSubmit={(e) => {
               e.preventDefault()
-              saveFunding('NCS', e.currentTarget)
+              saveFunding('NCS', e.currentTarget, editingNcs && ncs ? ncs.id : null)
             }}
           >
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">NCS</h3>
-              {ncs && <Badge variant="success">{ncs.status}</Badge>}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">NCS</h3>
+                {ncs && <Badge variant="success">{ncs.status}</Badge>}
+              </div>
+              {ncs && !editingNcs && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setError(null)
+                    setNotice(null)
+                    setEditingNcs(true)
+                  }}
+                >
+                  Edit
+                </Button>
+              )}
             </div>
-            {ncs ? (
+            {ncs && !editingNcs ? (
               <p className="text-sm text-text-muted">
                 {ncs.chick_code ? `CHICK ${ncs.chick_code} · ` : ''}
                 {formatCurrency(ncs.awarded_hourly_rate_cents ?? 0)}/hr ·{' '}
@@ -367,7 +498,7 @@ export function ChildBillingPanel({
               </p>
             ) : (
               <>
-                <Input label="CHICK code" name="chick" />
+                <Input label="CHICK code" name="chick" defaultValue={ncs?.chick_code ?? ''} />
                 <Select
                   label="Subsidy type"
                   name="ncsType"
@@ -377,17 +508,45 @@ export function ChildBillingPanel({
                   ]}
                 />
                 <div className="grid grid-cols-2 gap-2">
-                  <Input label="Awarded rate (€/hr)" name="rate" type="number" step="0.01" />
-                  <Input label="Band hours/wk" name="hours" type="number" step="0.5" />
+                  <Input
+                    label="Awarded rate (€/hr)"
+                    name="rate"
+                    type="number"
+                    step="0.01"
+                    defaultValue={centsToEuros(ncs?.awarded_hourly_rate_cents)}
+                  />
+                  <Input
+                    label="Band hours/wk"
+                    name="hours"
+                    type="number"
+                    step="0.5"
+                    defaultValue={ncs?.awarded_weekly_hours ?? ''}
+                  />
                 </div>
                 <Input
                   label="PPSN (stored encrypted)"
                   name="ppsn"
-                  hint="Special-category data — encrypted at rest."
+                  hint={
+                    editingNcs
+                      ? 'Leave blank to keep the existing PPSN.'
+                      : 'Special-category data — encrypted at rest.'
+                  }
                 />
-                <Button type="submit" variant="secondary" disabled={isPending}>
-                  Add NCS registration
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="submit" variant="secondary" disabled={isPending}>
+                    {editingNcs ? 'Save changes' : 'Add NCS registration'}
+                  </Button>
+                  {editingNcs && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setEditingNcs(false)}
+                      disabled={isPending}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </>
             )}
           </form>
@@ -421,46 +580,101 @@ export function ChildBillingPanel({
             {schedule ? 'No invoices yet — click Generate.' : 'Add a fee schedule first.'}
           </p>
         ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-text-muted">
-                  <th className="py-2 pr-3">Invoice</th>
-                  <th className="py-2 pr-3">Period</th>
-                  <th className="py-2 pr-3">Due</th>
-                  <th className="py-2 pr-3 text-right">Gross</th>
-                  <th className="py-2 pr-3 text-right">Subsidy</th>
-                  <th className="py-2 pr-3 text-right">Net</th>
-                  <th className="py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-border/50">
-                    <td className="py-2 pr-3 font-mono text-xs">{inv.invoice_number}</td>
-                    <td className="py-2 pr-3">
-                      {inv.period_start} → {inv.period_end}
-                    </td>
-                    <td className="py-2 pr-3">{inv.due_date}</td>
-                    <td className="py-2 pr-3 text-right">
-                      {formatCurrency(inv.gross_parent_cents)}
-                    </td>
-                    <td className="py-2 pr-3 text-right text-success">
-                      −{formatCurrency(inv.ncs_subsidy_cents)}
-                    </td>
-                    <td className="py-2 pr-3 text-right font-semibold">
-                      {formatCurrency(inv.net_parent_cents)}
-                    </td>
-                    <td className="py-2">
-                      <Badge variant={inv.status === 'draft' ? 'default' : 'success'}>
-                        {inv.status}
-                      </Badge>
-                    </td>
+          <>
+            <p className="mt-1 text-xs text-text-muted">
+              Issued invoice amounts are locked for audit — to change a figure, void and regenerate.
+              You can still reschedule a due date here.
+            </p>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-text-muted">
+                    <th className="py-2 pr-3">Invoice</th>
+                    <th className="py-2 pr-3">Period</th>
+                    <th className="py-2 pr-3">Due</th>
+                    <th className="py-2 pr-3 text-right">Gross</th>
+                    <th className="py-2 pr-3 text-right">Subsidy</th>
+                    <th className="py-2 pr-3 text-right">Net</th>
+                    <th className="py-2 pr-3">Status</th>
+                    <th className="py-2 text-right"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => {
+                    const editing = editingInvoiceId === inv.id
+                    return (
+                      <tr key={inv.id} className="border-b border-border/50">
+                        <td className="py-2 pr-3 font-mono text-xs">{inv.invoice_number}</td>
+                        <td className="py-2 pr-3">
+                          {inv.period_start} → {inv.period_end}
+                        </td>
+                        <td className="py-2 pr-3">
+                          {editing ? (
+                            <input
+                              type="date"
+                              value={dueDraft}
+                              onChange={(e) => setDueDraft(e.target.value)}
+                              className="rounded-md border border-border bg-surface px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                          ) : (
+                            inv.due_date
+                          )}
+                        </td>
+                        <td className="py-2 pr-3 text-right">
+                          {formatCurrency(inv.gross_parent_cents)}
+                        </td>
+                        <td className="py-2 pr-3 text-right text-success">
+                          −{formatCurrency(inv.ncs_subsidy_cents)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-semibold">
+                          {formatCurrency(inv.net_parent_cents)}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <Badge variant={inv.status === 'draft' ? 'default' : 'success'}>
+                            {inv.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2 text-right">
+                          {inv.status === 'void' ? null : editing ? (
+                            <span className="inline-flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => saveDueDate(inv.id)}
+                                disabled={isPending}
+                                className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingInvoiceId(null)}
+                                className="text-xs text-text-muted hover:underline"
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setError(null)
+                                setNotice(null)
+                                setDueDraft(inv.due_date)
+                                setEditingInvoiceId(inv.id)
+                              }}
+                              className="text-xs font-medium text-primary hover:underline"
+                            >
+                              Edit due
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     </div>
