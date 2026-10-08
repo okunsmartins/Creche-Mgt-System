@@ -128,8 +128,37 @@ export type AuditAction =
   | 'aim.closed'
   | 'funding.ppsn_revealed'
   | 'funding.chick_revealed'
+  | 'late_collection.recorded'
 
 // ─── Standalone Row Interfaces ────────────────────────────────────────────────
+
+/** Per-crèche late-collection policy (one row per school). */
+export interface LateCollectionSettingsRow {
+  school_id: string
+  cutoff_time: string // 'HH:MM:SS'
+  grace_minutes: number
+  flat_fee_cents: number
+  per_block_fee_cents: number
+  block_minutes: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+/** A recorded late-collection incident for a child, with a snapshotted fee. */
+export interface LateCollectionRow {
+  id: string
+  school_id: string
+  student_id: string
+  collected_at: string
+  minutes_late: number
+  fee_cents: number
+  note: string | null
+  parent_alerted: boolean
+  recorded_by: string | null
+  created_at: string
+  updated_at: string
+}
 // Defined before Database to avoid circular type references.
 
 export interface SchoolRow {

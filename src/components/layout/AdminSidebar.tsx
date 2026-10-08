@@ -48,6 +48,7 @@ import {
   UserPlus,
   UserCheck,
   Upload,
+  Timer,
 } from 'lucide-react'
 import { cn, schoolInitials } from '@/lib/utils'
 import { signOutAction } from '@/lib/auth/actions'
@@ -111,6 +112,7 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/admin/fees', label: 'Fees & Invoices', icon: Receipt },
       { href: '/admin/arrears', label: 'Arrears', icon: AlertCircle },
       { href: '/admin/reminders', label: 'Reminders', icon: Bell },
+      { href: '/admin/late-collection', label: 'Late Collection', icon: Timer },
       { href: '/admin/activities', label: 'Activities', icon: Calendar },
       { href: '/admin/programmes', label: 'Programmes', icon: Repeat },
       { href: '/admin/collection', label: 'School Collection', icon: Bus },
