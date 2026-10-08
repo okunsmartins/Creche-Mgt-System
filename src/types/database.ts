@@ -236,6 +236,7 @@ export interface ClassRow {
   display_order: number
   teacher_id: string | null
   academic_year: string | null
+  capacity: number | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -277,6 +278,7 @@ export interface StudentRow {
   medication_consent: boolean
   medication_notes: string | null
   session: 'FULL_DAY' | 'MORNING' | 'AFTERNOON' | 'OTHER' | null
+  leaving_date: string | null
   created_at: string
   updated_at: string
 }

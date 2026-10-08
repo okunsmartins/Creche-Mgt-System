@@ -24,6 +24,7 @@ interface StudentFormProps {
         firstName: string
         lastName: string
         classId: string
+        leavingDate?: string | null
       } & Partial<StudentCareFields>)
     | undefined
 }
@@ -98,6 +99,16 @@ export function StudentForm({ action, classes, student }: StudentFormProps) {
             disabled={isPending}
             autoComplete="off"
             hint="Used to text the parent (e.g. reminders)."
+          />
+
+          <Input
+            label="Expected leaving date"
+            name="leavingDate"
+            type="date"
+            defaultValue={student?.leavingDate ?? ''}
+            disabled={isPending}
+            autoComplete="off"
+            hint="When this child is due to leave. Shown under upcoming leavers / vacancies."
           />
 
           <div className="space-y-5 border-t border-border pt-5">
