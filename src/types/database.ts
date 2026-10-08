@@ -154,6 +154,8 @@ export interface LateCollectionRow {
   collected_at: string
   minutes_late: number
   fee_cents: number
+  amount_paid_cents: number
+  paid_at: string | null
   note: string | null
   parent_alerted: boolean
   recorded_by: string | null
@@ -438,7 +440,9 @@ export interface OrderItemRow {
 
 export interface PaymentRow {
   id: string
-  order_id: string
+  order_id: string | null
+  invoice_id: string | null
+  late_collection_id: string | null
   payment_reference: string
   provider: PaymentProvider
   provider_checkout_session_id: string | null
