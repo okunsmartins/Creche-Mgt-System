@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-10-07
+**Last updated:** 2026-10-08
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -16,15 +16,18 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
-## Verification snapshot (2026-10-07)
+## Verification snapshot (2026-10-08)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **983 passed / 90 files** (combined staff+reporting branch, 2026-10-07) |
-| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ source clean (2026-10-07; ignore stale `.next/types` route stubs) |
-| Lint | `npm run lint` (`eslint src`) | ✅ clean (2026-10-07) |
-| Format | `npm run format:check` (`prettier --check`) | ✅ all files match (2026-10-07) |
-| DB migrations 068–100 applied | verified via service-role scripts / Supabase SQL editor | ✅ incl. 084–088 Funding & Hive, 089–091, 092–094 Staff Workforce, 095 timesheet-adjustments, 096 certifications, 097 parent_mobile, 098 ratio_bands, 099 room_staff_on_duty, **100 staff_attendance (applied 2026-10-07)**. |
+| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **1001 passed / 93 files** (on `feat/late-collection-payments`, 2026-10-08) |
+| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ source clean (2026-10-08; ignore stale `.next/types` route stubs) |
+| Lint | `npm run lint` (`eslint src`) | ✅ clean (2026-10-08) |
+| Format | `npm run format:check` (`prettier --check`) | ✅ all `src/**` files match (2026-10-08; Prettier has no SQL parser — exclude `*.sql`) |
+| DB migrations 068–105 applied | verified via Supabase SQL editor | ✅ incl. 100 staff_attendance, **102 places_and_leavers, 103 audit invoice.sent, 104 late_collection, 105 invoice_payments — all applied 2026-10-08**. ⚠️ **101 student_meal_options NOT applied** (lives on unmerged `feat/child-meal-options`). |
+
+> ⚠️ **The 2026-10-08 phases below are on OPEN PR BRANCHES, not yet on `main`.** Migrations 102–105 are applied to
+> the DB, but the code ships only when the PRs merge. See "Session 2026-10-08" and "Open PR branches" below.
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
@@ -131,6 +134,110 @@ npx vitest run src/lib/rota src/lib/timeoff src/lib/staff-attendance src/lib/rat
 node scripts/verify-tenant-isolation.mjs           # add ratio_bands/room_staff_on_duty/staff_attendance
 ```
 PRs: `feat/timesheet-report`, `feat/timeoff-clash`, `feat/staff-clock-in` (all re-synced to main, conflict-free; merge in any order).
+
+---
+
+## Session 2026-10-08 — places/billing edits, reports, enquiry/arrears email, online payments (FEE-08)
+
+> Built against master spec **§7.3 (enquiry/waiting-list), §7.4/§7.5 (ratios, rota/daily-records reporting),
+> §7.8 (places/occupancy), §8 + FEE-06/08/10 (fees: edit, reports, pay, reminders), §auth/RBAC (roles)**.
+> Pure-logic-first where applicable + vitest. Full gate on `feat/late-collection-payments` (the deepest payment
+> branch): `tsc --noEmit` source-clean · `eslint src` clean · `prettier --check src` clean · **1001 passed / 93 files**
+> (2026-10-08).
+>
+> **Honesty:** all items below are **on open PR branches, NOT merged to `main`**, and none of the payment paths is
+> **verified end-to-end** (no crèche has connected a Stripe/Revolut account yet). Treat 🟡 = built + gated (tsc/lint/
+> tests), **not** browser/e2e-verified.
+
+### Merged earlier this session (on `main`)
+| Feature | Spec | PR |
+|---|---|---|
+| Places & vacancies (capacity → available places, upcoming leavers) | §7.8 | #72 |
+| Fees due by period (today/week/month/year) + "send to parent" email | FEE-10 | #73 |
+| Late-collection fee (policy, record incident, parent alert, dashboard) | §7.4 ops | #74 |
+| "Send to parent" confirm names recipient/child/amount | — | #75 |
+| Child billing view **editable** after creation (schedule/funding/due-date) | FEE-06 | #76 |
+| Places & vacancies **editable** in place (capacity, add/edit/remove leavers) | §7.8 | #77 |
+| Email the enquiring parent from the enquiries list | §7.3 | #78 |
+
+### Open PR branches (2026-10-08) — built + gated, NOT merged, NOT e2e-verified
+| Feature | Spec | Branch | Migration | Status |
+|---|---|---|---|---|
+| Contact-page emails → @crechewise.com | — | `fix/contact-page-crechewise-emails` | — | 🟡 built + gated |
+| Assign role to staff · Monthly-Summary nav highlight · edit room name | RBAC / room admin | `fix/admin-roles-rooms-nav` | — | 🟡 built + gated (revived from stale branch) |
+| Daily-records report (day/week/month + CSV) | §7.6 | `feat/daily-records-report` | — | 🟡 built + gated; pure `summariseDailyRecords` +2 tests |
+| Rota report (planned shifts, day/week/month + CSV) | §7.5 | `feat/rota-report` | — | 🟡 built + gated |
+| Arrears "Send reminder" (parent email + pay link) | FEE-10 | `feat/arrears-send-reminder` | — | 🟡 built + gated |
+| **FEE-08** online invoice payment (parent pays via crèche's Stripe) | FEE-08 | `feat/invoice-payments` | **105 (applied)** | 🟡 built + gated; **NOT e2e-verified** |
+| Late-collection online payment + **Revolut parity** (invoice + late-fee) | FEE-08 | `feat/late-collection-payments` *(stacked on invoice-payments)* | uses 105 | 🟡 built + gated; **NOT e2e-verified** |
+
+**Already present (confirmed during this review, no build needed):** timesheet report+CSV (`/admin/timesheets/report`),
+**editable ratios** ("Save ratios" panel on `/admin/ratios`, `saveRatioBandsAction`). **Arrears is derived**, not configured.
+
+### FEE-08 — online payment of fees invoices + late fees (the main new capability)
+- **Architecture:** `payments` can now attach to an **invoice** or **late-collection** (not only an order) — `order_id`
+  nullable, `invoice_id` / `late_collection_id` FKs + idempotency unique indexes (mig 105). Chosen because `order_items`
+  is hard-coupled to `activities` (a synthetic order per invoice would need a fake activity).
+- **Direct charge on the crèche's OWN account** — `startFeeCheckout` (`lib/fees/payment.ts`) prefers **Stripe Connect**
+  (`stripeAccount: connect.stripe_connect_account_id`) and falls back to the crèche's **own Revolut** (`resolveRevolutApiKey`
+  + `schoolHasOwnRevolut`). Platform takes no cut.
+- **Parent entry points:** "Pay now" on `/parent/invoices` and `/parent/late-fees` (both parent-authed + linked-child check).
+- **Webhooks propagate paid:** Stripe `handleInvoicePayment`/`handleLateFeePayment` and Revolut
+  `applyRevolutInvoicePayment`/`applyRevolutLateFeePayment` set the invoice → `paid`/`part_paid` (guard allows
+  `amount_paid_cents`+`status`) or the late-fee `paid_at`, and insert a payment row (idempotent via the new unique
+  indexes / `provider_order_id`). Reflected in **parent + child + admin** views and admin money-collected.
+- **Gap to close (release-blocking for FEE-08):** **no crèche has connected a payment account**, so the pay→paid loop
+  is **unverified end-to-end**. Also: overpayment isn't capped in the invoice webhook (caps `status`, not `amount_paid`);
+  no automated test of the webhook propagation (webhook handlers aren't unit-tested); no receipt email on invoice/late-fee
+  payment yet.
+
+**Outstanding (not done — do not report as complete):**
+1. **Verify FEE-08 end-to-end** once a crèche connects Stripe (test mode) or Revolut: pay → invoice/late-fee flips to paid
+   in all three views; test idempotency (replay webhook) and partial payment.
+2. **Webhook unit tests** for invoice/late-fee propagation + idempotency; **overpayment cap** in the invoice webhook.
+3. **Receipt email** on a successful invoice/late-fee payment.
+4. **Merge the 7 open PRs** (invoice-payments **before** the stacked late-collection-payments).
+
+### Manual configuration steps (this session)
+1. **Apply migration 105** — done on the dev DB (2026-10-08). For any fresh env, run `105_invoice_payments.sql`.
+2. **Connect a payment account per crèche** at `/admin/payments/connect` — Stripe Connect KYC (test mode is fine to
+   verify) and/or the crèche's own Revolut key. Until then "Pay now" shows "this crèche hasn't finished setting up card
+   payments." The platform-level Stripe/Revolut keys in Vercel are only the fallback.
+3. **Redeploy** after merging so the new routes/pages ship.
+
+### Security considerations (this session)
+- **Parent authz on payment:** `createInvoicePaymentCheckoutAction` / `createLateFeePaymentCheckoutAction` require a
+  **verified parent with an active link to the child** before starting a charge — prevents paying/enumerating another
+  family's invoice. Pro-gated (lapsed portal can't collect).
+- **Webhook idempotency:** retried events can't double-apply — Stripe via `uq_payments_invoice_session` /
+  `uq_payments_latefee_session` (on `provider_checkout_session_id`), Revolut via the existing `provider_order_id` unique
+  index. Amount/currency validated (EUR, positive) before state changes; invoice status machine is monotonic (never
+  downgrades paid/void).
+- **Revolut ext-ref:** `INVPAY_<id>`/`LFPAY_<id>` let the webhook resolve the crèche (`schoolIdFromExtRef`) so it
+  re-fetches the order on the **correct** per-crèche Merchant account, not the platform account.
+- **Email sends** (arrears reminder, enquiry) are `school_id`-scoped, resolve the parent email from active
+  `parent_student_links` only, HTML-escape tenant/child text, and send branded as the crèche. Audited (`invoice.sent`).
+- All new report queries are `school_id`-scoped; CSV cells go through the shared quoted/escaped `toCsv`.
+- **New payments columns** reuse the existing `payments` grants/RLS (service-role writes only; the webhook is excluded
+  from auth middleware and verifies provider signatures). `late_collections` paid columns inherit mig 104 grants.
+
+### Exact commands to continue (this session)
+```bash
+# repo root: E:\First Stack Solutions\Creche_Mgt_System
+npx tsc --noEmit                      # source clean (ignore stale .next/types)
+npx eslint src --ext .ts,.tsx
+npx prettier --check "src/**/*.{ts,tsx}"   # exclude *.sql (no SQL parser)
+npx vitest run                        # 1001 passed / 93 files (on feat/late-collection-payments)
+
+# merge order for the payment PRs (stacked):
+#   1) feat/invoice-payments   2) feat/late-collection-payments
+# the other 5 branches are independent (merge in any order); re-sync if GitHub flags a types/database.ts conflict.
+
+# verify FEE-08 once a crèche connects a provider (test mode):
+#   /admin/payments/connect → Stripe test onboarding (or crèche Revolut key)
+#   parent /parent/invoices → "Pay now" → Stripe test card 4242 4242 4242 4242
+#   confirm invoice → Paid in parent + /admin/fees/<child> + money-collected; replay the webhook (idempotent)
+```
 
 ---
 
@@ -527,11 +634,13 @@ Work for the **school** product; passes its own tests but **not verified for the
 
 ## ⬜ Outstanding (not started / provider-gated)
 
-**Fee/subvention:** FEE-08 pay invoice via a payment provider (needs each crèche's own KYC — FEE-09 instalment
-engine already built to plug in). **Both provider paths are per-tenant and code-complete, but not yet wired to
-crèche invoices and not activated in production** (see "Per-tenant payments" below). When FEE-08 is built it **must**
-route through the same per-crèche resolvers (`stripeAccount: <tenant connect account>` / `resolveRevolutApiKey(schoolId)`),
-never a shared platform account. Also: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates`
+**Fee/subvention:** **FEE-08 is now BUILT on branches** (2026-10-08) — parent pays an **invoice** (`/parent/invoices`)
+or a **late fee** (`/parent/late-fees`) online; the charge is a **direct charge on the crèche's own** Stripe Connect
+account, falling back to the crèche's **own Revolut**; webhooks mark the invoice/late-fee paid (see "Session 2026-10-08").
+It correctly routes through the per-crèche resolvers (`stripeAccount: connect.stripe_connect_account_id` /
+`resolveRevolutApiKey(schoolId)`), never a shared platform account. ⚠️ **NOT merged and NOT verified end-to-end** —
+blocked on a crèche connecting a payment account; webhook propagation has no automated test yet; overpayment isn't capped
+in the invoice webhook. Also still open: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates`
 (FEE-01), `invoice_lines` + full 8-state machine (FEE-04), parent invoice **payment** wiring, reminder **dispatch**
 (email/SMS send).
 
