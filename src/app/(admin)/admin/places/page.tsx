@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { requireAdmin } from '@/lib/auth/guards'
+import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getPlacesOverview } from '@/lib/places/queries'
+import { PlacesRoomsTable } from '@/components/places/PlacesRoomsTable'
+import { UpcomingLeaversPanel } from '@/components/places/UpcomingLeaversPanel'
 
 export const metadata: Metadata = { title: 'Places & Vacancies' }
 
@@ -15,34 +18,35 @@ function todayISO(): string {
   return parts
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat('en-IE', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(d)
-}
-
 export default async function PlacesPage() {
   const admin = await requireAdmin()
   if (!admin.schoolId)
     return <p className="text-error">No crèche is associated with your account.</p>
+  const db = createSupabaseAdminClient()
 
   const today = todayISO()
-  const { rooms, leavers, totalCapacity, totalEnrolled, totalAvailable } = await getPlacesOverview(
-    admin.schoolId,
-    today,
-  )
+  const [{ rooms, leavers, totalCapacity, totalEnrolled, totalAvailable }, { data: childData }] =
+    await Promise.all([
+      getPlacesOverview(admin.schoolId, today),
+      db
+        .from('students')
+        .select('id, first_name, last_name')
+        .eq('school_id', admin.schoolId)
+        .eq('is_active', true)
+        .order('last_name'),
+    ])
+
+  const children = (
+    (childData ?? []) as { id: string; first_name: string; last_name: string }[]
+  ).map((c) => ({ id: c.id, name: `${c.first_name} ${c.last_name}` }))
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Places &amp; vacancies</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Available places per room and children due to leave in the next 90 days.
+          Available places per room and children due to leave in the next 90 days. Edit a
+          room&rsquo;s capacity or a child&rsquo;s leaving date right here.
         </p>
       </div>
 
@@ -64,91 +68,24 @@ export default async function PlacesPage() {
         </div>
       </div>
 
-      {/* Per-room table */}
+      {/* Per-room table (capacity editable inline) */}
       <div>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">
           By room
         </h2>
-        {rooms.length === 0 ? (
-          <p className="text-sm text-text-muted">No rooms yet.</p>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Room</th>
-                  <th className="px-4 py-3 text-right font-medium">Capacity</th>
-                  <th className="px-4 py-3 text-right font-medium">Enrolled</th>
-                  <th className="px-4 py-3 text-right font-medium">Available</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rooms.map((r) => {
-                  const over = r.capacity != null && r.enrolled > r.capacity
-                  return (
-                    <tr key={r.id}>
-                      <td className="px-4 py-3 font-medium text-text-primary">{r.name}</td>
-                      <td className="px-4 py-3 text-right text-text-primary">
-                        {r.capacity ?? <span className="text-text-muted">—</span>}
-                      </td>
-                      <td className="px-4 py-3 text-right text-text-primary">{r.enrolled}</td>
-                      <td className="px-4 py-3 text-right">
-                        {r.available == null ? (
-                          <span className="text-text-muted">—</span>
-                        ) : over ? (
-                          <span className="font-semibold text-error">
-                            Over by {r.enrolled - r.capacity!}
-                          </span>
-                        ) : r.available === 0 ? (
-                          <span className="font-semibold text-text-muted">Full</span>
-                        ) : (
-                          <span className="font-semibold text-primary">{r.available}</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <PlacesRoomsTable rooms={rooms} />
         <p className="mt-2 text-xs text-text-muted">
-          Set a room&rsquo;s capacity on its edit page (Rooms → a room) to track available places.
+          Set a room&rsquo;s capacity here (or on its edit page under Rooms) to track available
+          places.
         </p>
       </div>
 
-      {/* Upcoming leavers */}
+      {/* Upcoming leavers (add / edit / remove) */}
       <div>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-muted">
           Upcoming leavers (next 90 days)
         </h2>
-        {leavers.length === 0 ? (
-          <p className="text-sm text-text-muted">
-            No children have a leaving date in the next 90 days. Set a child&rsquo;s expected
-            leaving date on their edit page.
-          </p>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full text-sm">
-              <thead className="bg-surface/60 text-left text-xs uppercase tracking-wide text-text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Child</th>
-                  <th className="px-4 py-3 font-medium">Room</th>
-                  <th className="px-4 py-3 font-medium">Leaving</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {leavers.map((l) => (
-                  <tr key={l.studentId}>
-                    <td className="px-4 py-3 font-medium text-text-primary">{l.name}</td>
-                    <td className="px-4 py-3 text-text-primary">{l.roomName}</td>
-                    <td className="px-4 py-3 text-text-primary">{formatDate(l.leavingDate)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <UpcomingLeaversPanel leavers={leavers} childOptions={children} />
       </div>
     </div>
   )
