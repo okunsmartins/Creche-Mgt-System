@@ -10,6 +10,7 @@ import {
   createEnquiryAction,
   updateEnquiryStatusAction,
   deleteEnquiryAction,
+  sendEnquiryEmailAction,
 } from '@/lib/enquiries/actions'
 import {
   ENQUIRY_STATUSES,
@@ -34,7 +35,10 @@ export function EnquiriesPanel({ enquiries }: { enquiries: EnquiryRow[] }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
+  // Which enquiry's email composer is open.
+  const [emailingId, setEmailingId] = useState<string | null>(null)
 
   function submit(form: HTMLFormElement) {
     setError(null)
@@ -76,9 +80,29 @@ export function EnquiriesPanel({ enquiries }: { enquiries: EnquiryRow[] }) {
     })
   }
 
+  function sendEmail(id: string, form: HTMLFormElement) {
+    setError(null)
+    setNotice(null)
+    const fd = new FormData(form)
+    startTransition(async () => {
+      const res = await sendEnquiryEmailAction(
+        id,
+        (fd.get('subject') as string) ?? '',
+        (fd.get('message') as string) ?? '',
+      )
+      if (!res.ok) setError(res.error)
+      else {
+        setNotice('Email sent to the parent.')
+        setEmailingId(null)
+        router.refresh()
+      }
+    })
+  }
+
   return (
     <div className="space-y-4">
       {error && <Alert variant="error">{error}</Alert>}
+      {notice && <Alert variant="success">{notice}</Alert>}
 
       <div>
         <Button type="button" onClick={() => setOpen((v) => !v)}>
@@ -129,7 +153,7 @@ export function EnquiriesPanel({ enquiries }: { enquiries: EnquiryRow[] }) {
               </tr>
             </thead>
             <tbody>
-              {enquiries.map((e) => (
+              {enquiries.map((e) => [
                 <tr key={e.id} className="border-b border-border/50 align-top">
                   <td className="px-4 py-3 font-medium">
                     {e.parent_name}
@@ -161,17 +185,81 @@ export function EnquiriesPanel({ enquiries }: { enquiries: EnquiryRow[] }) {
                     </select>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      onClick={() => remove(e.id)}
-                      disabled={isPending}
-                      className="text-xs text-text-muted hover:text-error"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      {e.parent_email && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setError(null)
+                            setNotice(null)
+                            setEmailingId((cur) => (cur === e.id ? null : e.id))
+                          }}
+                          disabled={isPending}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          {emailingId === e.id ? 'Close' : 'Email'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => remove(e.id)}
+                        disabled={isPending}
+                        className="text-xs text-text-muted hover:text-error"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
-                </tr>
-              ))}
+                </tr>,
+                emailingId === e.id && e.parent_email ? (
+                  <tr key={`${e.id}-email`} className="border-b border-border/50 bg-surface/50">
+                    <td colSpan={6} className="px-4 py-4">
+                      <form
+                        className="space-y-3"
+                        onSubmit={(ev) => {
+                          ev.preventDefault()
+                          sendEmail(e.id, ev.currentTarget)
+                        }}
+                      >
+                        <p className="text-xs text-text-muted">
+                          Emailing <span className="font-medium">{e.parent_email}</span> as{' '}
+                          {e.parent_name || 'the parent'} — sent from your crèche’s address.
+                        </p>
+                        <Input
+                          label="Subject"
+                          name="subject"
+                          required
+                          defaultValue={`Your enquiry${
+                            [e.child_first_name, e.child_last_name].filter(Boolean).length
+                              ? ` about ${[e.child_first_name, e.child_last_name].filter(Boolean).join(' ')}`
+                              : ''
+                          }`}
+                        />
+                        <Textarea
+                          label="Message"
+                          name="message"
+                          rows={5}
+                          required
+                          defaultValue={`Hi ${e.parent_name?.split(' ')[0] ?? ''},\n\nThank you for your enquiry. `}
+                        />
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={isPending}>
+                            Send email
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setEmailingId(null)}
+                            disabled={isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </td>
+                  </tr>
+                ) : null,
+              ])}
             </tbody>
           </table>
         </div>
