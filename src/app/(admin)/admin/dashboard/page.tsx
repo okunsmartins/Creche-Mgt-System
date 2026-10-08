@@ -13,6 +13,7 @@ import {
   Award,
   CalendarOff,
   Scale,
+  Timer,
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
@@ -237,6 +238,21 @@ export default async function AdminDashboardPage() {
   const ratioMore = ratio.alerts.length - ratioLabels.length
   const ratioAlertText = `${ratioLabels.join(', ')}${ratioMore > 0 ? ` +${ratioMore} more` : ''}.`
 
+  // Late collections recorded today (tolerant of the table being absent pre-migration).
+  let lateToday = 0
+  let lateFeesTodayCents = 0
+  {
+    const { data: lcData } = await adminClient
+      .from('late_collections')
+      .select('fee_cents, collected_at')
+      .eq('school_id', admin.schoolId!)
+      .gte('collected_at', `${vettingToday}T00:00:00.000Z`)
+      .lte('collected_at', `${vettingToday}T23:59:59.999Z`)
+    const lc = (lcData ?? []) as { fee_cents: number }[]
+    lateToday = lc.length
+    lateFeesTodayCents = lc.reduce((n, r) => n + (r.fee_cents ?? 0), 0)
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome */}
@@ -386,6 +402,33 @@ export default async function AdminDashboardPage() {
               </p>
               <p className="mt-0.5 text-xs text-text-muted">
                 2+ staff off at once — possible shortage. {clashAlertText}
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-primary">
+            Review
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </span>
+        </Link>
+      )}
+
+      {/* Late collections today — children collected after the cutoff. */}
+      {lateToday > 0 && (
+        <Link
+          href="/admin/late-collection"
+          className="group flex items-center justify-between gap-4 rounded-2xl border border-warning/40 bg-warning-light px-5 py-4 transition-all hover:border-warning/60"
+        >
+          <div className="flex items-start gap-3">
+            <Timer className="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">
+                {lateToday} late collection{lateToday === 1 ? '' : 's'} today
+              </p>
+              <p className="mt-0.5 text-xs text-text-muted">
+                {formatCurrency(lateFeesTodayCents)} in late fees recorded today.
               </p>
             </div>
           </div>
