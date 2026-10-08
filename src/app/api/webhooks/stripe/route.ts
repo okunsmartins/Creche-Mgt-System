@@ -204,6 +204,17 @@ async function handleCheckoutCompleted(
     return
   }
 
+  // Fees invoice / late-collection payment — a different subject from activity orders
+  // (order_items are hard-coupled to activities, so these use their own payment rows).
+  if (session.metadata?.kind === 'invoice') {
+    await handleInvoicePayment(session, adminClient)
+    return
+  }
+  if (session.metadata?.kind === 'late_fee') {
+    await handleLateFeePayment(session, adminClient)
+    return
+  }
+
   const orderId = session.metadata?.order_id
   if (!orderId) {
     logger.error('stripe_checkout_completed_no_order_id', { sessionId: session.id })
@@ -358,6 +369,125 @@ async function handleCheckoutCompleted(
     // partially_paid: deposit received — notify payer
     await sendDepositEmail(orderId, adminClient, sessionAmountCents, newAmountPaid, total_cents)
   }
+}
+
+/**
+ * Validate a completed fees/late-fee checkout session and return the paid amount,
+ * or null when it should be ignored (not paid, wrong currency, no amount).
+ */
+function paidAmountFromSession(session: Stripe.Checkout.Session): number | null {
+  if (session.payment_status !== 'paid') return null
+  if (session.currency?.toLowerCase() !== 'eur') {
+    throw new Error(`Expected EUR currency, got ${session.currency ?? 'null'}`)
+  }
+  const amount = session.amount_total ?? 0
+  return amount > 0 ? amount : null
+}
+
+function sessionPaymentIntentId(session: Stripe.Checkout.Session): string | null {
+  return typeof session.payment_intent === 'string'
+    ? session.payment_intent
+    : (session.payment_intent?.id ?? null)
+}
+
+/** Parent paid a fees invoice online — mark it (part-)paid and record the payment. */
+async function handleInvoicePayment(
+  session: Stripe.Checkout.Session,
+  adminClient: AdminClient,
+): Promise<void> {
+  const invoiceId = session.metadata?.invoice_id
+  if (!invoiceId) {
+    logger.error('stripe_invoice_payment_no_id', { sessionId: session.id })
+    return
+  }
+  const amount = paidAmountFromSession(session)
+  if (amount === null) return
+
+  const { data: invRow, error: fetchError } = await adminClient
+    .from('invoices')
+    .select('net_parent_cents, amount_paid_cents, status')
+    .eq('id', invoiceId)
+    .single()
+  if (fetchError || !invRow) {
+    throw new Error(`Invoice ${invoiceId} not found for payment`)
+  }
+  const inv = invRow as { net_parent_cents: number; amount_paid_cents: number; status: string }
+
+  // Only issued/part-paid invoices advance; paid/void/draft are left alone (idempotent).
+  if (inv.status === 'issued' || inv.status === 'part_paid') {
+    const newPaid = inv.amount_paid_cents + amount
+    const newStatus = newPaid >= inv.net_parent_cents ? 'paid' : 'part_paid'
+    const { error: updErr } = await adminClient
+      .from('invoices')
+      .update({ amount_paid_cents: newPaid, status: newStatus })
+      .eq('id', invoiceId)
+      .in('status', ['issued', 'part_paid'])
+    if (updErr) throw new Error(updErr.message)
+  }
+
+  // Idempotent via uq_payments_invoice_session; a retry hits 23505 and is ignored.
+  const { error: payErr } = await adminClient.from('payments').insert({
+    invoice_id: invoiceId,
+    provider: 'stripe',
+    provider_checkout_session_id: session.id,
+    provider_payment_intent_id: sessionPaymentIntentId(session),
+    amount_cents: amount,
+    currency: (session.currency ?? 'eur').toUpperCase(),
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+  })
+  if (payErr && payErr.code !== '23505') throw new Error(payErr.message)
+
+  logger.info('stripe_invoice_payment_recorded', { invoiceId, sessionId: session.id, amount })
+}
+
+/** Parent paid a late-collection fee online — mark it paid and record the payment. */
+async function handleLateFeePayment(
+  session: Stripe.Checkout.Session,
+  adminClient: AdminClient,
+): Promise<void> {
+  const lateId = session.metadata?.late_collection_id
+  if (!lateId) {
+    logger.error('stripe_latefee_payment_no_id', { sessionId: session.id })
+    return
+  }
+  const amount = paidAmountFromSession(session)
+  if (amount === null) return
+
+  const { data: lcRow, error: fetchError } = await adminClient
+    .from('late_collections')
+    .select('fee_cents, amount_paid_cents')
+    .eq('id', lateId)
+    .single()
+  if (fetchError || !lcRow) {
+    throw new Error(`Late collection ${lateId} not found for payment`)
+  }
+  const lc = lcRow as { fee_cents: number; amount_paid_cents: number }
+  const newPaid = lc.amount_paid_cents + amount
+  const fullyPaid = newPaid >= lc.fee_cents
+
+  const { error: updErr } = await adminClient
+    .from('late_collections')
+    .update({
+      amount_paid_cents: newPaid,
+      paid_at: fullyPaid ? new Date().toISOString() : null,
+    })
+    .eq('id', lateId)
+  if (updErr) throw new Error(updErr.message)
+
+  const { error: payErr } = await adminClient.from('payments').insert({
+    late_collection_id: lateId,
+    provider: 'stripe',
+    provider_checkout_session_id: session.id,
+    provider_payment_intent_id: sessionPaymentIntentId(session),
+    amount_cents: amount,
+    currency: (session.currency ?? 'eur').toUpperCase(),
+    status: 'paid',
+    paid_at: new Date().toISOString(),
+  })
+  if (payErr && payErr.code !== '23505') throw new Error(payErr.message)
+
+  logger.info('stripe_latefee_payment_recorded', { lateId, sessionId: session.id, amount })
 }
 
 async function handleCheckoutExpired(
