@@ -25,13 +25,20 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
       {state.error && <Alert variant="error">{state.error}</Alert>}
       {state.success && <Alert variant="success">Room updated successfully.</Alert>}
 
-      {/* Class name — read-only, not editable */}
+      {/* Room name */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-text-primary">Class name</label>
-        <p className="rounded-md border border-border bg-surface/50 px-3 py-2 text-sm text-text-muted">
-          {cls.name}
-        </p>
-        <p className="mt-1 text-xs text-text-muted">Class names are fixed and cannot be changed.</p>
+        <label htmlFor="name" className="mb-1 block text-sm font-medium text-text-primary">
+          Room name
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          maxLength={100}
+          defaultValue={cls.name}
+          className="input-base"
+        />
       </div>
 
       {/* Teacher assignment */}

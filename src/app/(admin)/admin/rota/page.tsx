@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { requireAdmin } from '@/lib/auth/guards'
 import { getWeekRota } from '@/lib/rota/queries'
 import { getWeekCoverAlerts } from '@/lib/rota/cover-queries'
@@ -27,12 +28,20 @@ export default async function RotaPage({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Staff rota</h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Plan the weekly rota — assign staff to shifts and rooms. Hours per staff are totalled for
-          the week.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Staff rota</h1>
+          <p className="mt-1 text-sm text-text-muted">
+            Plan the weekly rota — assign staff to shifts and rooms. Hours per staff are totalled
+            for the week.
+          </p>
+        </div>
+        <Link
+          href="/admin/rota/report"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-primary hover:border-primary hover:text-primary"
+        >
+          Reports (day / week / month)
+        </Link>
       </div>
       <CoverAlertsPanel cover={cover} />
       <RotaBoard week={rota} prevWeek={addDays(weekStart, -7)} nextWeek={addDays(weekStart, 7)} />

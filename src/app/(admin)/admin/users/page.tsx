@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
 import { ChangeRoleForm } from '@/components/users/ChangeRoleForm'
+import { AssignRoleForm } from '@/components/users/AssignRoleForm'
 import type { UserRole, RoleRow, ProfileRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Users & Roles' }
@@ -130,6 +131,12 @@ export default async function AdminUsersPage() {
           </p>
         </div>
       </div>
+
+      {(isSuperAdmin || admin.roles.includes('school_admin')) && (
+        <div className="mb-6">
+          <AssignRoleForm roles={staffRoles} />
+        </div>
+      )}
 
       {users.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface p-8 text-center">
