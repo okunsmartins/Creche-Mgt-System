@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard,
   Users,
@@ -173,6 +173,8 @@ export function AdminSidebar({
   fundingEnabled = false,
 }: AdminSidebarProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const currentView = searchParams.get('view')
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // Insert the Funding section (before Reports) only when the tenant has the feature
@@ -186,9 +188,32 @@ export function AdminSidebar({
   // /admin/attendance and its /summary child don't both highlight).
   const allHrefs = sections.flatMap((s) => s.items.map((i) => i.href))
   const matchesPath = (p: string) => pathname === p || pathname.startsWith(`${p}/`)
-  const isHrefActive = (href: string) =>
-    matchesPath(href) &&
-    !allHrefs.some((other) => other !== href && other.startsWith(`${href}/`) && matchesPath(other))
+  const viewOf = (href: string) => {
+    const q = href.split('?')[1]
+    return q ? new URLSearchParams(q).get('view') : null
+  }
+  // Query-aware active matching: two links can share a path and differ only by `?view=`
+  // (e.g. Attendance vs Monthly Summary). A query link is active when the path matches and
+  // its `view` matches the URL; a plain link yields to a sibling query link that is active.
+  const isHrefActive = (href: string) => {
+    const path = href.split('?')[0] ?? href
+    const hrefView = viewOf(href)
+    if (hrefView) return pathname === path && currentView === hrefView
+    if (!matchesPath(path)) return false
+    const moreSpecific = allHrefs.some(
+      (o) =>
+        o !== href &&
+        (o.split('?')[0] ?? o).startsWith(`${path}/`) &&
+        matchesPath(o.split('?')[0] ?? o),
+    )
+    if (moreSpecific) return false
+    // A sibling query link on the same path (e.g. ?view=month) owns the highlight instead.
+    const siblingQueryActive = allHrefs.some((o) => {
+      const ov = viewOf(o)
+      return ov !== null && (o.split('?')[0] ?? o) === path && currentView === ov
+    })
+    return !siblingQueryActive
+  }
   const platformActive = matchesPath('/platform')
 
   const brandName = user.schoolName ?? 'Creche Wise'
