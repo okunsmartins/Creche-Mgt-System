@@ -81,6 +81,90 @@ export async function createFeeScheduleAction(
   return { ok: true, id: (data as { id: string }).id }
 }
 
+/**
+ * Update an existing fee schedule (the billing "template"). Allowed at any time;
+ * already-issued invoices are NOT rewritten (their amounts are immutable) — void
+ * and regenerate to apply a changed schedule to outstanding periods.
+ */
+export async function updateFeeScheduleAction(
+  scheduleId: string,
+  input: FeeScheduleInput,
+): Promise<ActionResult> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  const db = createSupabaseAdminClient()
+
+  if (!input.name?.trim()) return { ok: false, error: 'A name is required.' }
+  if (input.flatAmountCents == null && input.providerHourlyRateCents == null)
+    return { ok: false, error: 'Provide either a flat amount or an hourly rate.' }
+  if (input.endDate < input.startDate)
+    return { ok: false, error: 'End date must be on or after the start date.' }
+
+  const { data: existing } = await db
+    .from('fee_schedules')
+    .select('id, student_id')
+    .eq('id', scheduleId)
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  if (!existing) return { ok: false, error: 'Fee schedule not found in this crèche.' }
+  const studentId = (existing as { student_id: string }).student_id
+
+  const { error } = await db
+    .from('fee_schedules')
+    .update({
+      name: input.name.trim(),
+      frequency: input.frequency,
+      provider_hourly_rate_cents: input.providerHourlyRateCents ?? null,
+      flat_amount_cents: input.flatAmountCents ?? null,
+      contracted_day_hours: input.contractedDayHours ?? [],
+      start_date: input.startDate,
+      end_date: input.endDate,
+    })
+    .eq('id', scheduleId)
+    .eq('school_id', schoolId)
+
+  if (error) {
+    logger.error('fee_schedule_update_failed', { scheduleId, error: error.message })
+    return { ok: false, error: 'Could not update the fee schedule.' }
+  }
+
+  logger.info('fee_schedule_updated', { schoolId, scheduleId })
+  revalidatePath('/admin/fees')
+  revalidatePath(`/admin/fees/${studentId}`)
+  await onFeePlanChanged(schoolId, studentId)
+  return { ok: true }
+}
+
+/** Reschedule a single invoice (its due date). Financial fields stay immutable. */
+export async function updateInvoiceDueDateAction(
+  invoiceId: string,
+  dueDate: string,
+): Promise<ActionResult> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate) || Number.isNaN(Date.parse(`${dueDate}T00:00:00Z`)))
+    return { ok: false, error: 'Enter a valid due date.' }
+
+  const db = createSupabaseAdminClient()
+  const { data, error } = await db
+    .from('invoices')
+    .update({ due_date: dueDate })
+    .eq('id', invoiceId)
+    .eq('school_id', schoolId)
+    .select('id, student_id')
+
+  if (error) {
+    logger.error('invoice_due_date_update_failed', { invoiceId, error: error.message })
+    return { ok: false, error: 'Could not update the due date.' }
+  }
+  if (!data || data.length === 0) return { ok: false, error: 'Invoice not found in this crèche.' }
+
+  revalidatePath('/admin/fees')
+  revalidatePath(`/admin/fees/${(data[0] as { student_id: string }).student_id}`)
+  revalidatePath('/admin/fees/due')
+  return { ok: true }
+}
+
 // ─── Child funding registrations (ECCE / NCS award data) ──────────────────────
 
 export interface FundingRegistrationInput {
@@ -162,6 +246,68 @@ export async function upsertFundingRegistrationAction(
   logger.info('funding_reg_created', { schoolId, scheme: input.scheme })
   revalidatePath('/admin/fees')
   return { ok: true, id: (data as { id: string }).id }
+}
+
+/**
+ * Update an existing funding registration (ECCE/NCS award data) in place. Edits the
+ * same row, so the one-active-per-scheme unique index is not tripped. The scheme
+ * itself can't be changed here. PPSN is re-encrypted only when a new value is given.
+ */
+export async function updateFundingRegistrationAction(
+  registrationId: string,
+  input: FundingRegistrationInput,
+): Promise<ActionResult> {
+  const admin = await requireAdmin()
+  const schoolId = admin.schoolId!
+  const db = createSupabaseAdminClient()
+
+  const { data: existing } = await db
+    .from('child_funding_registrations')
+    .select('id, student_id')
+    .eq('id', registrationId)
+    .eq('school_id', schoolId)
+    .maybeSingle()
+  if (!existing) return { ok: false, error: 'Funding registration not found in this crèche.' }
+  const studentId = (existing as { student_id: string }).student_id
+
+  const row: Record<string, unknown> = {
+    status: input.status ?? 'ACTIVE',
+    start_date: input.startDate ?? null,
+    end_date: input.endDate ?? null,
+    chick_code: input.chickCode ?? null,
+    ncs_subsidy_type: input.ncsSubsidyType ?? null,
+    awarded_hourly_rate_cents: input.awardedHourlyRateCents ?? null,
+    awarded_weekly_hours: input.awardedWeeklyHours ?? null,
+    ecce_programme_year: input.ecceProgrammeYear ?? null,
+    higher_capitation: input.higherCapitation ?? false,
+    notes: input.notes ?? null,
+  }
+  if (input.ppsNumber && input.ppsNumber.trim()) {
+    row.pps_number_encrypted = encryptSecret(input.ppsNumber.trim())
+  }
+
+  const { error } = await db
+    .from('child_funding_registrations')
+    .update(row)
+    .eq('id', registrationId)
+    .eq('school_id', schoolId)
+
+  if (error) {
+    const dup = error.message?.includes('uq_funding_reg_one_active')
+    logger.error('funding_reg_update_failed', { registrationId, error: error.message })
+    return {
+      ok: false,
+      error: dup
+        ? `This child already has another active ${input.scheme} registration.`
+        : 'Could not update the funding registration.',
+    }
+  }
+
+  logger.info('funding_reg_updated', { schoolId, registrationId, scheme: input.scheme })
+  revalidatePath('/admin/fees')
+  revalidatePath(`/admin/fees/${studentId}`)
+  await onFeePlanChanged(schoolId, studentId)
+  return { ok: true }
 }
 
 // ─── Invoice generation (FEE-06) ──────────────────────────────────────────────
