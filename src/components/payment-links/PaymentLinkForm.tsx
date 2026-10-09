@@ -1,31 +1,43 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
 import type { PaymentLinkActionState } from '@/lib/payment-links/schemas'
-import type { ActivityRow, PaymentLinkRow } from '@/types/database'
+import type { ActivityRow, PaymentLinkRow, ProgrammeRow } from '@/types/database'
+
+type TargetType = 'activity' | 'programme'
 
 interface PaymentLinkFormProps {
   action: (prev: PaymentLinkActionState, formData: FormData) => Promise<PaymentLinkActionState>
   activities: Pick<ActivityRow, 'id' | 'name' | 'is_active' | 'publication_status'>[]
-  link?: Pick<PaymentLinkRow, 'activity_id' | 'label' | 'expires_at' | 'max_uses' | 'is_active'>
+  programmes: Pick<ProgrammeRow, 'id' | 'name' | 'is_active' | 'publication_status'>[]
+  link?: Pick<
+    PaymentLinkRow,
+    'activity_id' | 'programme_id' | 'label' | 'expires_at' | 'max_uses' | 'is_active'
+  >
+  /** The existing target's display name, shown read-only in edit mode. */
+  targetName?: string
   submitLabel?: string
 }
 
 export function PaymentLinkForm({
   action,
   activities,
+  programmes,
   link,
+  targetName,
   submitLabel = 'Create link',
 }: PaymentLinkFormProps) {
   const router = useRouter()
   const [state, formAction, isPending] = useActionState<PaymentLinkActionState, FormData>(
     action,
     null,
+  )
+  const [targetType, setTargetType] = useState<TargetType>(
+    link?.programme_id ? 'programme' : 'activity',
   )
 
   useEffect(() => {
@@ -37,44 +49,79 @@ export function PaymentLinkForm({
   const publishedActivities = activities.filter(
     (a) => a.is_active && a.publication_status !== 'archived',
   )
+  const publishedProgrammes = programmes.filter(
+    (p) => p.is_active && p.publication_status !== 'archived',
+  )
+  const isEdit = !!link
 
   return (
     <form action={formAction} className="space-y-5">
       {state && 'error' in state && <Alert variant="error">{state.error}</Alert>}
 
-      <div>
-        <label htmlFor="activityId" className="form-label">
-          Activity{' '}
-          <span className="ml-1 text-error" aria-hidden="true">
-            *
-          </span>
-        </label>
-        <select
-          id="activityId"
-          name="activityId"
-          required
-          disabled={isPending || !!link}
-          defaultValue={link?.activity_id ?? ''}
-          className="input-base mt-1"
-          aria-describedby={errors?.activityId ? 'activityId-error' : undefined}
-          suppressHydrationWarning
-        >
-          <option value="">Select an activity…</option>
-          {publishedActivities.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
-        {errors?.activityId && (
-          <p id="activityId-error" className="mt-1 text-xs text-error" role="alert">
-            {errors.activityId}
+      {isEdit ? (
+        <div>
+          <label className="form-label">{link?.programme_id ? 'Programme' : 'Activity'}</label>
+          <p className="mt-1 rounded-md border border-border bg-surface/50 px-3 py-2 text-sm text-text-muted">
+            {targetName ?? '—'}
           </p>
-        )}
-        {link && (
-          <p className="mt-1 text-xs text-text-muted">Activity cannot be changed after creation.</p>
-        )}
-      </div>
+          <p className="mt-1 text-xs text-text-muted">
+            The activity/programme cannot be changed after creation.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div>
+            <label htmlFor="targetType" className="form-label">
+              Pay for
+            </label>
+            <select
+              id="targetType"
+              name="targetType"
+              value={targetType}
+              onChange={(e) => setTargetType(e.target.value as TargetType)}
+              disabled={isPending}
+              className="input-base mt-1"
+            >
+              <option value="activity">Activity</option>
+              <option value="programme">Programme</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="targetId" className="form-label">
+              {targetType === 'programme' ? 'Programme' : 'Activity'}{' '}
+              <span className="ml-1 text-error" aria-hidden="true">
+                *
+              </span>
+            </label>
+            <select
+              key={targetType}
+              id="targetId"
+              name="targetId"
+              required
+              disabled={isPending}
+              defaultValue=""
+              className="input-base mt-1"
+              aria-describedby={errors?.targetId ? 'targetId-error' : undefined}
+              suppressHydrationWarning
+            >
+              <option value="">
+                {targetType === 'programme' ? 'Select a programme…' : 'Select an activity…'}
+              </option>
+              {(targetType === 'programme' ? publishedProgrammes : publishedActivities).map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+            {errors?.targetId && (
+              <p id="targetId-error" className="mt-1 text-xs text-error" role="alert">
+                {errors.targetId}
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       <Input
         label="Label"

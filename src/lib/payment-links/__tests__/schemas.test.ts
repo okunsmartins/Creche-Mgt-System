@@ -6,22 +6,35 @@ const FUTURE_DATE = new Date(Date.now() + 86_400_000).toISOString()
 
 describe('paymentLinkSchema', () => {
   const valid = {
-    activityId: VALID_UUID,
+    targetType: 'activity',
+    targetId: VALID_UUID,
     label: 'Dublin Zoo – Class 1A',
     expiresAt: FUTURE_DATE,
     maxUses: '50',
     isActive: 'true',
   }
 
-  it('accepts a fully populated payment link', () => {
+  it('accepts a fully populated activity payment link', () => {
     const result = paymentLinkSchema.safeParse(valid)
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.activityId).toBe(VALID_UUID)
+      expect(result.data.targetType).toBe('activity')
+      expect(result.data.targetId).toBe(VALID_UUID)
       expect(result.data.label).toBe('Dublin Zoo – Class 1A')
       expect(result.data.maxUses).toBe(50)
       expect(result.data.isActive).toBe(true)
     }
+  })
+
+  it('accepts a programme payment link', () => {
+    const result = paymentLinkSchema.safeParse({ ...valid, targetType: 'programme' })
+    expect(result.success).toBe(true)
+    if (result.success) expect(result.data.targetType).toBe('programme')
+  })
+
+  it('rejects an invalid target type', () => {
+    const result = paymentLinkSchema.safeParse({ ...valid, targetType: 'teacher' })
+    expect(result.success).toBe(false)
   })
 
   it('accepts a link with no expiry or max uses', () => {
@@ -33,8 +46,8 @@ describe('paymentLinkSchema', () => {
     }
   })
 
-  it('rejects a non-UUID activityId', () => {
-    const result = paymentLinkSchema.safeParse({ ...valid, activityId: 'not-a-uuid' })
+  it('rejects a non-UUID targetId', () => {
+    const result = paymentLinkSchema.safeParse({ ...valid, targetId: 'not-a-uuid' })
     expect(result.success).toBe(false)
   })
 

@@ -5,7 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { createPaymentLinkAction } from '@/lib/payment-links/actions'
 import { requireFeature } from '@/lib/subscriptions/access'
 import { PaymentLinkForm } from '@/components/payment-links/PaymentLinkForm'
-import type { ActivityRow } from '@/types/database'
+import type { ActivityRow, ProgrammeRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Create Payment Link | Admin' }
 
@@ -14,15 +14,27 @@ export default async function NewPaymentLinkPage() {
   // Pro-gated — can't open the create form without access.
   await requireFeature('payment_links', admin.schoolId!)
   const adminClient = createSupabaseAdminClient()
-  const { data } = await adminClient
-    .from('activities')
-    .select('id, name, is_active, publication_status')
-    .eq('school_id', admin.schoolId!)
-    .neq('publication_status', 'archived')
-    .order('name')
+  const [{ data: actData }, { data: progData }] = await Promise.all([
+    adminClient
+      .from('activities')
+      .select('id, name, is_active, publication_status')
+      .eq('school_id', admin.schoolId!)
+      .neq('publication_status', 'archived')
+      .order('name'),
+    adminClient
+      .from('programmes')
+      .select('id, name, is_active, publication_status')
+      .eq('school_id', admin.schoolId!)
+      .neq('publication_status', 'archived')
+      .order('name'),
+  ])
 
   const activities =
-    (data as Pick<ActivityRow, 'id' | 'name' | 'is_active' | 'publication_status'>[] | null) ?? []
+    (actData as Pick<ActivityRow, 'id' | 'name' | 'is_active' | 'publication_status'>[] | null) ??
+    []
+  const programmes =
+    (progData as Pick<ProgrammeRow, 'id' | 'name' | 'is_active' | 'publication_status'>[] | null) ??
+    []
 
   return (
     <div className="mx-auto max-w-lg space-y-6">
@@ -32,12 +44,16 @@ export default async function NewPaymentLinkPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-text-primary">Create payment link</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Generate a shareable link that pre-selects an activity for guest payers.
+          Generate a shareable link that pre-selects an activity or programme for guest payers.
         </p>
       </div>
 
       <div className="card p-6">
-        <PaymentLinkForm action={createPaymentLinkAction} activities={activities} />
+        <PaymentLinkForm
+          action={createPaymentLinkAction}
+          activities={activities}
+          programmes={programmes}
+        />
       </div>
     </div>
   )

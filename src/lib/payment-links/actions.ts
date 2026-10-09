@@ -41,7 +41,8 @@ export async function createPaymentLinkAction(
   await requireFeature('payment_links', user.schoolId)
 
   const result = paymentLinkSchema.safeParse({
-    activityId: formData.get('activityId'),
+    targetType: formData.get('targetType'),
+    targetId: formData.get('targetId'),
     label: formData.get('label'),
     expiresAt: formData.get('expiresAt') ?? '',
     maxUses: formData.get('maxUses') ?? '',
@@ -53,7 +54,8 @@ export async function createPaymentLinkAction(
     return {
       error: 'Please fix the errors below.',
       fieldErrors: {
-        activityId: fe.activityId?.[0],
+        targetType: fe.targetType?.[0],
+        targetId: fe.targetId?.[0],
         label: fe.label?.[0],
         expiresAt: fe.expiresAt?.[0],
         maxUses: fe.maxUses?.[0],
@@ -61,26 +63,38 @@ export async function createPaymentLinkAction(
     }
   }
 
-  const { activityId, label, expiresAt, maxUses, isActive } = result.data
+  const { targetType, targetId, label, expiresAt, maxUses, isActive } = result.data
   const adminClient = createSupabaseAdminClient()
 
-  // Verify the activity belongs to this school and is not archived
-  const { data: activityData } = await adminClient
-    .from('activities')
-    .select('id, name, is_active')
-    .eq('id', activityId)
-    .eq('school_id', user.schoolId)
-    .single()
-
-  if (!activityData || !(activityData as { is_active: boolean }).is_active) {
-    return { error: 'Activity not found or inactive.' }
+  // Verify the chosen activity/programme belongs to this school and is active.
+  if (targetType === 'activity') {
+    const { data: act } = await adminClient
+      .from('activities')
+      .select('id, is_active')
+      .eq('id', targetId)
+      .eq('school_id', user.schoolId)
+      .single()
+    if (!act || !(act as { is_active: boolean }).is_active) {
+      return { error: 'Activity not found or inactive.' }
+    }
+  } else {
+    const { data: prog } = await adminClient
+      .from('programmes')
+      .select('id, is_active')
+      .eq('id', targetId)
+      .eq('school_id', user.schoolId)
+      .single()
+    if (!prog || !(prog as { is_active: boolean }).is_active) {
+      return { error: 'Programme not found or inactive.' }
+    }
   }
 
   const { data, error } = await adminClient
     .from('payment_links')
     .insert({
       school_id: user.schoolId,
-      activity_id: activityId,
+      activity_id: targetType === 'activity' ? targetId : null,
+      programme_id: targetType === 'programme' ? targetId : null,
       created_by: user.id,
       label,
       expires_at: expiresAt ?? null,
@@ -103,7 +117,7 @@ export async function createPaymentLinkAction(
     actorEmail: user.email,
     action: 'payment_link.created',
     resourceId: linkId,
-    metadata: { label, activity_id: activityId },
+    metadata: { label, target_type: targetType, target_id: targetId },
   })
 
   revalidatePath('/admin/payment-links')

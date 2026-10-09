@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
 export const paymentLinkSchema = z.object({
-  activityId: z.string().uuid('Please select a valid activity'),
+  targetType: z.enum(['activity', 'programme'], {
+    errorMap: () => ({ message: 'Choose an activity or a programme' }),
+  }),
+  targetId: z.string().uuid('Please select an activity or programme'),
   label: z
     .string()
     .min(1, 'Label is required')
