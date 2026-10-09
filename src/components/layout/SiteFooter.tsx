@@ -16,7 +16,43 @@ const companyLinks = [
 
 const linkClass = 'text-sm text-[#d7dce3] transition-colors hover:text-white'
 
-export function SiteFooter() {
+export function SiteFooter({
+  schoolName,
+  tenantSlug,
+}: { schoolName?: string | null; tenantSlug?: string | null } = {}) {
+  // Keep a `/s/<school>` path prefix on crèche links so they stay in the crèche.
+  const withTenant = (href: string) => (tenantSlug ? `/s/${tenantSlug}${href}` : href)
+  // Inside a crèche's own portal the footer belongs to the crèche, with a small
+  // "Powered by Creche Wise" credit instead of the platform's marketing links.
+  if (schoolName) {
+    return (
+      <footer className="bg-[#1f2b57] text-[#d7dce3]">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-8 sm:px-6 lg:px-8">
+          <p className="font-display text-xl font-bold text-white">{schoolName}</p>
+          <nav aria-label="Footer" className="flex flex-wrap gap-5">
+            <Link href={withTenant('/privacy')} className={linkClass}>
+              Privacy Notice
+            </Link>
+            <Link href={withTenant('/contact')} className={linkClass}>
+              Contact
+            </Link>
+          </nav>
+        </div>
+        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
+          <p>
+            &copy; {currentYear} {schoolName}
+          </p>
+          <p>
+            Powered by{' '}
+            <a href="https://crechewise.com" className="font-extrabold text-white">
+              Creche Wise
+            </a>
+          </p>
+        </div>
+      </footer>
+    )
+  }
+
   return (
     <footer className="bg-[#1f2b57] text-[#d7dce3]">
       <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-8 px-4 pb-6 pt-10 sm:px-6 lg:px-8">
