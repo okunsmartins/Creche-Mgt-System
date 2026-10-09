@@ -11,6 +11,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { RainbowText } from '@/components/ui/RainbowText'
 import { Mascot, Star, WaveEdge } from './Mascot'
 
 // Creche Wise platform landing page (the bare apex, no crèche resolved). Ported from
@@ -32,7 +33,7 @@ function Tick({ className = 'text-primary' }: { className?: string }) {
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-sm font-extrabold uppercase tracking-[0.06em] text-[#c2412d]">
+    <span className="text-sm font-extrabold uppercase tracking-[0.06em] text-secondary">
       {children}
     </span>
   )
@@ -82,7 +83,7 @@ const featureGroups: {
       'Fees due, arrears & reminders',
       'Late-collection fees',
     ],
-    card: 'bg-[#fff4d1]',
+    card: 'border-[#f5c84c]',
     chip: 'bg-accent-sunny text-text-primary',
     tick: 'text-[#7a5600]',
   },
@@ -95,8 +96,8 @@ const featureGroups: {
       'Learning journals & reports',
       'Places, vacancies & waiting list',
     ],
-    card: 'bg-[#ffe6e1]',
-    chip: 'bg-[#e8604c] text-white',
+    card: 'border-[#f48fb1]',
+    chip: 'bg-accent-coral text-white',
     tick: 'text-[#c2412d]',
   },
   {
@@ -108,8 +109,8 @@ const featureGroups: {
       'Garda vetting & training reminders',
       'Time off requests & approvals',
     ],
-    card: 'bg-[#eeeafe]',
-    chip: 'bg-[#6e5ae6] text-white',
+    card: 'border-[#b39ddb]',
+    chip: 'bg-accent-grape text-white',
     tick: 'text-[#5b46d6]',
   },
   {
@@ -121,8 +122,8 @@ const featureGroups: {
       'Permission slips & collectors',
       'Enquiries & waiting list',
     ],
-    card: 'bg-[#e1f1fd]',
-    chip: 'bg-[#1e88d9] text-white',
+    card: 'border-[#90caf9]',
+    chip: 'bg-accent-sky text-white',
     tick: 'text-[#1a6fb5]',
   },
 ]
@@ -151,24 +152,32 @@ function TourList({ items }: { items: string[] }) {
 
 export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
   return (
-    <div className="bg-[#fff9ef] text-[#1e2a3a]">
+    <div className="bg-background text-text-primary">
       {/* Hero */}
       <section className="relative overflow-hidden bg-primary-light">
+        {/* Soft pastel blobs + stars, as in the brand reference */}
+        <div
+          aria-hidden="true"
+          className="absolute -left-28 bottom-16 h-72 w-72 rounded-full bg-secondary-light"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#fff1c2]"
+        />
         <Star size={34} color="#FFC93C" className="absolute left-[46%] top-12 hidden md:block" />
-        <Star size={22} color="#E8604C" className="absolute right-[5%] top-36" />
-        <Star size={18} color="#6E5AE6" className="absolute bottom-36 left-[4%]" />
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-14 px-4 pb-[120px] pt-12 sm:px-8 md:pt-16">
+        <Star size={22} color="#EC4F8B" className="absolute right-[5%] top-36" />
+        <Star size={18} color="#8B5CF6" className="absolute bottom-36 left-[4%]" />
+        <div className="relative mx-auto flex max-w-[1200px] flex-wrap items-center gap-14 px-4 pb-[120px] pt-12 sm:px-8 md:pt-16">
           <div className="min-w-0 flex-[1_1_460px]">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-[13px] font-extrabold text-primary">
-              <span className="h-2 w-2 rounded-full bg-[#e8604c]" />
+              <span className="h-2 w-2 rounded-full bg-secondary" />
               Crèche management for Ireland
             </span>
             <h1 className="mt-5 text-[clamp(40px,5.4vw,66px)] font-bold leading-[1.05]">
               Crèche admin, made <span className="text-primary">simple</span>,{' '}
-              <span className="text-[#c2412d]">secure</span>{' '}
-              <span className="text-[#5b46d6]">&amp; joyful.</span>
+              <span className="text-secondary">secure</span> &amp; <RainbowText text="joyful." />
             </h1>
-            <p className="mt-5 max-w-[540px] text-[19px] text-[#3d4a5c]">
+            <p className="mt-5 max-w-[540px] text-[19px] text-text-secondary">
               Fees with ECCE &amp; NCS worked out, daily check-in and ratios, staff rotas and a
               parent portal — one calm place to run your crèche.
             </p>
@@ -182,12 +191,12 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               </Link>
               <a
                 href="#demo"
-                className="inline-flex min-h-[52px] items-center rounded-full border-2 border-[#cfe5e1] bg-white px-6 py-3.5 text-[17px] font-extrabold text-[#1e2a3a] transition-colors hover:border-primary"
+                className="inline-flex min-h-[52px] items-center rounded-full border-2 border-primary/25 bg-white px-6 py-3.5 text-[17px] font-extrabold text-text-primary transition-colors hover:border-primary"
               >
                 Book a demo
               </a>
             </div>
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-1.5 text-sm font-bold text-[#3d4a5c]">
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-1.5 text-sm font-bold text-text-secondary">
               {['First month free', 'Unlimited children & rooms', 'Works on any device'].map(
                 (t) => (
                   <span key={t} className="inline-flex items-center gap-1.5">
@@ -209,8 +218,8 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <div className="flex items-center gap-2 border-b border-[#efe6d3] bg-[#f7f3ea] px-4 py-3">
                 <span className="h-[11px] w-[11px] rounded-full bg-[#e8604c]" />
                 <span className="h-[11px] w-[11px] rounded-full bg-accent-sunny" />
-                <span className="h-[11px] w-[11px] rounded-full bg-[#3fb3a7]" />
-                <span className="ml-2.5 rounded-full bg-white px-3.5 py-0.5 text-xs font-bold text-[#5b6575]">
+                <span className="h-[11px] w-[11px] rounded-full bg-accent-leaf" />
+                <span className="ml-2.5 rounded-full bg-white px-3.5 py-0.5 text-xs font-bold text-text-secondary">
                   crechewise.com/admin
                 </span>
               </div>
@@ -219,7 +228,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                   <p className="font-display text-[21px] font-semibold">
                     Good morning, Little Meadows
                   </p>
-                  <span className="text-[13px] font-bold text-[#5b6575]">Thu 9 Oct</span>
+                  <span className="text-[13px] font-bold text-text-secondary">Thu 9 Oct</span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2.5">
                   {[
@@ -228,14 +237,14 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                     ['Fees this week', '€2,140', 'bg-[#fff4d1]', 'text-[#7a5600]'],
                   ].map(([label, value, bg, fg]) => (
                     <div key={label} className={`rounded-2xl p-2.5 sm:p-3.5 ${bg}`}>
-                      <div className="text-xs font-bold text-[#3d4a5c]">{label}</div>
+                      <div className="text-xs font-bold text-text-secondary">{label}</div>
                       <div className={`font-display text-xl font-bold sm:text-[26px] ${fg}`}>
                         {value}
                       </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 text-[13px] font-extrabold text-[#3d4a5c]">
+                <div className="mt-4 text-[13px] font-extrabold text-text-secondary">
                   Today&apos;s arrivals
                 </div>
                 <div className="mt-2 flex flex-col gap-2">
@@ -254,7 +263,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                         {initials}
                       </span>
                       <span className="flex-1 text-sm font-bold">
-                        {name} <span className="font-semibold text-[#5b6575]">· {room}</span>
+                        {name} <span className="font-semibold text-text-secondary">· {room}</span>
                       </span>
                       <span className="text-[13px] font-extrabold text-primary">{time}</span>
                     </div>
@@ -271,7 +280,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               </span>
               <span className="text-[13px] leading-tight">
                 <strong className="block">Payment received</strong>
-                <span className="font-bold text-[#5b6575]">€200.00 · Emma Byrne</span>
+                <span className="font-bold text-text-secondary">€200.00 · Emma Byrne</span>
               </span>
             </div>
             <div
@@ -280,7 +289,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             >
               <span className="text-[13px] leading-tight">
                 <strong className="block">Toddlers Room</strong>
-                <span className="font-bold text-[#5b6575]">2 staff · 9 children</span>
+                <span className="font-bold text-text-secondary">2 staff · 9 children</span>
               </span>
               <span className="rounded-full bg-[#eeeafe] px-2.5 py-1 text-xs font-extrabold text-[#5b46d6]">
                 1:5 · In ratio
@@ -289,7 +298,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             <Mascot size={104} className="absolute -bottom-4 -right-2" />
           </div>
         </div>
-        <WaveEdge fill="#fff9ef" />
+        <WaveEdge fill="#fff8ec" />
       </section>
 
       {/* Trust strip */}
@@ -307,7 +316,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               </span>
               <div>
                 <div className="font-extrabold">{title}</div>
-                <div className="text-sm text-[#4b5563]">{body}</div>
+                <div className="text-sm text-text-secondary">{body}</div>
               </div>
             </div>
           ))}
@@ -321,14 +330,17 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
           <h2 className="mt-2 text-[clamp(32px,3.6vw,46px)] font-bold leading-[1.1]">
             Everything your crèche runs on, <span className="text-primary">finally together</span>
           </h2>
-          <p className="mt-3.5 text-lg text-[#3d4a5c]">
+          <p className="mt-3.5 text-lg text-text-secondary">
             Four areas, one login — so the money, the children, the team and the parents never live
             in separate spreadsheets again.
           </p>
         </div>
         <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {featureGroups.map(({ icon: Icon, title, items, card, chip, tick }) => (
-            <div key={title} className={`flex flex-col gap-4 rounded-[26px] p-7 ${card}`}>
+            <div
+              key={title}
+              className={`flex flex-col gap-4 rounded-[26px] border-2 border-dashed bg-white p-7 shadow-[0_10px_30px_rgba(31,43,87,0.06)] ${card}`}
+            >
               <span
                 className={`flex h-[54px] w-[54px] items-center justify-center rounded-[18px] ${chip}`}
               >
@@ -360,7 +372,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <h2 className="mt-3.5 text-[clamp(28px,3vw,38px)] font-bold leading-[1.15]">
                 Invoices that already know about ECCE &amp; NCS
               </h2>
-              <p className="mt-3.5 text-[17px] text-[#3d4a5c]">
+              <p className="mt-3.5 text-[17px] text-text-secondary">
                 Set each child&apos;s fee schedule once. Creche Wise nets ECCE and NCS off every
                 invoice, so parents only see what they owe — and you can see what Pobal owes you.
               </p>
@@ -379,7 +391,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <div className="rounded-[20px] bg-white p-6 shadow-[0_16px_40px_rgba(30,42,58,0.1)]">
                 <div className="flex flex-wrap justify-between gap-2">
                   <div>
-                    <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-[#5b6575]">
+                    <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-text-secondary">
                       Invoice
                     </div>
                     <div className="font-extrabold">INV-2026-000123</div>
@@ -388,7 +400,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                     Due 21 Oct
                   </span>
                 </div>
-                <div className="mt-1.5 text-sm font-bold text-[#5b6575]">
+                <div className="mt-1.5 text-sm font-bold text-text-secondary">
                   Emma Byrne · Weekly full day
                 </div>
                 <div className="mt-4 flex flex-col gap-2.5 text-[15px]">
@@ -432,7 +444,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                     className={`flex flex-wrap items-center gap-2.5 rounded-[14px] px-3.5 py-3 ${alert ? 'border border-[#f6c2b8] bg-[#fff1ee]' : 'bg-[#fbf8f1]'}`}
                   >
                     <span className="flex-1 font-bold">
-                      {room} <span className="font-semibold text-[#5b6575]">({ages})</span>
+                      {room} <span className="font-semibold text-text-secondary">({ages})</span>
                     </span>
                     <span
                       className={`rounded-full px-3 py-1 text-[13px] font-extrabold ${alert ? 'bg-[#ffe6e1] text-[#9e2f1e]' : 'bg-[#dcf3e6] text-[#1b6e40]'}`}
@@ -450,7 +462,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <h2 className="mt-3.5 text-[clamp(28px,3vw,38px)] font-bold leading-[1.15]">
                 Know every room is in ratio — before an inspector asks
               </h2>
-              <p className="mt-3.5 text-[17px] text-[#3d4a5c]">
+              <p className="mt-3.5 text-[17px] text-text-secondary">
                 As children check in, Creche Wise compares each room&apos;s ages against your ratios
                 and the staff on duty, and flags a room on the dashboard the moment it slips.
               </p>
@@ -473,7 +485,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <h2 className="mt-3.5 text-[clamp(28px,3vw,38px)] font-bold leading-[1.15]">
                 Give parents their own portal — not another group chat
               </h2>
-              <p className="mt-3.5 text-[17px] text-[#3d4a5c]">
+              <p className="mt-3.5 text-[17px] text-text-secondary">
                 Send a one-time invite link. Parents see their child&apos;s day, pay fees, sign
                 permission slips and get messages from you — on any phone, tablet or computer.
               </p>
@@ -489,14 +501,14 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               className="flex min-w-0 flex-[1_1_420px] justify-center rounded-[30px] bg-[#e1f1fd] p-5 sm:p-11"
               aria-hidden="true"
             >
-              <div className="w-[270px] max-w-full rounded-[40px] bg-[#1e2a3a] p-3 shadow-[0_24px_50px_rgba(30,42,58,0.25)]">
+              <div className="w-[270px] max-w-full rounded-[40px] bg-text-primary p-3 shadow-[0_24px_50px_rgba(30,42,58,0.25)]">
                 <div className="overflow-hidden rounded-[30px] bg-[#fff9ef]">
                   <div className="bg-[#573c9b] px-[18px] pb-[18px] pt-[22px] text-white">
                     <div className="font-display text-lg font-bold">Little Meadows Crèche</div>
                     <div className="text-[13px] text-[#e4dcf7]">Good morning, Sarah</div>
                   </div>
                   <div className="flex flex-col gap-2.5 p-3.5 text-[13px]">
-                    <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-[#3d4a5c]">
+                    <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-text-secondary">
                       Emma&apos;s day
                     </div>
                     {[
@@ -509,7 +521,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                         className="flex justify-between rounded-[14px] bg-white px-3 py-2.5"
                       >
                         <span className="font-bold">{k}</span>
-                        <span className="font-bold text-[#5b6575]">{v}</span>
+                        <span className="font-bold text-text-secondary">{v}</span>
                       </div>
                     ))}
                     <div className="rounded-[14px] bg-[#fff4d1] p-3">
@@ -543,9 +555,11 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <span className="font-display text-[72px] font-bold leading-none">
                 {monthlyPrice}
               </span>
-              <span className="text-lg font-bold text-[#3d4a5c]">/ month per crèche</span>
+              <span className="text-lg font-bold text-text-secondary">/ month per crèche</span>
             </div>
-            <p className="mt-2.5 font-bold text-[#3d4a5c]">Unlimited children · Unlimited rooms</p>
+            <p className="mt-2.5 font-bold text-text-secondary">
+              Unlimited children · Unlimited rooms
+            </p>
             <ul className="mt-6 grid gap-3 text-left text-[15px] sm:grid-cols-2">
               {pricingIncludes.map((i) => (
                 <li key={i} className="flex gap-2.5">
@@ -560,7 +574,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             >
               Start your free month
             </Link>
-            <p className="mt-3.5 text-sm text-[#4b5563]">
+            <p className="mt-3.5 text-sm text-text-secondary">
               Running more than one crèche? Each one gets its own portal at {monthlyPrice} a month.{' '}
               <Link href="/pricing" className="font-bold text-primary underline">
                 Full pricing
@@ -586,7 +600,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                 [
                   '1',
                   'Book a short call at a time that suits you',
-                  'bg-accent-sunny text-[#1e2a3a]',
+                  'bg-accent-sunny text-text-primary',
                 ],
                 ['2', 'We set up your portal and import your children', 'bg-[#e8604c] text-white'],
                 ['3', 'Use everything free for your first month', 'bg-[#6e5ae6] text-white'],
@@ -610,14 +624,14 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             </p>
             <a
               href={DEMO_MAILTO}
-              className="inline-flex min-h-[54px] items-center justify-center gap-2.5 rounded-full bg-[#1e2a3a] px-6 text-[17px] font-extrabold text-white transition-transform hover:-translate-y-0.5"
+              className="inline-flex min-h-[54px] items-center justify-center gap-2.5 rounded-full bg-text-primary px-6 text-[17px] font-extrabold text-white transition-transform hover:-translate-y-0.5"
             >
               <Mail className="h-5 w-5" aria-hidden="true" />
               Email info@crechewise.com
             </a>
             <Link
               href="/get-started"
-              className="text-center font-extrabold text-[#1e2a3a] underline underline-offset-4"
+              className="text-center font-extrabold text-text-primary underline underline-offset-4"
             >
               Or start your free month now
             </Link>
@@ -634,7 +648,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <h2 className="text-[clamp(28px,3vw,40px)] font-bold leading-[1.15] text-white">
                 Ready to give your crèche its calm back?
               </h2>
-              <p className="mt-2 text-[17px] text-[#e2f2ef]">
+              <p className="mt-2 text-[17px] text-white/85">
                 Set up your crèche&apos;s portal today. Your first month is on us.
               </p>
             </div>
@@ -642,7 +656,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/get-started"
-              className="inline-flex min-h-[52px] items-center rounded-full bg-accent-sunny px-6 text-[17px] font-extrabold text-[#1e2a3a]"
+              className="inline-flex min-h-[52px] items-center rounded-full bg-accent-sunny px-6 text-[17px] font-extrabold text-text-primary"
             >
               Start free month
             </Link>
