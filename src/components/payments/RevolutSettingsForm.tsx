@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Alert } from '@/components/ui/Alert'
 import {
   saveRevolutCredentialsAction,
@@ -47,40 +48,22 @@ export function RevolutSettingsForm({ configured }: { configured: boolean }) {
       {disc?.success && <Alert variant="success">Revolut disconnected.</Alert>}
 
       <form action={formAction} className="space-y-3 border-t border-border pt-4">
-        <div>
-          <label htmlFor="apiKey" className="mb-1 block text-sm font-medium text-text-primary">
-            Merchant API key{' '}
-            {configured && <span className="text-text-muted">(enter to replace)</span>}
-          </label>
-          <input
-            id="apiKey"
-            name="apiKey"
-            type="password"
-            autoComplete="off"
-            placeholder="sk_..."
-            className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary"
-          />
-        </div>
-        <div>
-          <label
-            htmlFor="webhookSecret"
-            className="mb-1 block text-sm font-medium text-text-primary"
-          >
-            Webhook signing secret <span className="text-text-muted">(recommended)</span>
-          </label>
-          <input
-            id="webhookSecret"
-            name="webhookSecret"
-            type="password"
-            autoComplete="off"
-            className="block w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary"
-          />
-          <p className="mt-1 text-xs text-text-muted">
-            From your Revolut webhook set to
-            <span className="font-mono"> /api/webhooks/revolut</span>. Stored encrypted; never shown
-            again.
-          </p>
-        </div>
+        <Input
+          id="apiKey"
+          name="apiKey"
+          type="password"
+          autoComplete="off"
+          placeholder="sk_..."
+          label={configured ? 'Merchant API key (enter to replace)' : 'Merchant API key'}
+        />
+        <Input
+          id="webhookSecret"
+          name="webhookSecret"
+          type="password"
+          autoComplete="off"
+          label="Webhook signing secret (recommended)"
+          hint="From your Revolut webhook set to /api/webhooks/revolut. Stored encrypted; never shown again."
+        />
         <Button type="submit" loading={isPending}>
           {configured ? 'Update Revolut details' : 'Save Revolut details'}
         </Button>
