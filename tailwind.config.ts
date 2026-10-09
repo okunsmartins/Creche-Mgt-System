@@ -91,7 +91,7 @@ const config: Config = {
         '3xl': '1.75rem',
       },
       boxShadow: {
-        card: '0 4px 16px -2px rgb(36 99 214 / 0.10), 0 2px 6px -2px rgb(36 99 214 / 0.08)',
+        card: '0 10px 30px -4px rgb(31 43 87 / 0.08), 0 2px 6px -2px rgb(31 43 87 / 0.05)',
         'card-hover': '0 0 0 1px rgb(36 99 214 / 0.22), 0 14px 34px -6px rgb(36 99 214 / 0.24)',
         glow: '0 0 28px 0 rgb(36 99 214 / 0.25)',
         sidebar: '4px 0 30px 0 rgb(36 99 214 / 0.16)',
