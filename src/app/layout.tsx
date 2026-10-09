@@ -15,6 +15,15 @@ const sans = localFont({
   display: 'swap',
 })
 
+// Rounded display face for headings (Fredoka, OFL). Self-hosted for the same
+// reason as Nunito above.
+const display = localFont({
+  src: './fonts/fredoka-latin-variable.woff2',
+  weight: '300 700',
+  variable: '--font-display',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
   title: {
     template: '%s | Creche Wise',
@@ -31,7 +40,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#14b3ad',
+  themeColor: '#0f6b64',
 }
 
 export default function RootLayout({
@@ -40,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en-IE" className={sans.variable}>
+    <html lang="en-IE" className={`${sans.variable} ${display.variable}`}>
       <body className="min-h-screen bg-background font-sans">
         <a href="#main-content" className="skip-to-content">
           Skip to main content

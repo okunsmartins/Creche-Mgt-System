@@ -11,9 +11,9 @@
     --text-secondary: #5c6b7a;
     --text-muted: #93a0ac;
     --border: #efe3d0;
-    --primary: #14b3ad;
-    --primary-hover: #0f9b96;
-    --primary-light: #d6f4f2;
+    --primary: #0f6b64;
+    --primary-hover: #0a4f4a;
+    --primary-light: #e6f4f2;
     --secondary: #ff7fa8;
     --secondary-hover: #f4638f;
     --secondary-light: #ffe4ee;
@@ -28,6 +28,14 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
+  }
+
+  /* Headings use the rounded display face across the whole platform. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
   }
 
   *:focus-visible {

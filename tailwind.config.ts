@@ -37,10 +37,10 @@ const config: Config = {
         },
         // Semantic colour aliases — bright, warm, cream-based theme
         primary: {
-          DEFAULT: '#14b3ad',
+          DEFAULT: '#0f6b64',
           foreground: '#ffffff',
-          hover: '#0f9b96',
-          light: '#d6f4f2',
+          hover: '#0a4f4a',
+          light: '#e6f4f2',
         },
         secondary: {
           DEFAULT: '#ff7fa8',
@@ -79,6 +79,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-sans)', 'Nunito', 'system-ui', 'sans-serif'],
+        // Rounded display face for headings — matches the Creche Wise marketing site.
+        display: ['var(--font-display)', 'Fredoka', 'var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       borderRadius: {
         DEFAULT: '0.625rem',
@@ -87,10 +89,10 @@ const config: Config = {
         '3xl': '1.75rem',
       },
       boxShadow: {
-        card: '0 4px 16px -2px rgb(20 179 173 / 0.10), 0 2px 6px -2px rgb(20 179 173 / 0.08)',
-        'card-hover': '0 0 0 1px rgb(20 179 173 / 0.22), 0 14px 34px -6px rgb(20 179 173 / 0.24)',
-        glow: '0 0 28px 0 rgb(20 179 173 / 0.25)',
-        sidebar: '4px 0 30px 0 rgb(20 179 173 / 0.16)',
+        card: '0 4px 16px -2px rgb(15 107 100 / 0.10), 0 2px 6px -2px rgb(15 107 100 / 0.08)',
+        'card-hover': '0 0 0 1px rgb(15 107 100 / 0.22), 0 14px 34px -6px rgb(15 107 100 / 0.24)',
+        glow: '0 0 28px 0 rgb(15 107 100 / 0.25)',
+        sidebar: '4px 0 30px 0 rgb(15 107 100 / 0.16)',
       },
       keyframes: {
         'nav-progress': {
