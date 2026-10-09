@@ -277,7 +277,8 @@ export interface ClassRow {
 export interface PaymentLinkRow {
   id: string
   school_id: string
-  activity_id: string
+  activity_id: string | null
+  programme_id: string | null
   created_by: string | null
   label: string
   public_token: string
