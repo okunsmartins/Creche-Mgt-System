@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Brand palette — cheerful early-years (teal primary, playful accents)
+        // Legacy teal scale (kept for any remaining brand-teal-* utilities)
         brand: {
           teal: {
             50: '#e9faf8',
@@ -26,34 +26,36 @@ const config: Config = {
             950: '#053331',
           },
         },
-        // Playful accent colours for feature tiles / category chips
+        // Rainbow accents — playful early-years palette (Montessori-style reference)
         accent: {
-          sunny: '#ffca3a',
-          coral: '#ff6b6b',
-          pink: '#ff7fa8',
-          leaf: '#8ac926',
-          sky: '#4cc9f0',
-          grape: '#b57edc',
+          sunny: '#ffc93c',
+          orange: '#f7931e',
+          coral: '#ef5350',
+          pink: '#ec4f8b',
+          leaf: '#4caf50',
+          sky: '#3a8ee6',
+          grape: '#8b5cf6',
         },
-        // Semantic colour aliases — bright, warm, cream-based theme
+        // Semantic colour aliases — royal-blue primary, magenta secondary, navy ink on
+        // cream. DEFAULTs are deepened from the reference so white text passes WCAG AA.
         primary: {
-          DEFAULT: '#0f6b64',
+          DEFAULT: '#2463d6',
           foreground: '#ffffff',
-          hover: '#0a4f4a',
-          light: '#e6f4f2',
+          hover: '#1b4fae',
+          light: '#e6efff',
         },
         secondary: {
-          DEFAULT: '#ff7fa8',
+          DEFAULT: '#d42a6b',
           foreground: '#ffffff',
-          hover: '#f4638f',
-          light: '#ffe4ee',
+          hover: '#b51f59',
+          light: '#ffe4ef',
         },
-        background: '#fff8ee',
+        background: '#fff8ec',
         surface: '#ffffff',
         'surface-raised': '#fff3e0',
-        'text-primary': '#2b3a4a',
-        'text-secondary': '#5c6b7a',
-        'text-muted': '#93a0ac',
+        'text-primary': '#1f2b57',
+        'text-secondary': '#4a5578',
+        'text-muted': '#7d87a6',
         border: '#efe3d0',
         // Status colours — light-theme tuned (DEFAULT readable on white, light = pale tint)
         success: {
@@ -89,10 +91,10 @@ const config: Config = {
         '3xl': '1.75rem',
       },
       boxShadow: {
-        card: '0 4px 16px -2px rgb(15 107 100 / 0.10), 0 2px 6px -2px rgb(15 107 100 / 0.08)',
-        'card-hover': '0 0 0 1px rgb(15 107 100 / 0.22), 0 14px 34px -6px rgb(15 107 100 / 0.24)',
-        glow: '0 0 28px 0 rgb(15 107 100 / 0.25)',
-        sidebar: '4px 0 30px 0 rgb(15 107 100 / 0.16)',
+        card: '0 4px 16px -2px rgb(36 99 214 / 0.10), 0 2px 6px -2px rgb(36 99 214 / 0.08)',
+        'card-hover': '0 0 0 1px rgb(36 99 214 / 0.22), 0 14px 34px -6px rgb(36 99 214 / 0.24)',
+        glow: '0 0 28px 0 rgb(36 99 214 / 0.25)',
+        sidebar: '4px 0 30px 0 rgb(36 99 214 / 0.16)',
       },
       keyframes: {
         'nav-progress': {

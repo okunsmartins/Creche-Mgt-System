@@ -30,8 +30,8 @@ const pillOutline =
   'inline-flex min-h-[40px] items-center gap-1.5 rounded-full border-2 border-text-primary px-4 py-1.5 text-sm font-extrabold text-text-primary transition-colors hover:border-primary hover:text-primary'
 const pillOutlineActive =
   'inline-flex min-h-[40px] items-center gap-1.5 rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 text-sm font-extrabold text-primary'
-const pillSunny =
-  'inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-accent-sunny px-4 py-1.5 text-sm font-extrabold text-text-primary transition-transform hover:-translate-y-0.5'
+const pillCta =
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-secondary px-4 py-1.5 text-sm font-extrabold text-white transition-colors hover:bg-secondary-hover'
 
 export function SiteHeader({
   schoolName,
@@ -166,7 +166,7 @@ export function SiteHeader({
                     <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                     Sign in
                   </Link>
-                  <Link href="/get-started" className={pillSunny}>
+                  <Link href="/get-started" className={pillCta}>
                     Start free month
                   </Link>
                 </>

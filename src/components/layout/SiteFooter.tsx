@@ -18,7 +18,7 @@ const linkClass = 'text-sm text-[#d7dce3] transition-colors hover:text-white'
 
 export function SiteFooter() {
   return (
-    <footer className="bg-[#1e2a3a] text-[#d7dce3]">
+    <footer className="bg-[#1f2b57] text-[#d7dce3]">
       <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-8 px-4 pb-6 pt-10 sm:px-6 lg:px-8">
         <div className="max-w-xs">
           <p className="font-display text-xl font-bold text-white">Creche Wise</p>
@@ -52,7 +52,7 @@ export function SiteFooter() {
           </a>
         </div>
       </div>
-      <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-[#34425a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
         <p>&copy; {currentYear} First Stack Solutions. All rights reserved.</p>
         <p>Payments secured by Stripe &amp; Revolut</p>
       </div>
