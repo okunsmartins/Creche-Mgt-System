@@ -95,11 +95,6 @@
     background: linear-gradient(135deg, #eaf1fd 0%, #dbe8fb 100%);
     border: 1px solid #cbddf7;
   }
-
-  /* Purple gradient sidebar — signature element */
-  .sidebar-gradient {
-    background: linear-gradient(180deg, #8b6fe0 0%, #7a5cd6 55%, #6f4fce 100%);
-  }
 }
 
 /* ── Print ─────────────────────────────────────────────────────────────────
