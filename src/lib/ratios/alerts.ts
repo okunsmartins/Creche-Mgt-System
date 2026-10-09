@@ -16,10 +16,23 @@ export interface RoomRatioAlert {
   /** Where the available-staff figure came from. */
   source: 'saved' | 'rostered'
 }
+/** Every active room's staffing picture right now (in or out of ratio). */
+export interface RoomRatioStatus {
+  roomId: string
+  roomName: string
+  childrenPresent: number
+  required: number
+  available: number
+  inRatio: boolean
+}
 export interface RatioAlertResult {
   date: string
   alerts: RoomRatioAlert[] // under-ratio rooms only
   roomsChecked: number
+  /** All active rooms, in display order. */
+  rooms: RoomRatioStatus[]
+  /** Active children checked in and not yet checked out. */
+  childrenPresent: number
 }
 
 /**
@@ -97,11 +110,20 @@ export async function getRoomRatioAlerts(
   }
 
   const alerts: RoomRatioAlert[] = []
+  const statuses: RoomRatioStatus[] = []
   for (const room of rooms) {
     const required = roomStaffingRequirement(agesByRoom.get(room.id) ?? [], bands).requiredStaff
-    if (required <= 0) continue
     const saved = savedStaff.get(room.id)
     const available = saved ?? rosteredByRoom.get(room.id)?.size ?? 0
+    statuses.push({
+      roomId: room.id,
+      roomName: room.name,
+      childrenPresent: (agesByRoom.get(room.id) ?? []).length,
+      required,
+      available,
+      inRatio: available >= required,
+    })
+    if (required <= 0) continue
     const source: 'saved' | 'rostered' = saved === undefined ? 'rostered' : 'saved'
     if (available < required) {
       alerts.push({
@@ -116,5 +138,12 @@ export async function getRoomRatioAlerts(
     }
   }
 
-  return { date: dateISO, alerts, roomsChecked: rooms.length }
+  const childrenPresent = children.filter((c) => presentSet.has(c.id)).length
+  return {
+    date: dateISO,
+    alerts,
+    roomsChecked: rooms.length,
+    rooms: statuses,
+    childrenPresent,
+  }
 }
