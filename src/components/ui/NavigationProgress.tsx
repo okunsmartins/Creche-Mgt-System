@@ -71,7 +71,7 @@ export function NavigationProgress() {
 
   return (
     <div className="fixed inset-x-0 top-0 z-[9999] h-[2px] overflow-hidden" aria-hidden="true">
-      <div className="h-full bg-primary shadow-[0_0_8px_0px_#14b3ad]" style={barStyle} />
+      <div className="h-full bg-primary shadow-[0_0_8px_0px_#2463d6]" style={barStyle} />
     </div>
   )
 }

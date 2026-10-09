@@ -20,10 +20,18 @@ const schoolLinks = [
 const platformLinks = [
   { href: '/', label: 'Home' },
   { href: '/about', label: 'About' },
-  { href: '/get-started', label: 'Create your Portal' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/faqs', label: 'FAQs' },
-  { href: '/contact', label: 'Get in Touch' },
+  { href: '/contact', label: 'Contact' },
 ]
+
+// Shared pill styles (match the marketing design).
+const pillOutline =
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-full border-2 border-text-primary px-4 py-1.5 text-sm font-extrabold text-text-primary transition-colors hover:border-primary hover:text-primary'
+const pillOutlineActive =
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 text-sm font-extrabold text-primary'
+const pillCta =
+  'inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-secondary px-4 py-1.5 text-sm font-extrabold text-white transition-colors hover:bg-secondary-hover'
 
 export function SiteHeader({
   schoolName,
@@ -65,11 +73,11 @@ export function SiteHeader({
 
   const linkClass = (href: string) =>
     isActive(href)
-      ? 'text-sm font-semibold text-primary underline underline-offset-4'
-      : 'text-sm font-medium text-text-secondary transition-colors hover:text-primary'
+      ? 'text-[15px] font-bold text-primary underline decoration-2 underline-offset-[6px]'
+      : 'text-[15px] font-bold text-text-primary transition-colors hover:text-primary'
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo + school name */}
         <Link
@@ -78,19 +86,21 @@ export function SiteHeader({
           aria-label={`${brandName} home`}
         >
           <SchoolCrest name={brandName} size={40} logoUrl={schoolLogoUrl} />
-          <span className="hidden text-sm font-bold leading-tight text-primary sm:block">
+          <span className="hidden font-display text-xl font-bold leading-tight text-text-primary sm:block">
             {brandName}
             {schoolName && (
               <>
                 <br />
-                <span className="text-xs font-normal text-text-secondary">Admin Portal</span>
+                <span className="font-sans text-xs font-semibold text-text-secondary">
+                  Parent &amp; staff portal
+                </span>
               </>
             )}
           </span>
         </Link>
 
         {/* Desktop navigation */}
-        <nav aria-label="Main navigation" className="hidden items-center gap-6 md:flex">
+        <nav aria-label="Main navigation" className="hidden items-center gap-5 md:flex">
           {isTenant ? (
             <>
               {/* Inside a crèche portal: school-facing links + Admin + Exit portal. */}
@@ -108,11 +118,7 @@ export function SiteHeader({
               <Link
                 href="/admin/dashboard"
                 aria-current={isAdminActive ? 'page' : undefined}
-                className={
-                  isAdminActive
-                    ? 'inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary'
-                    : 'inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
-                }
+                className={isAdminActive ? pillOutlineActive : pillOutline}
               >
                 <Shield className="h-3.5 w-3.5" aria-hidden="true" />
                 Admin
@@ -123,7 +129,7 @@ export function SiteHeader({
               <a
                 href="/s/reset"
                 title="Leave this school's portal"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-primary/40 hover:text-primary"
+                className="inline-flex items-center gap-1.5 text-sm font-bold text-text-secondary transition-colors hover:text-primary"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 Exit portal
@@ -145,27 +151,25 @@ export function SiteHeader({
 
               {isAuthenticated ? (
                 <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                  >
+                  <button type="submit" className={pillOutline}>
                     <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                     Sign out
                   </button>
                 </form>
               ) : (
-                <Link
-                  href="/login"
-                  aria-current={isActive('/login') ? 'page' : undefined}
-                  className={
-                    isActive('/login')
-                      ? 'inline-flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary'
-                      : 'inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised px-3 py-1.5 text-xs font-semibold text-text-muted transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary'
-                  }
-                >
-                  <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
-                  Sign in
-                </Link>
+                <>
+                  <Link
+                    href="/login"
+                    aria-current={isActive('/login') ? 'page' : undefined}
+                    className={isActive('/login') ? pillOutlineActive : pillOutline}
+                  >
+                    <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
+                    Sign in
+                  </Link>
+                  <Link href="/get-started" className={pillCta}>
+                    Start free month
+                  </Link>
+                </>
               )}
             </>
           )}
@@ -181,7 +185,11 @@ export function SiteHeader({
                 ]
               : isAuthenticated
                 ? platformLinks
-                : [...platformLinks, { href: '/login', label: 'Sign in' }]
+                : [
+                    ...platformLinks,
+                    { href: '/login', label: 'Sign in' },
+                    { href: '/get-started', label: 'Start free month' },
+                  ]
           }
           signOut={!isTenant && isAuthenticated}
         />

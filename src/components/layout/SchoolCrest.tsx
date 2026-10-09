@@ -46,7 +46,7 @@ export function SchoolCrest({
       style={{
         width: size,
         height: size,
-        background: '#14b3ad',
+        background: '#2463d6',
         color: '#ffffff',
         boxShadow: 'inset 0 0 0 2px #ffca3a',
         fontSize: Math.round(size * 0.34),

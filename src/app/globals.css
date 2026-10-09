@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: #fff8ee;
+    --background: #fff8ec;
     --surface: #ffffff;
     --surface-raised: #fff3e0;
-    --text-primary: #2b3a4a;
-    --text-secondary: #5c6b7a;
-    --text-muted: #93a0ac;
+    --text-primary: #1f2b57;
+    --text-secondary: #4a5578;
+    --text-muted: #7d87a6;
     --border: #efe3d0;
-    --primary: #14b3ad;
-    --primary-hover: #0f9b96;
-    --primary-light: #d6f4f2;
-    --secondary: #ff7fa8;
-    --secondary-hover: #f4638f;
-    --secondary-light: #ffe4ee;
+    --primary: #2463d6;
+    --primary-hover: #1b4fae;
+    --primary-light: #e6efff;
+    --secondary: #d42a6b;
+    --secondary-hover: #b51f59;
+    --secondary-light: #ffe4ef;
   }
 
   * {
@@ -28,6 +28,14 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
+  }
+
+  /* Headings use the rounded display face across the whole platform. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
   }
 
   *:focus-visible {
