@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getResend } from '@/lib/email/client'
 import { buildEmailFrom } from '@/lib/email/from'
+import { renderBrandedEmail } from '@/lib/email/layout'
 import { serverEnv } from '@/lib/env'
 import { logger } from '@/lib/logging'
 import { formatCurrency } from '@/lib/utils'
@@ -245,16 +246,17 @@ async function alertParents(
     let sent = 0
     for (const r of recipients) {
       const greeting = r.first_name ? `Hi ${esc(r.first_name)},` : 'Hi,'
-      const html = `
-        <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1f2937">
-          <p>${greeting}</p>
+      const html = renderBrandedEmail({
+        schoolName,
+        subtitle: 'Late collection',
+        bodyHtml: `
+          <p style="margin:0 0 12px">${greeting}</p>
           <p><strong>${esc(p.childName)}</strong> was collected late on <strong>${esc(p.date)}</strong> at <strong>${esc(p.time)}</strong>
              (${p.minutesLate} minute${p.minutesLate === 1 ? '' : 's'} after our collection cutoff).</p>
           <p>${feeLine}</p>
           <p style="color:#6b7280;font-size:13px">Please ensure collection by the agreed time. Thank you.</p>
-          <p><a href="${portalUrl}" style="color:#4f46e5">Open your parent portal</a></p>
-          <p style="color:#9ca3af;font-size:12px">${esc(schoolName)} · Creche Wise</p>
-        </div>`
+          <p style="margin:16px 0 0"><a href="${portalUrl}" style="color:#573c9b;font-weight:600">Open your parent portal</a></p>`,
+      })
       const text =
         `${r.first_name ? `Hi ${r.first_name},` : 'Hi,'}\n\n` +
         `${p.childName} was collected late on ${p.date} at ${p.time} (${p.minutesLate} min after cutoff).\n` +

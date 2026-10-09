@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getResend } from '@/lib/email/client'
 import { buildEmailFrom } from '@/lib/email/from'
+import { renderBrandedEmail } from '@/lib/email/layout'
 import { logger } from '@/lib/logging'
 import { validateEnquiry, isEnquiryStatus } from './enquiries'
 
@@ -119,13 +120,11 @@ export async function sendEnquiryEmailAction(
     ? `Hi ${esc(e.parent_name.split(' ')[0] ?? e.parent_name)},`
     : 'Hi,'
   const bodyHtml = esc(body).replace(/\n/g, '<br>')
-  const html = `
-    <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1f2937">
-      <p>${greeting}</p>
-      <div style="white-space:normal">${bodyHtml}</div>
-      <p style="margin-top:20px;color:#6b7280;font-size:13px">${esc(schoolName)}</p>
-      <p style="color:#9ca3af;font-size:12px">Sent via Creche Wise</p>
-    </div>`
+  const html = renderBrandedEmail({
+    schoolName,
+    subtitle: `Message from ${schoolName}`,
+    bodyHtml: `<p style="margin:0 0 12px">${greeting}</p><div>${bodyHtml}</div>`,
+  })
 
   const { error: sendError } = await getResend().emails.send({
     from: buildEmailFrom(schoolName),

@@ -4,6 +4,7 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getResend } from '@/lib/email/client'
 import { buildEmailFrom } from '@/lib/email/from'
+import { renderBrandedEmail } from '@/lib/email/layout'
 import { serverEnv } from '@/lib/env'
 import { logger } from '@/lib/logging'
 import { formatCurrency } from '@/lib/utils'
@@ -84,20 +85,21 @@ export async function sendArrearsReminderAction(studentId: string): Promise<Acti
   let sent = 0
   for (const r of recipients) {
     const greeting = r.first_name ? `Hi ${esc(r.first_name)},` : 'Hi,'
-    const html = `
-      <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:560px;margin:0 auto;color:#1f2937">
-        <p>${greeting}</p>
-        <p>This is a reminder from <strong>${esc(schoolName)}</strong> that there is an outstanding
-           balance of <strong>${formatCurrency(outstanding)}</strong> for
-           <strong>${esc(childName)}</strong> (after any ECCE/NCS funding).</p>
-        <p>
-          <a href="${portalUrl}" style="display:inline-block;background:#4f46e5;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">
+    const html = renderBrandedEmail({
+      schoolName,
+      subtitle: 'Payment reminder',
+      bodyHtml: `
+        <p style="margin:0 0 12px">${greeting}</p>
+        <p>This is a reminder that there is an outstanding balance of
+           <strong>${formatCurrency(outstanding)}</strong> for <strong>${esc(childName)}</strong>
+           (after any ECCE/NCS funding).</p>
+        <p style="margin:16px 0">
+          <a href="${portalUrl}" style="display:inline-block;background:#573c9b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">
             View &amp; pay your invoices
           </a>
         </p>
-        <p style="color:#6b7280;font-size:13px">Sign in to your parent portal to see each invoice and pay online.</p>
-        <p style="color:#9ca3af;font-size:12px">${esc(schoolName)} · Creche Wise</p>
-      </div>`
+        <p style="color:#6b7280;font-size:13px;margin:0">Sign in to your parent portal to see each invoice and pay online.</p>`,
+    })
     const text =
       `${r.first_name ? `Hi ${r.first_name},` : 'Hi,'}\n\n` +
       `Outstanding balance for ${childName} at ${schoolName}: ${formatCurrency(outstanding)}.\n` +
