@@ -8,6 +8,7 @@ import { StudentForm } from '@/components/students/StudentForm'
 import { StudentStatusToggle } from '@/components/students/StudentStatusToggle'
 import { RegeneratePupilCode } from '@/components/students/RegeneratePupilCode'
 import { AdminLinkParent } from '@/components/students/AdminLinkParent'
+import { ParentInviteButton } from '@/components/parent-invites/ParentInviteButton'
 import { ParentMessageForm } from '@/components/messages/ParentMessageForm'
 import { StatusBadge } from '@/components/ui/Badge'
 import { AssignmentFileRow } from '@/components/assignments/AssignmentFileRow'
@@ -260,6 +261,13 @@ export default async function EditStudentPage({ params }: PageProps) {
           without requiring a link request.
         </p>
         <AdminLinkParent studentId={student.id} />
+
+        <div className="mt-4 rounded-lg border border-border bg-surface-raised/40 p-4">
+          <h3 className="mb-1 text-sm font-semibold text-text-primary">
+            Invite a parent (first login)
+          </h3>
+          <ParentInviteButton studentId={student.id} />
+        </div>
 
         {/* Message this pupil's linked parents by email (uses the parent-messaging
             'student' audience). Only shown when at least one parent is linked. */}
