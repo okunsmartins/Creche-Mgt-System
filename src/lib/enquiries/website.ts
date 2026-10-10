@@ -13,6 +13,11 @@ export interface WebsiteEnquiry {
   childFirstName: string | null
   childDob: string | null
   desiredStartDate: string | null
+  /** Weekdays the family needs (subset of WEEKDAYS, in week order). */
+  days: string[]
+  wantsVisit: boolean
+  /** The parent's own free-text message, as typed. */
+  message: string | null
   /** Days needed, wanting a visit and the free-text message, folded into one note. */
   notes: string | null
 }
@@ -74,6 +79,9 @@ export function parseWebsiteEnquiry(fd: FormData): WebsiteEnquiryResult {
       childFirstName: childFirstName || null,
       childDob: childDob || null,
       desiredStartDate: desiredStartDate || null,
+      days,
+      wantsVisit,
+      message: message || null,
       notes: noteParts.length ? noteParts.join('\n') : null,
     },
   }
