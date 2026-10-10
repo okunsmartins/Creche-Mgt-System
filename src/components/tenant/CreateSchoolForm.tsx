@@ -34,7 +34,7 @@ export function CreateSchoolForm() {
           label="Subdomain"
           name="subdomain"
           type="text"
-          placeholder="stmarys"
+          placeholder="littleexplorers"
           value={subdomain}
           onChange={(e) => setSubdomain(normalise(e.target.value))}
           required
@@ -43,7 +43,7 @@ export function CreateSchoolForm() {
         />
         <p className="mt-1.5 text-xs text-text-muted">
           Your parents will visit{' '}
-          <span className="font-mono text-text-secondary">{subdomain || 'yourschool'}</span>
+          <span className="font-mono text-text-secondary">{subdomain || 'yourcreche'}</span>
           <span className="font-mono text-text-muted">.yourdomain.ie</span> — lowercase letters,
           numbers and hyphens only.
         </p>
@@ -51,7 +51,11 @@ export function CreateSchoolForm() {
 
       {state?.error && <Alert variant="error">{state.error}</Alert>}
 
-      <Button type="submit" className="w-full" loading={isPending}>
+      <Button
+        type="submit"
+        className="min-h-[50px] w-full bg-gradient-to-r from-[#c2255c] via-[#7048e8] to-primary text-base font-extrabold shadow-[0_10px_24px_-8px_rgba(112,72,232,0.6)] hover:opacity-95"
+        loading={isPending}
+      >
         Create my crèche
       </Button>
     </form>

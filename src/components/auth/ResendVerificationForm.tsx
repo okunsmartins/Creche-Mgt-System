@@ -40,7 +40,13 @@ export function ResendVerificationForm() {
           {state.error}
         </Alert>
       )}
-      <Button type="submit" variant="outline" size="sm" className="w-full" loading={isPending}>
+      <Button
+        type="submit"
+        variant="outline"
+        size="sm"
+        className="no-auth-gradient w-full"
+        loading={isPending}
+      >
         Resend verification email
       </Button>
     </form>
