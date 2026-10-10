@@ -217,3 +217,41 @@
   ) {
   border-radius: 0.875rem;
 }
+
+/* ── Sign-in pages ─────────────────────────────────────────────────────────
+   The auth layout wraps each form's .card in .auth-shell: a frosted, rounded
+   card under the peeking teddy, with gently floating 3D icons around it. */
+.auth-shell .card {
+  border-radius: 2rem;
+  border-color: rgb(255 255 255 / 0.7);
+  background: rgb(255 255 255 / 0.9);
+  padding: 2rem 1.75rem 1.75rem;
+  box-shadow:
+    0 24px 60px -12px rgb(87 60 155 / 0.25),
+    0 4px 12px -4px rgb(31 43 87 / 0.08);
+  backdrop-filter: blur(10px);
+}
+.auth-shell .card h2 {
+  text-align: center;
+}
+@keyframes auth-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.auth-float {
+  animation: auth-float 5s ease-in-out infinite;
+}
+.auth-float-slow {
+  animation: auth-float 7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-float,
+  .auth-float-slow {
+    animation: none;
+  }
+}

@@ -9,10 +9,12 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label?: string | undefined
   hint?: string | undefined
   required?: boolean
+  /** Small decorative icon shown inside the field on the left. */
+  leftIcon?: React.ReactNode
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, label, hint, id, required, type, ...props }, ref) => {
+  ({ className, error, label, hint, id, required, type, leftIcon, ...props }, ref) => {
     const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
     const [reveal, setReveal] = useState(false)
 
@@ -30,6 +32,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         className={cn(
           'input-base',
           isPassword && 'pr-10',
+          leftIcon ? 'pl-10' : null,
           error && 'border-error focus:border-error focus:ring-error',
           className,
         )}
@@ -51,23 +54,33 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
 
-        {isPassword ? (
+        {isPassword || leftIcon ? (
           <div className="relative">
+            {leftIcon && (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-text-muted"
+              >
+                {leftIcon}
+              </span>
+            )}
             {inputEl}
-            <button
-              type="button"
-              onClick={() => setReveal((v) => !v)}
-              aria-label={reveal ? 'Hide password' : 'Show password'}
-              aria-pressed={reveal}
-              tabIndex={-1}
-              className="absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-primary focus:outline-none focus-visible:text-primary"
-            >
-              {reveal ? (
-                <EyeOff className="h-4 w-4" aria-hidden="true" />
-              ) : (
-                <Eye className="h-4 w-4" aria-hidden="true" />
-              )}
-            </button>
+            {isPassword && (
+              <button
+                type="button"
+                onClick={() => setReveal((v) => !v)}
+                aria-label={reveal ? 'Hide password' : 'Show password'}
+                aria-pressed={reveal}
+                tabIndex={-1}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-text-muted hover:text-text-primary focus:outline-none focus-visible:text-primary"
+              >
+                {reveal ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
+            )}
           </div>
         ) : (
           inputEl

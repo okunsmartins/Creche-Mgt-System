@@ -5,6 +5,7 @@ import { PlatformLanding } from '@/components/marketing/PlatformLanding'
 import { CrecheLanding, type CrecheRoom } from '@/components/marketing/CrecheLanding'
 import { serverEnv } from '@/lib/env'
 import { getProPrices } from '@/lib/stripe/prices'
+import { getSchoolSocialLinks } from '@/lib/social/queries'
 
 export const metadata: Metadata = { title: 'Home' }
 
@@ -40,6 +41,14 @@ export default async function HomePage() {
     .eq('is_active', true)
     .order('display_order', { ascending: true })
   const rooms = (data ?? []) as CrecheRoom[]
+  const socialLinks = await getSchoolSocialLinks(school.id)
 
-  return <CrecheLanding school={school} rooms={rooms} withTenant={withTenant} />
+  return (
+    <CrecheLanding
+      school={school}
+      rooms={rooms}
+      withTenant={withTenant}
+      socialLinks={socialLinks}
+    />
+  )
 }
