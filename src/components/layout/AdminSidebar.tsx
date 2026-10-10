@@ -52,6 +52,7 @@ import {
   Timer,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Icon3D, type Icon3DName } from '@/components/ui/Icon3D'
 import { signOutAction } from '@/lib/auth/actions'
 import type { SessionUser } from '@/types'
 
@@ -65,6 +66,8 @@ interface NavSection {
   title?: string
   /** Group colour for the icon tiles (rainbow brand palette, white icon ≥ 4.5:1). */
   color?: string
+  /** 3D icon shown beside the group heading. */
+  icon3d?: Icon3DName
   items: NavItem[]
 }
 
@@ -74,6 +77,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Today',
+    icon3d: 'calendar',
     color: '#2b8a3e',
     items: [
       { href: '/admin/check-in', label: 'Daily Check-in', icon: LogIn },
@@ -84,6 +88,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Children',
+    icon3d: 'child',
     color: '#d6336c',
     items: [
       { href: '/admin/students', label: 'Children', icon: Users },
@@ -99,6 +104,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Staff',
+    icon3d: 'teacher',
     color: '#7048e8',
     items: [
       { href: '/admin/teachers', label: 'Staff', icon: GraduationCap },
@@ -115,6 +121,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Money',
+    icon3d: 'euro',
     color: '#b07200',
     items: [
       { href: '/admin/fees', label: 'Fees & Invoices', icon: Receipt },
@@ -134,6 +141,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Parents',
+    icon3d: 'speech',
     color: '#1c7ed6',
     items: [
       { href: '/admin/messages', label: 'Messages', icon: Mail },
@@ -142,6 +150,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Reports',
+    icon3d: 'chart',
     color: '#4a5578',
     items: [
       { href: '/admin/reports', label: 'Reports', icon: BarChart2 },
@@ -151,6 +160,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: 'Administration',
+    icon3d: 'gear',
     color: '#4a5578',
     items: [
       { href: '/admin/settings', label: 'Crèche Settings', icon: Settings },
@@ -164,6 +174,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 const FUNDING_SECTION: NavSection = {
   title: 'Funding',
+  icon3d: 'bank',
   color: '#2b8a3e',
   items: [{ href: '/admin/funding', label: 'Funding & Hive', icon: Landmark }],
 }
@@ -272,7 +283,11 @@ export function AdminSidebar({ user, isOwner = false, fundingEnabled = false }: 
                   className="flex w-full items-center justify-between rounded-lg px-2 pb-1 pt-3 text-[11px] font-extrabold uppercase tracking-[0.08em] text-text-secondary hover:text-text-primary"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                    {section.icon3d ? (
+                      <Icon3D name={section.icon3d} size={22} />
+                    ) : (
+                      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                    )}
                     {title}
                   </span>
                   <ChevronDown

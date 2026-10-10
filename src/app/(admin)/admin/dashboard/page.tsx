@@ -3,8 +3,6 @@ import Link from 'next/link'
 import {
   ArrowRight,
   Award,
-  Baby,
-  Building2,
   CalendarOff,
   GitMerge,
   Receipt,
@@ -342,7 +340,7 @@ export default async function AdminDashboardPage() {
           }
           subTone={delta > 0 ? 'good' : 'muted'}
           tone="green"
-          icon={Baby}
+          icon3d="child"
           href="/admin/check-in"
         />
         <StatTile
@@ -351,7 +349,7 @@ export default async function AdminDashboardPage() {
           sub={ratio.alerts.length === 0 ? 'All good ✓' : 'Needs staff now'}
           subTone={ratio.alerts.length === 0 ? 'good' : 'warn'}
           tone={ratio.alerts.length === 0 ? 'purple' : 'red'}
-          icon={Scale}
+          icon3d="scale"
           href="/admin/ratios"
         />
         <StatTile
@@ -364,7 +362,7 @@ export default async function AdminDashboardPage() {
           }
           subTone={overdue.length === 0 ? 'good' : 'warn'}
           tone="yellow"
-          icon={Receipt}
+          icon3d="euro"
           href="/admin/fees/due"
         />
         <StatTile
@@ -372,7 +370,7 @@ export default async function AdminDashboardPage() {
           value={String(places.totalAvailable)}
           sub={`${newEnquiries ?? 0} new enquir${newEnquiries === 1 ? 'y' : 'ies'}`}
           tone="pink"
-          icon={Building2}
+          icon3d="house"
           href="/admin/places"
         />
       </div>

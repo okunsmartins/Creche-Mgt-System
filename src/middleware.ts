@@ -103,6 +103,6 @@ export const config = {
   matcher: [
     // Run on all routes except static assets, API webhooks, and cron endpoints
     // (cron routes authenticate themselves with CRON_SECRET).
-    '/((?!_next/static|_next/image|favicon.ico|branding/|api/webhooks/|api/cron/).*)',
+    '/((?!_next/static|_next/image|favicon.ico|branding/|icons/|api/webhooks/|api/cron/).*)',
   ],
 }
