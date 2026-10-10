@@ -11,7 +11,8 @@ type Cls = Pick<ClassRow, 'id' | 'name' | 'academic_year' | 'is_active' | 'teach
 
 interface ClassEditFormProps {
   action: (prev: ClassActionState, formData: FormData) => Promise<ClassActionState>
-  cls: Cls
+  /** The room being edited; omit to create a new room. */
+  cls?: Cls
   teachers: Teacher[]
 }
 
@@ -19,11 +20,12 @@ const initialState: ClassActionState = {}
 
 export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState)
+  const isNew = !cls
 
   return (
     <form action={formAction} className="space-y-5">
       {state.error && <Alert variant="error">{state.error}</Alert>}
-      {state.success && <Alert variant="success">Room updated successfully.</Alert>}
+      {state.success && <Alert variant="success">Room saved.</Alert>}
 
       {/* Room name */}
       <div>
@@ -36,9 +38,16 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
           type="text"
           required
           maxLength={100}
-          defaultValue={cls.name}
+          defaultValue={cls?.name ?? ''}
+          placeholder="e.g. Butterflies Room (2–3 yrs)"
+          autoFocus={isNew}
           className="input-base"
         />
+        <p className="mt-1 text-xs text-text-muted">
+          {isNew
+            ? 'Any name you like — you can rename it later.'
+            : 'Change this to rename the room everywhere (check-in, ratios, reports, parent app).'}
+        </p>
       </div>
 
       {/* Teacher assignment */}
@@ -49,7 +58,7 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
         <select
           id="teacherId"
           name="teacherId"
-          defaultValue={cls.teacher_id ?? ''}
+          defaultValue={cls?.teacher_id ?? ''}
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">— Unassigned —</option>
@@ -73,7 +82,7 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
           min={0}
           step={1}
           inputMode="numeric"
-          defaultValue={cls.capacity ?? ''}
+          defaultValue={cls?.capacity ?? ''}
           placeholder="e.g. 12"
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
         />
@@ -92,37 +101,41 @@ export function ClassEditForm({ action, cls, teachers }: ClassEditFormProps) {
           id="academicYear"
           name="academicYear"
           type="text"
-          defaultValue={cls.academic_year ?? ''}
+          defaultValue={cls?.academic_year ?? ''}
           placeholder="e.g. 2025-2026"
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
 
-      {/* Active status — hidden-input + nameless-checkbox pattern.
+      {cls && (
+        <>
+          {/* Active status — hidden-input + nameless-checkbox pattern.
           The hidden input is initialised to the current value so that
           saving without touching the checkbox preserves the existing state. */}
-      <input type="hidden" name="isActive" defaultValue={cls.is_active ? 'true' : 'false'} />
-      <div className="flex items-center gap-3">
-        <input
-          id="isActive"
-          type="checkbox"
-          name=""
-          defaultChecked={cls.is_active}
-          onChange={(e) => {
-            const hidden = e.currentTarget.form?.elements.namedItem(
-              'isActive',
-            ) as HTMLInputElement | null
-            if (hidden) hidden.value = e.currentTarget.checked ? 'true' : 'false'
-          }}
-          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-        />
-        <label htmlFor="isActive" className="text-sm text-text-primary">
-          Class is active
-        </label>
-      </div>
+          <input type="hidden" name="isActive" defaultValue={cls.is_active ? 'true' : 'false'} />
+          <div className="flex items-center gap-3">
+            <input
+              id="isActive"
+              type="checkbox"
+              name=""
+              defaultChecked={cls.is_active}
+              onChange={(e) => {
+                const hidden = e.currentTarget.form?.elements.namedItem(
+                  'isActive',
+                ) as HTMLInputElement | null
+                if (hidden) hidden.value = e.currentTarget.checked ? 'true' : 'false'
+              }}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <label htmlFor="isActive" className="text-sm text-text-primary">
+              Room is active (untick to hide a room you no longer use)
+            </label>
+          </div>
+        </>
+      )}
 
       <Button type="submit" loading={pending} className="w-full">
-        Save changes
+        {isNew ? 'Create room' : 'Save changes'}
       </Button>
     </form>
   )

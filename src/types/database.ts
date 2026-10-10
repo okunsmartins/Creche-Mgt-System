@@ -91,6 +91,7 @@ export type AuditAction =
   | 'activity.published'
   | 'activity.archived'
   | 'activity.closed'
+  | 'class.created'
   | 'class.updated'
   | 'teacher.created'
   | 'teacher.updated'
