@@ -55,7 +55,7 @@ const config: Config = {
         'surface-raised': '#fff3e0',
         'text-primary': '#1f2b57',
         'text-secondary': '#4a5578',
-        'text-muted': '#7d87a6',
+        'text-muted': '#66708f',
         border: '#efe3d0',
         // Status colours — light-theme tuned (DEFAULT readable on white, light = pale tint)
         success: {
