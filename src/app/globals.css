@@ -234,6 +234,26 @@
 .auth-shell .card h2 {
   text-align: center;
 }
+/* Every card's title and main button match the "Welcome back!" sign-in card. */
+.auth-shell .card > :is(h1, h2):first-child {
+  font-family: var(--font-display), 'Fredoka', sans-serif;
+  font-size: 1.85rem;
+  line-height: 1.2;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+}
+.auth-shell .card button[type='submit']:not(.no-auth-gradient) {
+  min-height: 50px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  background-image: linear-gradient(90deg, #c2255c, #7048e8, #2463d6);
+  box-shadow: 0 10px 24px -8px rgb(112 72 232 / 0.6);
+}
+.auth-shell .card button[type='submit']:not(.no-auth-gradient):hover {
+  opacity: 0.95;
+}
 @keyframes auth-float {
   0%,
   100% {
