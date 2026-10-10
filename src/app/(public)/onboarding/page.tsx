@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/guards'
 import { hasVerifiedSignup } from '@/lib/onboarding/signups'
 import { CreateSchoolForm } from '@/components/tenant/CreateSchoolForm'
+import { TeddyShell } from '@/components/auth/TeddyShell'
 
 export const metadata: Metadata = { title: 'Create your crèche' }
 
@@ -27,36 +28,17 @@ export default async function OnboardingPage() {
   if (!(await hasVerifiedSignup(user.email))) redirect('/get-started')
 
   return (
-    <>
-      {/* Hero — matches homepage colour scheme */}
-      <section
-        className="relative overflow-hidden border-b border-border"
-        style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
-      >
-        <div className="mx-auto max-w-2xl px-4 py-14 text-center sm:px-6 lg:px-8">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            Set up your crèche
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Create your <span className="text-primary">crèche portal</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-lg text-text-secondary">
-            Pick a name and a web address. We&apos;ll set up your environment — rooms, settings and
-            your admin account — in seconds.
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-md px-4 py-12 sm:px-6">
-        <div className="card p-6">
-          <CreateSchoolForm />
-        </div>
-        <p className="mt-4 text-center text-xs text-text-muted">
-          You&apos;ll become the administrator of this crèche and can invite staff and add children
-          right away.
+    <TeddyShell footer="You'll become the administrator of this crèche and can invite staff and add children right away.">
+      <div className="card">
+        <h1 className="text-center font-display text-3xl font-bold text-text-primary">
+          Create your crèche portal
+        </h1>
+        <p className="mb-6 mt-1 text-center text-sm font-semibold text-text-secondary">
+          Pick a name and a web address. We&apos;ll set up your rooms, settings and admin account in
+          seconds.
         </p>
-      </section>
-    </>
+        <CreateSchoolForm />
+      </div>
+    </TeddyShell>
   )
 }

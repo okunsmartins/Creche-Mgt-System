@@ -37,7 +37,7 @@ export function RegisterForm({
       <p className="mb-6 text-sm text-text-muted">
         {isCreatingPortal
           ? "First, create your account — then you'll set up your crèche portal."
-          : 'Register to manage school payments for your children.'}
+          : 'Register to follow your child’s day, fees and messages.'}
       </p>
 
       {state?.error && (

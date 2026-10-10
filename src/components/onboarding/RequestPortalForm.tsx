@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { MailCheck, ArrowRight } from 'lucide-react'
+import { MailCheck, ArrowRight, Mail, User, Building2 } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Alert } from '@/components/ui/Alert'
@@ -15,7 +15,7 @@ export function RequestPortalForm() {
 
   if (state.success) {
     return (
-      <div className="rounded-2xl border border-border bg-surface p-6 text-center">
+      <div className="text-center">
         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary/10">
           <MailCheck className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
@@ -30,7 +30,7 @@ export function RequestPortalForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-4 rounded-2xl border border-border bg-surface p-6">
+    <form action={formAction} className="space-y-4">
       {state.error && <Alert variant="error">{state.error}</Alert>}
 
       <Input
@@ -39,12 +39,29 @@ export function RequestPortalForm() {
         label="Your email"
         required
         autoComplete="email"
-        placeholder="you@yourschool.ie"
+        placeholder="you@yourcreche.ie"
+        leftIcon={<Mail className="h-4 w-4" />}
       />
-      <Input name="contactName" label="Your name (optional)" autoComplete="name" maxLength={120} />
-      <Input name="schoolName" label="School name (optional)" maxLength={160} />
+      <Input
+        name="contactName"
+        label="Your name (optional)"
+        autoComplete="name"
+        maxLength={120}
+        leftIcon={<User className="h-4 w-4" />}
+      />
+      <Input
+        name="schoolName"
+        label="Crèche name (optional)"
+        maxLength={160}
+        leftIcon={<Building2 className="h-4 w-4" />}
+      />
 
-      <Button type="submit" loading={isPending} disabled={isPending} className="w-full">
+      <Button
+        type="submit"
+        loading={isPending}
+        disabled={isPending}
+        className="min-h-[50px] w-full bg-gradient-to-r from-[#c2255c] via-[#7048e8] to-primary text-base font-extrabold shadow-[0_10px_24px_-8px_rgba(112,72,232,0.6)] hover:opacity-95"
+      >
         Send confirmation link
         <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
       </Button>
