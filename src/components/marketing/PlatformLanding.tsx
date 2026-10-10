@@ -1,17 +1,7 @@
 import Link from 'next/link'
-import {
-  ArrowRight,
-  Check,
-  CreditCard,
-  Heart,
-  Landmark,
-  Mail,
-  MessageSquare,
-  ShieldCheck,
-  Users,
-  type LucideIcon,
-} from 'lucide-react'
+import { ArrowRight, Check, Mail } from 'lucide-react'
 import { RainbowText } from '@/components/ui/RainbowText'
+import { Icon3D, type Icon3DName } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
 
 // Creche Wise platform landing page (the bare apex, no crèche resolved). Ported from
@@ -39,27 +29,27 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   )
 }
 
-const trustItems: { icon: LucideIcon; title: string; body: string; tint: string }[] = [
+const trustItems: { icon3d: Icon3DName; title: string; body: string; tint: string }[] = [
   {
-    icon: Landmark,
+    icon3d: 'school',
     title: 'Built for Irish crèches',
     body: 'ECCE & NCS subvention worked out for you',
     tint: 'bg-primary-light text-primary',
   },
   {
-    icon: ShieldCheck,
+    icon3d: 'shield',
     title: 'Child data kept safe',
     body: 'Encrypted PPSNs, each crèche walled off',
     tint: 'bg-[#eeeafe] text-[#5b46d6]',
   },
   {
-    icon: CreditCard,
+    icon3d: 'moneybag',
     title: 'Paid straight to you',
     body: 'Parents pay into your own Stripe or Revolut',
     tint: 'bg-[#fff4d1] text-[#7a5600]',
   },
   {
-    icon: Heart,
+    icon3d: 'heart',
     title: 'A portal parents love',
     body: 'Fees, daily records & messages in one place',
     tint: 'bg-[#ffe6e1] text-[#c2412d]',
@@ -67,15 +57,14 @@ const trustItems: { icon: LucideIcon; title: string; body: string; tint: string 
 ]
 
 const featureGroups: {
-  icon: LucideIcon
+  icon3d: Icon3DName
   title: string
   items: string[]
   card: string
-  chip: string
   tick: string
 }[] = [
   {
-    icon: CreditCard,
+    icon3d: 'card',
     title: 'Fees & money',
     items: [
       'Invoices with ECCE & NCS netted off',
@@ -84,11 +73,10 @@ const featureGroups: {
       'Late-collection fees',
     ],
     card: 'border-[#f5c84c]',
-    chip: 'bg-accent-sunny text-text-primary',
     tick: 'text-[#7a5600]',
   },
   {
-    icon: Heart,
+    icon3d: 'teddy',
     title: 'Children & care',
     items: [
       'Daily check-in & check-out',
@@ -97,11 +85,10 @@ const featureGroups: {
       'Places, vacancies & waiting list',
     ],
     card: 'border-[#f48fb1]',
-    chip: 'bg-accent-coral text-white',
     tick: 'text-[#c2412d]',
   },
   {
-    icon: Users,
+    icon3d: 'teacher',
     title: 'Staff & ratios',
     items: [
       'Live room ratios & cover alerts',
@@ -110,11 +97,10 @@ const featureGroups: {
       'Time off requests & approvals',
     ],
     card: 'border-[#b39ddb]',
-    chip: 'bg-accent-grape text-white',
     tick: 'text-[#5b46d6]',
   },
   {
-    icon: MessageSquare,
+    icon3d: 'speech',
     title: 'Parents & messages',
     items: [
       'Parent portal with invite links',
@@ -123,7 +109,6 @@ const featureGroups: {
       'Enquiries & waiting list',
     ],
     card: 'border-[#90caf9]',
-    chip: 'bg-accent-sky text-white',
     tick: 'text-[#1a6fb5]',
   },
 ]
@@ -307,12 +292,12 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
         className="relative mx-auto -mt-10 max-w-[1200px] px-4 sm:px-8"
       >
         <div className="grid gap-5 rounded-[26px] bg-white p-6 shadow-[0_18px_46px_rgba(30,42,58,0.09)] sm:grid-cols-2 lg:grid-cols-4">
-          {trustItems.map(({ icon: Icon, title, body, tint }) => (
+          {trustItems.map(({ icon3d, title, body, tint }) => (
             <div key={title} className="flex items-start gap-3.5">
               <span
                 className={`flex h-[50px] w-[50px] flex-none items-center justify-center rounded-2xl ${tint}`}
               >
-                <Icon className="h-6 w-6" aria-hidden="true" />
+                <Icon3D name={icon3d} size={36} />
               </span>
               <div>
                 <div className="font-extrabold">{title}</div>
@@ -336,16 +321,12 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
           </p>
         </div>
         <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featureGroups.map(({ icon: Icon, title, items, card, chip, tick }) => (
+          {featureGroups.map(({ icon3d, title, items, card, tick }) => (
             <div
               key={title}
               className={`flex flex-col gap-4 rounded-[26px] border-2 border-dashed bg-white p-7 shadow-[0_10px_30px_rgba(31,43,87,0.06)] ${card}`}
             >
-              <span
-                className={`flex h-[54px] w-[54px] items-center justify-center rounded-[18px] ${chip}`}
-              >
-                <Icon className="h-[26px] w-[26px]" aria-hidden="true" />
-              </span>
+              <Icon3D name={icon3d} size={64} className="-ml-1" />
               <h3 className="text-[25px] font-semibold">{title}</h3>
               <ul className="flex flex-col gap-2.5 text-[15px]">
                 {items.map((i) => (

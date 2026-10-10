@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowRight, Check, Lightbulb, LogIn, NotebookPen, type LucideIcon } from 'lucide-react'
+import { ArrowRight, LogIn, NotebookPen, type LucideIcon } from 'lucide-react'
+import { Icon3D, type Icon3DName } from '@/components/ui/Icon3D'
 import { Mascot } from '@/components/marketing/Mascot'
 import { formatCurrency } from '@/lib/utils'
 import type { MonthFeeSplit, SmartTip } from '@/lib/dashboard/home'
@@ -12,12 +13,14 @@ const chunky =
 
 export function Card({
   title,
+  icon3d,
   action,
   children,
   id,
   className = '',
 }: {
   title: string
+  icon3d?: Icon3DName
   action?: React.ReactNode
   children: React.ReactNode
   id?: string
@@ -30,7 +33,10 @@ export function Card({
       className={`flex min-w-0 flex-col gap-4 rounded-3xl bg-surface p-5 shadow-card ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
+        <h2 className="flex items-center gap-2.5 text-xl font-semibold text-text-primary">
+          {icon3d && <Icon3D name={icon3d} size={32} />}
+          {title}
+        </h2>
         {action}
       </div>
       {children}
@@ -120,7 +126,7 @@ export function StatTile({
   sub,
   subTone = 'muted',
   tone,
-  icon: Icon,
+  icon3d,
   href,
 }: {
   label: string
@@ -128,7 +134,7 @@ export function StatTile({
   sub: string
   subTone?: 'muted' | 'good' | 'warn'
   tone: Tone
-  icon: LucideIcon
+  icon3d: Icon3DName
   href: string
 }) {
   const t = TONES[tone]
@@ -139,11 +145,11 @@ export function StatTile({
     >
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-extrabold text-text-primary">{label}</span>
-        <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.16)] ${t.chip}`}
-        >
-          <Icon className="h-5 w-5" aria-hidden="true" />
-        </span>
+        <Icon3D
+          name={icon3d}
+          size={52}
+          className="-my-2 transition-transform group-hover:-rotate-6 group-hover:scale-110"
+        />
       </div>
       <span className={`font-display text-[32px] font-bold leading-none ${t.value}`}>{value}</span>
       <span
@@ -174,6 +180,7 @@ export function AttentionCard({ items }: { items: AttentionItem[] }) {
   return (
     <Card
       id="attention"
+      icon3d="bell"
       title="Needs attention"
       action={
         <span
@@ -186,9 +193,7 @@ export function AttentionCard({ items }: { items: AttentionItem[] }) {
     >
       {items.length === 0 ? (
         <div className="flex items-center gap-3 rounded-2xl bg-success-light p-4">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2b8a3e] text-white">
-            <Check className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
-          </span>
+          <Icon3D name="party" size={44} />
           <span>
             <span className="block font-extrabold text-text-primary">All clear 🎉</span>
             <span className="text-sm text-text-secondary">Nothing needs your attention.</span>
@@ -238,7 +243,11 @@ export function RoomsNowCard({
   capacityByRoom: Map<string, number | null>
 }) {
   return (
-    <Card title="Rooms right now" action={<PillLink href="/admin/ratios">Ratios ›</PillLink>}>
+    <Card
+      title="Rooms right now"
+      icon3d="school"
+      action={<PillLink href="/admin/ratios">Ratios ›</PillLink>}
+    >
       {rooms.length === 0 ? (
         <p className="text-sm text-text-secondary">
           Add your rooms to see live numbers and ratios here.{' '}
@@ -305,6 +314,7 @@ export function FeesDonutCard({ split, monthLabel }: { split: MonthFeeSplit; mon
   const collectedPct = split.totalCents ? Math.round((split.paidCents / split.totalCents) * 100) : 0
   return (
     <Card
+      icon3d="moneybag"
       title={`Fees for ${monthLabel}`}
       action={<PillLink href="/admin/fees/due">Fees due ›</PillLink>}
     >
@@ -396,7 +406,11 @@ const AVATAR_TINTS = [
 
 export function ArrivalsCard({ arrivals }: { arrivals: Arrival[] }) {
   return (
-    <Card title="Today's arrivals" action={<PillLink href="/admin/check-in">Check-in ›</PillLink>}>
+    <Card
+      title="Today's arrivals"
+      icon3d="wave"
+      action={<PillLink href="/admin/check-in">Check-in ›</PillLink>}
+    >
       {arrivals.length === 0 ? (
         <p className="text-sm text-text-secondary">No children checked in yet today.</p>
       ) : (
@@ -437,9 +451,7 @@ export function SmartTipCard({ tip }: { tip: SmartTip }) {
       aria-label="Smart tip"
       className={`flex flex-wrap items-center gap-4 rounded-3xl p-5 shadow-card ${tip.allClear ? 'bg-success-light' : 'bg-gradient-to-br from-[#fff4c7] to-[#ffe9a8]'}`}
     >
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent-sunny text-text-primary shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)]">
-        <Lightbulb className="h-6 w-6" aria-hidden="true" />
-      </span>
+      <Icon3D name={tip.allClear ? 'party' : 'bulb'} size={56} />
       <div className="min-w-0 flex-[1_1_280px]">
         <p className="text-xs font-extrabold uppercase tracking-[0.06em] text-text-secondary">
           Smart tip

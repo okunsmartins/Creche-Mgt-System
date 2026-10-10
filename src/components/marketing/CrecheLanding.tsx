@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowRight, Check, Lock, Mail, MapPin, Phone, Smartphone } from 'lucide-react'
+import { ArrowRight, Check, Lock, MapPin } from 'lucide-react'
 import type { School } from '@/lib/tenant/server'
 import { RainbowText } from '@/components/ui/RainbowText'
+import { Icon3D } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
 import { WaitingListForm } from './WaitingListForm'
 
@@ -145,12 +146,10 @@ export function CrecheLanding({
               )}
             </div>
             <div className="absolute bottom-0 right-0 flex h-[170px] w-[200px] items-center justify-center rounded-[38px] border-[6px] border-white bg-[repeating-linear-gradient(135deg,#ffe7a8_0_12px,#fff0c4_12px_24px)] shadow-[0_16px_36px_rgba(31,43,87,0.15)]">
-              <Star size={64} color="#F7931E" />
+              <Icon3D name="house" size={96} />
             </div>
             <div className="absolute bottom-8 left-0 flex items-center gap-3 rounded-[18px] bg-white px-4 py-3 shadow-[0_14px_34px_rgba(31,43,87,0.14)]">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-light text-primary">
-                <Smartphone className="h-[22px] w-[22px]" />
-              </span>
+              <Icon3D name="mobile" size={40} />
               <span className="leading-tight">
                 <span className="block text-sm font-extrabold">Parent app</span>
                 <span className="text-xs font-semibold text-text-secondary">
@@ -172,9 +171,7 @@ export function CrecheLanding({
           <div className="grid gap-5 rounded-[26px] bg-white p-6 shadow-[0_18px_46px_rgba(31,43,87,0.09)] sm:grid-cols-3">
             {address.length > 0 && (
               <div className="flex items-start gap-3.5">
-                <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-secondary-light text-secondary">
-                  <MapPin className="h-6 w-6" aria-hidden="true" />
-                </span>
+                <Icon3D name="pin" size={44} />
                 <span>
                   <span className="block font-extrabold">Find us</span>
                   <span className="text-sm text-text-secondary">{address.join(', ')}</span>
@@ -183,9 +180,7 @@ export function CrecheLanding({
             )}
             {school.phone && (
               <div className="flex items-start gap-3.5">
-                <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-[#fff1d6] text-[#9a6b00]">
-                  <Phone className="h-6 w-6" aria-hidden="true" />
-                </span>
+                <Icon3D name="phone" size={44} />
                 <span>
                   <span className="block font-extrabold">Call us</span>
                   <a href={`tel:${school.phone.replace(/\s+/g, '')}`} className="text-sm underline">
@@ -196,9 +191,7 @@ export function CrecheLanding({
             )}
             {school.email && (
               <div className="flex items-start gap-3.5">
-                <span className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-primary-light text-primary">
-                  <Mail className="h-6 w-6" aria-hidden="true" />
-                </span>
+                <Icon3D name="envelope" size={44} />
                 <span className="min-w-0">
                   <span className="block font-extrabold">Email us</span>
                   <a href={`mailto:${school.email}`} className="break-all text-sm underline">
