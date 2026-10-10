@@ -24,6 +24,9 @@ describe('parseWebsiteEnquiry', () => {
         childFirstName: null,
         childDob: null,
         desiredStartDate: null,
+        days: [],
+        wantsVisit: false,
+        message: null,
         notes: null,
       },
     })

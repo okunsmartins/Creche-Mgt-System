@@ -60,7 +60,7 @@ export function WaitingListForm({ schoolName }: { schoolName: string }) {
         <CheckCircle2 className="h-8 w-8 text-success" aria-hidden="true" />
         <p className="font-display text-2xl font-bold">Thank you — we&apos;ve got your enquiry</p>
         <p className="text-text-secondary">
-          The team at {schoolName} will be in touch by email soon.
+          We&apos;ve emailed you a confirmation, and the team at {schoolName} will be in touch soon.
         </p>
       </div>
     )
