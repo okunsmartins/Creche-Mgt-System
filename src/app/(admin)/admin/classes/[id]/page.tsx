@@ -50,7 +50,7 @@ export default async function EditClassPage({ params }: { params: Promise<{ id: 
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-text-primary">Edit {cls.name}</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Update the staff assignment and status for this room.
+          Rename the room or change its places, lead staff and status.
         </p>
       </div>
 
