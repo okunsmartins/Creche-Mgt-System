@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Check } from 'lucide-react'
+import { Mascot } from '@/components/marketing/Mascot'
 import { serverEnv } from '@/lib/env'
 import { getProPrices } from '@/lib/stripe/prices'
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton'
@@ -57,7 +58,7 @@ export default async function PricingPage({
       {/* Hero */}
       <section
         className="py-16 text-text-primary md:py-20"
-        style={{ background: 'radial-gradient(ellipse at top, #d6f4f2 0%, #fff8ee 62%)' }}
+        style={{ background: 'linear-gradient(160deg, #ece4ff 0%, #f5eefe 45%, #fff8ec 100%)' }}
       >
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
@@ -76,16 +77,16 @@ export default async function PricingPage({
 
       {/* Plans */}
       <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 pt-[100px] md:grid-cols-2">
           {/* Free trial — no card */}
-          <div className="card flex flex-col p-6">
-            <h2 className="text-lg font-semibold text-text-primary">
+          <div className="card flex h-full flex-col p-7">
+            <h2 className="font-display text-2xl font-bold text-text-primary">
               {TRIAL_PERIOD_DAYS}-day free trial
             </h2>
             <p className="mt-1 text-sm text-text-muted">
               Full access to every feature — <strong>no card required</strong> to start.
             </p>
-            <p className="mt-4 text-3xl font-bold text-text-primary">
+            <p className="mt-4 font-display text-5xl font-bold text-text-primary">
               €0
               <span className="text-base font-normal text-text-muted">
                 {' '}
@@ -97,64 +98,87 @@ export default async function PricingPage({
             </p>
             <Link
               href="/get-started"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-text-primary transition-colors hover:border-primary/40 hover:bg-surface-raised"
+              className="mt-auto inline-flex min-h-[48px] w-full items-center justify-center rounded-full border-2 border-primary/30 bg-surface px-4 text-sm font-extrabold text-primary transition-colors hover:border-primary"
             >
-              Create your portal
+              Start your free month
             </Link>
           </div>
 
           {/* The single Creche Wise plan */}
-          <div className="card relative flex flex-col border-primary/40 p-6 shadow-glow">
-            <div className="absolute -top-3 right-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-primary-foreground">
-              Everything included
+          <div className="relative h-full">
+            {/* The laughing Creche Wise teddy peeking over the plan, paws on the edge */}
+            <div aria-hidden="true" className="absolute right-6 top-0 z-0 -translate-y-[96px]">
+              <Mascot size={132} mood="laugh" />
             </div>
-            <h2 className="text-lg font-semibold text-text-primary">Creche Wise</h2>
-            <p className="mt-1 text-sm text-text-muted">
-              Every feature, SMS included — after your free trial.
-            </p>
-            <p className="mt-4 text-3xl font-bold text-text-primary">
-              {prices.monthly ?? '€—'}
-              <span className="text-base font-normal text-text-muted">/month</span>
-            </p>
-            {prices.annual && (
+            <div
+              aria-hidden="true"
+              className="absolute right-6 top-0 z-20 flex w-[132px] -translate-y-[14px] justify-center gap-[46px]"
+            >
+              <span className="h-6 w-8 rounded-full bg-[#c98a4b] shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)]" />
+              <span className="h-6 w-8 rounded-full bg-[#c98a4b] shadow-[inset_0_-3px_0_rgba(0,0,0,0.12)]" />
+            </div>
+            <div className="card relative z-10 flex h-full flex-col border-2 !border-primary/40 p-7 shadow-glow">
+              <div className="absolute -top-3.5 left-6 rounded-full bg-secondary px-3.5 py-1 text-xs font-extrabold text-white">
+                Everything included
+              </div>
+              <h2 className="font-display text-2xl font-bold text-text-primary">Creche Wise</h2>
               <p className="mt-1 text-sm text-text-muted">
-                or {prices.annual}/year —{' '}
-                <span className="font-semibold text-primary">save 10%</span>
+                Every feature, SMS included — after your free trial.
               </p>
-            )}
-            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              ✓ Cancel anytime — no lock-in
-            </p>
-
-            <div className="mt-6 space-y-3">
-              {subscriptionsEnabled ? (
-                <>
-                  {monthlyPriceId && (
-                    <SubscribeButton
-                      priceId={monthlyPriceId}
-                      label={
-                        prices.monthly ? `Subscribe — ${prices.monthly}/month` : 'Subscribe monthly'
-                      }
-                    />
-                  )}
-                  {annualPriceId && (
-                    <SubscribeButton
-                      priceId={annualPriceId}
-                      label={
-                        prices.annual ? `Subscribe — ${prices.annual}/year` : 'Subscribe annually'
-                      }
-                    />
-                  )}
-                </>
-              ) : (
-                <p className="rounded-md border border-border bg-surface px-4 py-3 text-center text-sm text-text-muted">
-                  Subscriptions are being set up — check back soon.
+              <p className="mt-4 font-display text-5xl font-bold text-text-primary">
+                {prices.monthly ?? '€75'}
+                <span className="font-sans text-base font-semibold text-text-muted">
+                  /month per crèche
+                </span>
+              </p>
+              <p className="mt-1 text-sm font-semibold text-text-secondary">
+                Unlimited children · Unlimited rooms
+              </p>
+              {prices.annual && (
+                <p className="mt-1 text-sm text-text-muted">
+                  or {prices.annual}/year —{' '}
+                  <span className="font-semibold text-primary">save 10%</span>
                 </p>
               )}
-              <p className="text-center text-xs text-text-muted">
-                No card needed to start your trial. Subscribe anytime from your admin portal. Admin
-                sign-in required.
+              <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                ✓ Cancel anytime — no lock-in
               </p>
+
+              <div className="mt-6 space-y-3">
+                {subscriptionsEnabled ? (
+                  <>
+                    {monthlyPriceId && (
+                      <SubscribeButton
+                        priceId={monthlyPriceId}
+                        label={
+                          prices.monthly
+                            ? `Subscribe — ${prices.monthly}/month`
+                            : 'Subscribe monthly'
+                        }
+                      />
+                    )}
+                    {annualPriceId && (
+                      <SubscribeButton
+                        priceId={annualPriceId}
+                        label={
+                          prices.annual ? `Subscribe — ${prices.annual}/year` : 'Subscribe annually'
+                        }
+                      />
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href="/get-started"
+                    className="inline-flex min-h-[50px] w-full items-center justify-center rounded-full bg-gradient-to-r from-[#c2255c] via-[#7048e8] to-primary px-4 text-base font-extrabold text-white shadow-[0_10px_24px_-8px_rgba(112,72,232,0.6)] hover:opacity-95"
+                  >
+                    Start your free month
+                  </Link>
+                )}
+                <p className="text-center text-xs text-text-muted">
+                  No card needed to start your trial. Subscribe anytime from your admin portal.
+                  Admin sign-in required.
+                </p>
+              </div>
             </div>
           </div>
         </div>

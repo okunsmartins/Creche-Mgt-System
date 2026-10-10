@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Mascot } from '@/components/marketing/Mascot'
 
 const currentYear = new Date().getFullYear()
 
@@ -57,7 +58,10 @@ export function SiteFooter({
     <footer className="bg-[#1f2b57] text-[#d7dce3]">
       <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-8 px-4 pb-6 pt-10 sm:px-6 lg:px-8">
         <div className="max-w-xs">
-          <p className="font-display text-xl font-bold text-white">Creche Wise</p>
+          <p className="flex items-center gap-2.5 font-display text-xl font-bold text-white">
+            <Mascot size={40} />
+            Creche Wise
+          </p>
           <p className="mt-2 text-sm">
             Crèche management for Ireland: fees, funding, ratios, staff and parents in one place.
           </p>
