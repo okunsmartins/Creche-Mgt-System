@@ -3,21 +3,26 @@ import Link from 'next/link'
 import { createSupabaseAdminClient, createSupabaseServerClient } from '@/lib/supabase/server'
 import { InviteForms } from '@/components/parent-invites/InviteForms'
 import { InviteAuthedButton } from '@/components/parent-invites/InviteAuthedButton'
+import { TeddyShell } from '@/components/auth/TeddyShell'
 
 export const metadata: Metadata = { title: 'Your invite' }
 
 function InvalidInvite() {
   return (
-    <div className="mx-auto max-w-md px-4 py-16 text-center sm:px-6">
-      <h1 className="mb-3 text-2xl font-bold text-text-primary">Invite not available</h1>
-      <p className="mb-6 text-text-secondary">
-        This invite link is invalid, has already been used, or has expired. Please ask your crèche
-        for a new one.
-      </p>
-      <Link href="/login" className="text-primary hover:underline">
-        Go to sign in
-      </Link>
-    </div>
+    <TeddyShell>
+      <div className="card text-center">
+        <h1 className="mb-3 font-display text-2xl font-bold text-text-primary">
+          Invite not available
+        </h1>
+        <p className="mb-6 text-text-secondary">
+          This invite link is invalid, has already been used, or has expired. Please ask your crèche
+          for a new one.
+        </p>
+        <Link href="/login" className="font-extrabold text-[#6d3fd1] hover:underline">
+          Go to sign in
+        </Link>
+      </div>
+    </TeddyShell>
   )
 }
 
@@ -64,16 +69,19 @@ export default async function ParentInvitePage({ params }: { params: Promise<{ t
   } = await supabase.auth.getUser()
 
   return (
-    <div className="mx-auto max-w-md px-4 py-12 sm:px-6">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-text-primary">Welcome to {schoolName}</h1>
-        <p className="mt-2 text-sm text-text-secondary">
+    <TeddyShell
+      footer={
+        <>This link is personal to {childName}&rsquo;s family — please don&rsquo;t share it.</>
+      }
+    >
+      <div className="card">
+        <h1 className="text-center font-display text-3xl font-bold text-text-primary">
+          Welcome to {schoolName}
+        </h1>
+        <p className="mb-6 mt-1 text-center text-sm font-semibold text-text-secondary">
           You&rsquo;ve been invited to the parent portal for <strong>{childName}</strong>. Set up
           your account below to see daily records, fees, messages and more.
         </p>
-      </div>
-
-      <div className="card p-6">
         {user ? (
           <div className="space-y-4">
             <p className="text-sm text-text-secondary">
@@ -85,10 +93,6 @@ export default async function ParentInvitePage({ params }: { params: Promise<{ t
           <InviteForms token={token} email={invite.email ?? undefined} />
         )}
       </div>
-
-      <p className="mt-6 text-center text-xs text-text-muted">
-        This link is personal to {childName}&rsquo;s family — please don&rsquo;t share it.
-      </p>
-    </div>
+    </TeddyShell>
   )
 }
