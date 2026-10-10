@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { SocialLinks } from '@/components/social/SocialLinks'
+import type { SocialLink } from '@/lib/social/links'
 import { Mascot } from '@/components/marketing/Mascot'
 
 const currentYear = new Date().getFullYear()
@@ -20,7 +22,13 @@ const linkClass = 'text-sm text-[#d7dce3] transition-colors hover:text-white'
 export function SiteFooter({
   schoolName,
   tenantSlug,
-}: { schoolName?: string | null; tenantSlug?: string | null } = {}) {
+  socialLinks = [],
+}: {
+  schoolName?: string | null
+  tenantSlug?: string | null
+  /** The crèche's (or, on platform pages, Creche Wise's) social links. */
+  socialLinks?: SocialLink[]
+} = {}) {
   // Keep a `/s/<school>` path prefix on crèche links so they stay in the crèche.
   const withTenant = (href: string) => (tenantSlug ? `/s/${tenantSlug}${href}` : href)
   // Inside a crèche's own portal the footer belongs to the crèche, with a small
@@ -39,10 +47,11 @@ export function SiteFooter({
             </Link>
           </nav>
         </div>
-        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
           <p>
             &copy; {currentYear} {schoolName}
           </p>
+          <SocialLinks links={socialLinks} schoolName={schoolName} size={34} />
           <p>
             Powered by{' '}
             <a href="https://crechewise.com" className="font-extrabold text-white">
@@ -92,8 +101,9 @@ export function SiteFooter({
           </a>
         </div>
       </div>
-      <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-2 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
         <p>&copy; {currentYear} First Stack Solutions. All rights reserved.</p>
+        <SocialLinks links={socialLinks} schoolName="Creche Wise" size={34} />
         <p>Payments secured by Stripe &amp; Revolut</p>
       </div>
     </footer>

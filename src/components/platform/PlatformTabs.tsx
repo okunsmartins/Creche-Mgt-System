@@ -8,6 +8,7 @@ const tabs = [
   { href: '/platform/revenue', label: 'Revenue' },
   { href: '/platform/schools', label: 'Schools' },
   { href: '/platform/signups', label: 'Sign-ups' },
+  { href: '/platform/settings', label: 'Settings' },
 ]
 
 export function PlatformTabs() {

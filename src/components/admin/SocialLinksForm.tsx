@@ -7,22 +7,24 @@ import { SOCIAL_PLATFORMS, type SocialLink } from '@/lib/social/links'
 import { saveSocialLinksAction, type SocialLinksState } from '@/lib/social/actions'
 import { SOCIAL_GLYPHS } from '@/components/social/socialGlyphs'
 
-/** Crèche Settings → Social media: one optional link per network. */
-export function SocialLinksForm({ links }: { links: SocialLink[] }) {
-  const [state, action, pending] = useActionState<SocialLinksState, FormData>(
-    saveSocialLinksAction,
-    null,
-  )
+/** Social media settings: one optional link per network (crèche or platform). */
+export function SocialLinksForm({
+  links,
+  action: saveAction = saveSocialLinksAction,
+  description = "Add your crèche's pages and they appear as buttons on your sign-in page, your public page and the page footer. Leave a box empty to hide that network.",
+}: {
+  links: SocialLink[]
+  action?: (prev: SocialLinksState, formData: FormData) => Promise<SocialLinksState>
+  description?: string
+}) {
+  const [state, action, pending] = useActionState<SocialLinksState, FormData>(saveAction, null)
   const current = new Map(links.map((l) => [l.key, l.url]))
 
   return (
     <form action={action} className="card space-y-4 p-6" noValidate>
       <div>
         <h2 className="text-lg font-bold text-text-primary">Social media</h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Add your crèche&apos;s pages and they appear as buttons on your sign-in page and your
-          public page. Leave a box empty to hide that network.
-        </p>
+        <p className="mt-1 text-sm text-text-secondary">{description}</p>
       </div>
 
       {state?.ok && <Alert variant="success">Social links saved.</Alert>}

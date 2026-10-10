@@ -238,6 +238,13 @@ export interface UserRoleRow {
   created_at: string
 }
 
+/** Platform-wide settings (migration 109), e.g. Creche Wise's own social links. */
+export interface PlatformSettingRow {
+  key: string
+  value: string
+  updated_at: string
+}
+
 export interface SchoolSettingRow {
   id: string
   school_id: string
@@ -757,6 +764,12 @@ export interface Database {
         Row: UserRoleRow
         Insert: Omit<UserRoleRow, 'id' | 'created_at'>
         Update: Partial<Omit<UserRoleRow, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      platform_settings: {
+        Row: PlatformSettingRow
+        Insert: Omit<PlatformSettingRow, 'updated_at'>
+        Update: Partial<Omit<PlatformSettingRow, 'key' | 'updated_at'>>
         Relationships: []
       }
       school_settings: {
