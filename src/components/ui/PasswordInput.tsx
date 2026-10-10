@@ -15,6 +15,7 @@ export function PasswordInput({
   id,
   required,
   disabled,
+  leftIcon,
   ...props
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false)
@@ -34,6 +35,14 @@ export function PasswordInput({
       )}
 
       <div className="relative">
+        {leftIcon && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-text-muted"
+          >
+            {leftIcon}
+          </span>
+        )}
         <input
           id={inputId}
           type={visible ? 'text' : 'password'}
@@ -42,6 +51,7 @@ export function PasswordInput({
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           className={cn(
             'input-base pr-10',
+            leftIcon ? 'pl-10' : null,
             error && 'border-error focus:border-error focus:ring-error',
             className,
           )}

@@ -3,6 +3,8 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { SchoolSettingsForm } from '@/components/admin/SchoolSettingsForm'
 import { SchoolLogoUploader } from '@/components/admin/SchoolLogoUploader'
+import { SocialLinksForm } from '@/components/admin/SocialLinksForm'
+import { getSchoolSocialLinks } from '@/lib/social/queries'
 import {
   updateSchoolSettingsAction,
   updateSchoolLogoAction,
@@ -44,6 +46,7 @@ export default async function SchoolSettingsPage() {
     .single()
 
   const school = data as SchoolSettingsRow | null
+  const socialLinks = await getSchoolSocialLinks(admin.schoolId)
   if (!school) {
     return <p className="text-error">Could not load your crèche details.</p>
   }
@@ -82,6 +85,10 @@ export default async function SchoolSettingsPage() {
           eircode: school.eircode ?? '',
         }}
       />
+
+      <div id="social" className="mt-8 scroll-mt-24">
+        <SocialLinksForm links={socialLinks} />
+      </div>
     </div>
   )
 }

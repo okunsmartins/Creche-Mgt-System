@@ -5,6 +5,8 @@ import { RainbowText } from '@/components/ui/RainbowText'
 import { Icon3D } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
 import { WaitingListForm } from './WaitingListForm'
+import { SocialLinks } from '@/components/social/SocialLinks'
+import type { SocialLink } from '@/lib/social/links'
 
 // A crèche's own parent-facing page (tenant resolved). Only shows facts the crèche
 // has actually entered — name, logo, rooms, contact details — and hides a section
@@ -55,10 +57,12 @@ export function CrecheLanding({
   school,
   rooms,
   withTenant,
+  socialLinks = [],
 }: {
   school: School
   rooms: CrecheRoom[]
   withTenant: (href: string) => string
+  socialLinks?: SocialLink[]
 }) {
   const address = [
     school.address_line1,
@@ -374,6 +378,17 @@ export function CrecheLanding({
               app, with any ECCE or NCS funding you&apos;re due already taken off.
             </p>
           </div>
+          {socialLinks.length > 0 && (
+            <div className="rounded-[32px] bg-white p-7 shadow-[0_10px_30px_rgba(31,43,87,0.06)]">
+              <h3 className="text-2xl font-bold">Follow us</h3>
+              <p className="mt-1 text-text-secondary">See what we get up to day to day.</p>
+              <SocialLinks
+                links={socialLinks}
+                schoolName={school.name}
+                className="mt-4 !justify-start"
+              />
+            </div>
+          )}
           {hasContact && (
             <div className="rounded-[32px] bg-[#f3eeff] p-7">
               <h3 className="text-2xl font-bold">Find us</h3>
