@@ -8,6 +8,7 @@ import { checkRateLimit } from '@/lib/rateLimit'
 import { getResend } from '@/lib/email/client'
 import { buildEmailFrom } from '@/lib/email/from'
 import { logger } from '@/lib/logging'
+import { getPortalOwnerEmail } from '@/lib/tenant/owner'
 import { parseWebsiteEnquiry } from './website'
 import { buildCrecheNotificationEmail, buildParentConfirmationEmail } from './website-emails'
 
@@ -15,41 +16,6 @@ export type WebsiteEnquiryState = { ok: true } | { ok: false; error: string } | 
 
 /** Max form submissions per email address, per crèche, per hour (anti-abuse). */
 const MAX_PER_EMAIL_PER_HOUR = 3
-
-type Db = ReturnType<typeof createSupabaseAdminClient>
-
-/**
- * Where to tell the crèche about a new enquiry: its contact email if set, else the
- * login emails of its admins (school_admin / super_admin) — never a platform address,
- * so one crèche's enquiries can't reach anyone outside it.
- */
-async function crecheRecipients(db: Db, schoolId: string, schoolEmail: string | null) {
-  if (schoolEmail) return [schoolEmail]
-  const { data: roleRows } = await db
-    .from('roles')
-    .select('id')
-    .in('name', ['school_admin', 'super_admin'])
-  const roleIds = ((roleRows as { id: string }[] | null) ?? []).map((r) => r.id)
-  if (!roleIds.length) return []
-  const { data: urRows } = await db
-    .from('user_roles')
-    .select('user_id')
-    .eq('school_id', schoolId)
-    .in('role_id', roleIds)
-  const userIds = [
-    ...new Set(((urRows as { user_id: string }[] | null) ?? []).map((r) => r.user_id)),
-  ]
-  if (!userIds.length) return []
-  const { data: profiles } = await db
-    .from('profiles')
-    .select('email, is_active')
-    .in('id', userIds)
-    .eq('school_id', schoolId)
-  return ((profiles as { email: string | null; is_active: boolean }[] | null) ?? [])
-    .filter((p) => p.is_active && p.email)
-    .map((p) => p.email as string)
-    .slice(0, 5)
-}
 
 /**
  * Public waiting-list / visit form on any crèche's own page. Anonymous, so the crèche
@@ -116,18 +82,24 @@ export async function submitWebsiteEnquiryAction(
   revalidatePath('/admin/enquiries')
 
   // Emails are best-effort: the enquiry is already saved either way.
-  const team = await crecheRecipients(db, school.id, school.email)
+  // Platform rule: the crèche is notified at the email that SET UP its portal (its
+  // first admin). Its public contact email is only a fallback if that account is
+  // gone. Never a platform address, so enquiries can't leave the crèche.
+  const ownerEmail = await getPortalOwnerEmail(db, school.id)
+  const team = [ownerEmail ?? school.email].filter((x): x is string => !!x)
+  // Parents reply to the crèche's public contact email if it has one, else the owner.
+  const replyContact = school.email ?? ownerEmail ?? null
   const from = buildEmailFrom(school.name)
   const resend = getResend()
 
-  const parentMail = buildParentConfirmationEmail(school.name, e, school.email ?? team[0] ?? null)
+  const parentMail = buildParentConfirmationEmail(school.name, e, replyContact)
   const crecheMail = buildCrecheNotificationEmail(school.name, e)
 
   const results = await Promise.allSettled([
     resend.emails.send({
       from,
       to: e.parentEmail,
-      ...(school.email || team[0] ? { replyTo: school.email ?? team[0]! } : {}),
+      ...(replyContact ? { replyTo: replyContact } : {}),
       subject: parentMail.subject,
       html: parentMail.html,
       text: parentMail.text,
