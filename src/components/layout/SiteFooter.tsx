@@ -51,7 +51,7 @@ export function SiteFooter({
           <p>
             &copy; {currentYear} {schoolName}
           </p>
-          <SocialLinks links={socialLinks} schoolName={schoolName} size={34} />
+          <SocialLinks links={socialLinks} schoolName={schoolName} size={34} showPlaceholders />
           <p>
             Powered by{' '}
             <a href="https://crechewise.com" className="font-extrabold text-white">
@@ -103,7 +103,7 @@ export function SiteFooter({
       </div>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-[#34407a] px-4 py-4 text-xs text-[#aeb6c2] sm:px-6 lg:px-8">
         <p>&copy; {currentYear} First Stack Solutions. All rights reserved.</p>
-        <SocialLinks links={socialLinks} schoolName="Creche Wise" size={34} />
+        <SocialLinks links={socialLinks} schoolName="Creche Wise" size={34} showPlaceholders />
         <p>Payments secured by Stripe &amp; Revolut</p>
       </div>
     </footer>
