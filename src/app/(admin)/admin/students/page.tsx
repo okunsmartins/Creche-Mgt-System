@@ -107,15 +107,20 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
       </div>
 
       {/* Filters */}
-      <form method="get" className="mb-5 flex flex-wrap gap-3">
+      <form method="get" className="mb-5 flex flex-wrap items-center gap-3">
         <input
           name="q"
           defaultValue={q}
           placeholder="Search name or code…"
-          className="input-base h-9 w-56"
+          className="input-base min-h-[44px] w-64 max-w-full"
           suppressHydrationWarning
         />
-        <select name="classId" defaultValue={classId} className="input-base h-9">
+        <select
+          name="classId"
+          defaultValue={classId}
+          aria-label="Room"
+          className="input-base min-h-[44px] w-auto min-w-[13rem] max-w-full pr-9"
+        >
           <option value="">All classes</option>
           {(classes ?? []).map((c) => (
             <option key={c.id} value={c.id}>
@@ -123,15 +128,20 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
             </option>
           ))}
         </select>
-        <select name="status" defaultValue={status} className="input-base h-9">
+        <select
+          name="status"
+          defaultValue={status}
+          aria-label="Status"
+          className="input-base min-h-[44px] w-auto min-w-[9rem] pr-9"
+        >
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
           <option value="all">All</option>
         </select>
-        <button type="submit" className="btn-primary h-9 px-4 text-sm">
+        <button type="submit" className="btn-primary min-h-[44px] px-5 text-sm">
           Filter
         </button>
-        <Link href="/admin/students" className="btn-outline h-9 px-4 text-sm">
+        <Link href="/admin/students" className="btn-outline min-h-[44px] px-5 text-sm">
           Clear
         </Link>
       </form>
