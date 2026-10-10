@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Shield, LogOut, LogIn } from 'lucide-react'
 import { MobileNav } from './MobileNav'
 import { SchoolCrest } from './SchoolCrest'
+import { Mascot } from '@/components/marketing/Mascot'
 import { signOutAction } from '@/lib/auth/actions'
 
 // School-facing nav — shown only inside a crèche's portal (a tenant is active).
@@ -85,7 +86,12 @@ export function SiteHeader({
           className="flex items-center gap-3"
           aria-label={`${brandName} home`}
         >
-          <SchoolCrest name={brandName} size={40} logoUrl={schoolLogoUrl} />
+          {schoolName ? (
+            <SchoolCrest name={brandName} size={40} logoUrl={schoolLogoUrl} />
+          ) : (
+            // The Creche Wise teddy is the platform's brand mark.
+            <Mascot size={44} className="-my-1" />
+          )}
           <span className="hidden font-display text-xl font-bold leading-tight text-text-primary sm:block">
             {brandName}
             {schoolName && (

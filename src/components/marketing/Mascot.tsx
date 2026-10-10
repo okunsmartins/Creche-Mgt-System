@@ -1,5 +1,17 @@
-/** The Creche Wise teddy-bear mascot (decorative). */
-export function Mascot({ size = 104, className }: { size?: number; className?: string }) {
+/**
+ * The Creche Wise teddy-bear mascot (decorative) — the brand's face. `smile` is the
+ * everyday look; `laugh` (happy closed eyes, open laughing mouth) is for moments
+ * like pricing and celebrations.
+ */
+export function Mascot({
+  size = 104,
+  className,
+  mood = 'smile',
+}: {
+  size?: number
+  className?: string
+  mood?: 'smile' | 'laugh'
+}) {
   return (
     <svg
       width={size}
@@ -15,18 +27,44 @@ export function Mascot({ size = 104, className }: { size?: number; className?: s
       <circle cx="90" cy="30" r="9" fill="#F2C99A" />
       <circle cx="60" cy="66" r="44" fill="#D9995A" />
       <ellipse cx="60" cy="80" rx="20" ry="15" fill="#F6D9B4" />
-      <circle cx="45" cy="60" r="5" fill="#1E2A3A" />
-      <circle cx="75" cy="60" r="5" fill="#1E2A3A" />
-      <circle cx="46.5" cy="58.5" r="1.6" fill="#FFFFFF" />
-      <circle cx="76.5" cy="58.5" r="1.6" fill="#FFFFFF" />
-      <ellipse cx="60" cy="74" rx="6" ry="4.5" fill="#1E2A3A" />
-      <path
-        d="M53 84 Q60 90 67 84"
-        stroke="#1E2A3A"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
-      />
+      {mood === 'laugh' ? (
+        <>
+          {/* Happy, squeezed-shut eyes */}
+          <path
+            d="M39 61 Q45 54 51 61"
+            stroke="#1E2A3A"
+            strokeWidth="3.4"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <path
+            d="M69 61 Q75 54 81 61"
+            stroke="#1E2A3A"
+            strokeWidth="3.4"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <ellipse cx="60" cy="72" rx="5.5" ry="4" fill="#1E2A3A" />
+          {/* Open laughing mouth with tongue */}
+          <path d="M49 79 Q60 80 71 79 Q69 93 60 93 Q51 93 49 79 Z" fill="#7A2E2E" />
+          <path d="M53 88 Q60 84 67 88 Q64 93 60 93 Q56 93 53 88 Z" fill="#F08A8A" />
+        </>
+      ) : (
+        <>
+          <circle cx="45" cy="60" r="5" fill="#1E2A3A" />
+          <circle cx="75" cy="60" r="5" fill="#1E2A3A" />
+          <circle cx="46.5" cy="58.5" r="1.6" fill="#FFFFFF" />
+          <circle cx="76.5" cy="58.5" r="1.6" fill="#FFFFFF" />
+          <ellipse cx="60" cy="74" rx="6" ry="4.5" fill="#1E2A3A" />
+          <path
+            d="M53 84 Q60 90 67 84"
+            stroke="#1E2A3A"
+            strokeWidth="3"
+            fill="none"
+            strokeLinecap="round"
+          />
+        </>
+      )}
       <circle cx="36" cy="77" r="5" fill="#F4A3A3" />
       <circle cx="84" cy="77" r="5" fill="#F4A3A3" />
     </svg>
