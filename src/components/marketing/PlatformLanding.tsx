@@ -3,6 +3,7 @@ import { ArrowRight, Check, Mail } from 'lucide-react'
 import { RainbowText } from '@/components/ui/RainbowText'
 import { Icon3D, type Icon3DName } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
+import { CountUp, LivePhoneFeed, RevealGroup } from './motion'
 
 // Creche Wise platform landing page (the bare apex, no crèche resolved). Ported from
 // the approved homepage mock-up. Figures inside the product previews are
@@ -160,7 +161,8 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             </span>
             <h1 className="mt-5 text-[clamp(40px,5.4vw,66px)] font-bold leading-[1.05]">
               Crèche admin, made <span className="text-primary">simple</span>,{' '}
-              <span className="text-secondary">secure</span> &amp; <RainbowText text="joyful." />
+              <span className="text-secondary">secure</span> &amp;{' '}
+              <RainbowText text="joyful." animateFrom={350} />
             </h1>
             <p className="mt-5 max-w-[540px] text-[19px] text-text-secondary">
               Fees with ECCE &amp; NCS worked out, daily check-in and ratios, staff rotas and a
@@ -169,14 +171,17 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/get-started"
-                className="inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-[17px] font-extrabold text-white transition-colors hover:bg-primary-hover"
+                className="cw-grow group inline-flex min-h-[52px] items-center gap-2.5 rounded-full bg-primary px-6 py-3.5 text-[17px] font-extrabold text-white transition-colors hover:bg-primary-hover hover:shadow-[0_12px_28px_-8px_rgba(36,99,214,0.6)]"
               >
                 Start your free month
-                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+                <span className="cw-arrow-swap" aria-hidden="true">
+                  <ArrowRight className="h-5 w-5" />
+                  <ArrowRight className="h-5 w-5" />
+                </span>
               </Link>
               <a
                 href="#demo"
-                className="inline-flex min-h-[52px] items-center rounded-full border-2 border-primary/25 bg-white px-6 py-3.5 text-[17px] font-extrabold text-text-primary transition-colors hover:border-primary"
+                className="cw-grow inline-flex min-h-[52px] items-center rounded-full border-2 border-primary/25 bg-white px-6 py-3.5 text-[17px] font-extrabold text-text-primary transition-colors hover:border-primary"
               >
                 Book a demo
               </a>
@@ -216,11 +221,32 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                   <span className="text-[13px] font-bold text-text-secondary">Thu 9 Oct</span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2.5">
-                  {[
-                    ['Children in today', '38 / 42', 'bg-primary-light', 'text-primary'],
-                    ['Rooms in ratio', '4 of 4', 'bg-[#eeeafe]', 'text-[#5b46d6]'],
-                    ['Fees this week', '€2,140', 'bg-[#fff4d1]', 'text-[#7a5600]'],
-                  ].map(([label, value, bg, fg]) => (
+                  {(
+                    [
+                      [
+                        'Children in today',
+                        <>
+                          <CountUp to={38} delay={300} /> / 42
+                        </>,
+                        'bg-primary-light',
+                        'text-primary',
+                      ],
+                      [
+                        'Rooms in ratio',
+                        <>
+                          <CountUp to={4} delay={300} duration={900} /> of 4
+                        </>,
+                        'bg-[#eeeafe]',
+                        'text-[#5b46d6]',
+                      ],
+                      [
+                        'Fees this week',
+                        <CountUp key="fees" prefix="€" to={2140} delay={300} />,
+                        'bg-[#fff4d1]',
+                        'text-[#7a5600]',
+                      ],
+                    ] as const
+                  ).map(([label, value, bg, fg]) => (
                     <div key={label} className={`rounded-2xl p-2.5 sm:p-3.5 ${bg}`}>
                       <div className="text-xs font-bold text-text-secondary">{label}</div>
                       <div className={`font-display text-xl font-bold sm:text-[26px] ${fg}`}>
@@ -237,10 +263,11 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                     ['EB', 'Emma Byrne', 'Toddlers', '08:42', 'bg-[#ffe6e1] text-[#c2412d]'],
                     ['JM', 'Jack Murphy', 'Wobblers', '08:51', 'bg-[#e1f1fd] text-[#1a6fb5]'],
                     ['AK', 'Aoife Kelly', 'Preschool', '09:05', 'bg-[#eeeafe] text-[#5b46d6]'],
-                  ].map(([initials, name, room, time, tint]) => (
+                  ].map(([initials, name, room, time, tint], i) => (
                     <div
                       key={name}
-                      className="flex items-center gap-3 rounded-[14px] bg-[#fbf8f1] px-3 py-2.5"
+                      className="cw-slide-in flex items-center gap-3 rounded-[14px] bg-[#fbf8f1] px-3 py-2.5"
+                      style={{ animationDelay: `${700 + i * 280}ms` }}
                     >
                       <span
                         className={`flex h-[34px] w-[34px] items-center justify-center rounded-full text-[13px] font-extrabold ${tint}`}
@@ -258,7 +285,8 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             </div>
             <div
               aria-hidden="true"
-              className="absolute right-0 top-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_14px_34px_rgba(30,42,58,0.16)]"
+              className="cw-pop absolute right-0 top-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_14px_34px_rgba(30,42,58,0.16)]"
+              style={{ animationDelay: '1700ms' }}
             >
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#dcf3e6]">
                 <Check className="h-[18px] w-[18px] text-[#1b7a45]" strokeWidth={3} />
@@ -270,7 +298,8 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             </div>
             <div
               aria-hidden="true"
-              className="absolute bottom-0 left-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_14px_34px_rgba(30,42,58,0.16)]"
+              className="cw-pop absolute bottom-0 left-0 flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 shadow-[0_14px_34px_rgba(30,42,58,0.16)]"
+              style={{ animationDelay: '2100ms' }}
             >
               <span className="text-[13px] leading-tight">
                 <strong className="block">Toddlers Room</strong>
@@ -280,7 +309,9 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                 1:5 · In ratio
               </span>
             </div>
-            <Mascot size={104} className="absolute -bottom-4 -right-2" />
+            <div className="absolute -bottom-4 -right-2">
+              <Mascot size={104} className="cw-bob" />
+            </div>
           </div>
         </div>
         <WaveEdge fill="#fff8ec" />
@@ -320,13 +351,13 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
             in separate spreadsheets again.
           </p>
         </div>
-        <div className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <RevealGroup stagger={110} className="mt-11 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {featureGroups.map(({ icon3d, title, items, card, tick }) => (
             <div
               key={title}
-              className={`flex flex-col gap-4 rounded-[26px] border-2 border-dashed bg-white p-7 shadow-[0_10px_30px_rgba(31,43,87,0.06)] ${card}`}
+              className={`group flex flex-col gap-4 rounded-[26px] border-2 border-dashed bg-white p-7 shadow-[0_10px_30px_rgba(31,43,87,0.06)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1.5 hover:shadow-[0_22px_44px_-12px_rgba(31,43,87,0.18)] ${card}`}
             >
-              <Icon3D name={icon3d} size={64} className="-ml-1" />
+              <Icon3D name={icon3d} size={64} className="cw-wiggle -ml-1" />
               <h3 className="text-[25px] font-semibold">{title}</h3>
               <ul className="flex flex-col gap-2.5 text-[15px]">
                 {items.map((i) => (
@@ -338,12 +369,12 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               </ul>
             </div>
           ))}
-        </div>
+        </RevealGroup>
       </section>
 
       {/* Product tour (illustrative sample data in the previews) */}
       <section id="tour" className="pb-6 pt-14">
-        <div className="mx-auto flex max-w-[1200px] flex-col gap-[72px] px-4 sm:px-8">
+        <RevealGroup className="mx-auto flex max-w-[1200px] flex-col gap-[72px] px-4 sm:px-8">
           {/* Fees */}
           <div className="flex flex-wrap items-center gap-12">
             <div className="min-w-0 flex-[1_1_400px]">
@@ -478,45 +509,11 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                 ]}
               />
             </div>
-            <div
-              className="flex min-w-0 flex-[1_1_420px] justify-center rounded-[30px] bg-[#e1f1fd] p-5 sm:p-11"
-              aria-hidden="true"
-            >
-              <div className="w-[270px] max-w-full rounded-[40px] bg-text-primary p-3 shadow-[0_24px_50px_rgba(30,42,58,0.25)]">
-                <div className="overflow-hidden rounded-[30px] bg-[#fff9ef]">
-                  <div className="bg-[#573c9b] px-[18px] pb-[18px] pt-[22px] text-white">
-                    <div className="font-display text-lg font-bold">Little Meadows Crèche</div>
-                    <div className="text-[13px] text-[#e4dcf7]">Good morning, Sarah</div>
-                  </div>
-                  <div className="flex flex-col gap-2.5 p-3.5 text-[13px]">
-                    <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-text-secondary">
-                      Emma&apos;s day
-                    </div>
-                    {[
-                      ['Nap', '12:30 – 13:50'],
-                      ['Lunch', 'Ate it all'],
-                      ['Art & craft', '2 photos'],
-                    ].map(([k, v]) => (
-                      <div
-                        key={k}
-                        className="flex justify-between rounded-[14px] bg-white px-3 py-2.5"
-                      >
-                        <span className="font-bold">{k}</span>
-                        <span className="font-bold text-text-secondary">{v}</span>
-                      </div>
-                    ))}
-                    <div className="rounded-[14px] bg-[#fff4d1] p-3">
-                      <div className="font-extrabold">Fees due · €200.00</div>
-                      <div className="mt-2 rounded-[10px] bg-[#573c9b] p-2 text-center font-extrabold text-white">
-                        Pay now
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="flex min-w-0 flex-[1_1_420px] justify-center rounded-[30px] bg-[#e1f1fd] p-5 sm:p-11">
+              <LivePhoneFeed />
             </div>
           </div>
-        </div>
+        </RevealGroup>
       </section>
 
       {/* Pricing */}
@@ -534,7 +531,11 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
           <div className="px-5 py-9 text-center sm:px-11">
             <div className="flex flex-wrap items-baseline justify-center gap-1.5">
               <span className="font-display text-[72px] font-bold leading-none">
-                {monthlyPrice}
+                {/^€\d+$/.test(monthlyPrice) ? (
+                  <CountUp prefix="€" to={Number(monthlyPrice.slice(1))} duration={1100} />
+                ) : (
+                  monthlyPrice
+                )}
               </span>
               <span className="text-lg font-bold text-text-secondary">/ month per crèche</span>
             </div>
@@ -624,7 +625,7 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
       <section className="bg-primary text-white">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-8 px-4 py-16 sm:px-8">
           <div className="flex min-w-0 flex-[1_1_520px] flex-wrap items-center gap-6">
-            <Mascot size={96} className="flex-none" />
+            <Mascot size={96} className="cw-bob flex-none" />
             <div className="min-w-0 flex-[1_1_300px]">
               <h2 className="text-[clamp(28px,3vw,40px)] font-bold leading-[1.15] text-white">
                 Ready to give your crèche its calm back?
