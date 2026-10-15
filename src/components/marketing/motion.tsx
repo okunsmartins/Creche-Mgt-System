@@ -38,29 +38,6 @@ function useInView<T extends Element>(threshold = 0.2) {
   return { ref, inView }
 }
 
-/** Fades + lifts its children in when scrolled into view (optionally staggered). */
-export function Reveal({
-  children,
-  delay = 0,
-  className = '',
-}: {
-  children: React.ReactNode
-  delay?: number
-  className?: string
-}) {
-  const { ref, inView } = useInView<HTMLDivElement>(0.15)
-  return (
-    <div
-      ref={ref}
-      className={`cw-reveal ${className}`}
-      data-shown={inView ? '' : undefined}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  )
-}
-
 /** Counts from 0 up to `to` when scrolled into view (renders the final value without JS). */
 export function CountUp({
   to,
@@ -209,8 +186,8 @@ export function LivePhoneFeed({ schoolName = 'Little Meadows Crèche' }: { schoo
 }
 
 /**
- * Like <Reveal>, but for a container whose DIRECT children should each fade up as
- * they scroll into view (optionally staggered) — no per-child wrappers needed.
+ * Fades + lifts each DIRECT child of a container in as it scrolls into view
+ * (optionally staggered) — no per-child wrappers needed.
  */
 export function RevealGroup({
   children,
