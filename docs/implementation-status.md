@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-10-08
+**Last updated:** 2026-10-15 (session review of PRs #87–#107 — see "Session 2026-10-09 → 2026-10-15")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -16,18 +16,24 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
-## Verification snapshot (2026-10-08)
+## Verification snapshot (2026-10-15, `main` @ PR #107 + review branch `chore/session-review-2026-10-15`)
 
 | Check | Command | Result |
 |---|---|---|
-| Unit/integration tests | `npm run test -- run` (`vitest run`) | ✅ **1001 passed / 93 files** (on `feat/late-collection-payments`, 2026-10-08) |
-| Type-check | `npm run type-check` (`tsc --noEmit`) | ✅ source clean (2026-10-08; ignore stale `.next/types` route stubs) |
-| Lint | `npm run lint` (`eslint src`) | ✅ clean (2026-10-08) |
-| Format | `npm run format:check` (`prettier --check`) | ✅ all `src/**` files match (2026-10-08; Prettier has no SQL parser — exclude `*.sql`) |
-| DB migrations 068–105 applied | verified via Supabase SQL editor | ✅ incl. 100 staff_attendance, **102 places_and_leavers, 103 audit invoice.sent, 104 late_collection, 105 invoice_payments — all applied 2026-10-08**. ⚠️ **101 student_meal_options NOT applied** (lives on unmerged `feat/child-meal-options`). |
+| Unit/component tests | `npx vitest run` | ✅ **1036 passed / 101 files** (2026-10-15, review branch; `main` alone = 1027 / 98) |
+| Type-check | `npx tsc --noEmit` | ✅ clean (2026-10-15; run `rm -rf .next/types` first if stale route stubs appear) |
+| Lint | `npx eslint src --ext .ts,.tsx` | ✅ clean (2026-10-15) |
+| Format | `npx prettier --check "src/**/*.{ts,tsx}"` | ✅ clean (2026-10-15; Prettier has no SQL parser — exclude `*.sql`) |
+| Production build | `npx next build` | ✅ exit 0, 124/124 pages (2026-10-15, `main` @ #107). Warnings are local-environment only: parent-folder lockfile (`outputFileTracingRoot`), Supabase edge-runtime `process.version` notice (pre-existing), `stripe_mrr_failed` from the placeholder key in local `.env.local`. Also green in CI on every merged PR #87–#107 |
+| DB migrations 068–109 applied | Supabase SQL editor (`xpbavfutfejlfbmnntyl`) | ✅ incl. **106 payment_links_programmes, 107 parent_invites, 108 audit `class.created`, 109 platform_settings** (all applied 2026-10-09 → 2026-10-10; 109 confirmed reachable via service role). ⚠️ **101 student_meal_options still NOT applied** (only on unmerged `feat/child-meal-options`). |
 
-> ⚠️ **The 2026-10-08 phases below are on OPEN PR BRANCHES, not yet on `main`.** Migrations 102–105 are applied to
-> the DB, but the code ships only when the PRs merge. See "Session 2026-10-08" and "Open PR branches" below.
+> ✅ The 2026-10-08 phases are **merged to `main`** (PRs #79–#86) and live. Their **payment** paths are still
+> **not verified end-to-end** — see "Session 2026-10-08".
+>
+> ⚠️ **Database note:** `xpbavfutfejlfbmnntyl` is now the **live production** database behind crechewise.com (a real
+> prospect, Angels Nest, trials on it). Treat any script that **writes** test rows — including
+> `scripts/verify-tenant-isolation.mjs` — as a production change: run it only with the owner's go-ahead, ideally against
+> a separate staging project.
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
 | Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
@@ -57,6 +63,126 @@ Hive Centre Phases 1–5** — all applied + DB-verified; 087 `core_funding_snap
 (`manager@angelsnest.ie`; password in the
 gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
 — scope every query by `school_id`.
+
+---
+
+## Session 2026-10-09 → 2026-10-15 — PRs #87–#107 (reviewed 2026-10-15)
+
+> All 21 PRs are **merged to `main` and deployed** (Vercel production status ✅ per merge). Spec references are given
+> where the master specification has a matching section (§7.3 enquiries/waiting list, §7.4 rooms & ratios, §7.8
+> occupancy, FEE-08 payments, §10 security); the visual redesign items were **owner-directed UX/branding** work with no
+> specific spec clause. ✅ = verified (automated test, or an explicitly-noted browser / live / owner check);
+> 🟡 = built + gated (tsc/lint/tests/CI build) but **not exercised end-to-end** — do **not** report as complete.
+
+### Verification (2026-10-15 review)
+- `tsc --noEmit` ✅ · `eslint src` ✅ · `prettier --check src` ✅ · `vitest run` ✅ **1036 / 101 files** (after the review
+  fixes below) · `next build` ✅ (exit 0, 124/124 pages; only local-environment warnings — see the snapshot table).
+- **Not run (and why):** Playwright E2E (`npm run test:e2e`, CI job still skipped); `scripts/verify-tenant-isolation.mjs`
+  (it **writes** test rows and the configured DB is now production — needs owner go-ahead or a staging project).
+
+### Review fixes made in this review (branch `chore/session-review-2026-10-15`)
+1. **A11y:** the footer social row, when it holds only faded placeholders (nothing saved yet), exposed an empty
+   labelled list to screen readers → now `aria-hidden` until at least one real link exists (`SocialLinks.tsx`).
+2. **Dead code:** removed the unused `Reveal` component (and earlier the trialled-then-rejected `ScrollPill`) from
+   `components/marketing/motion.tsx`.
+3. **Missing tests added (+9):** `SocialLinks` (safe new-tab links, placeholders never clickable, all-placeholder row
+   hidden from AT) ×4, `RainbowText` (screen-reader text, staggered letter delays) ×2, `Input` password **show/hide
+   toggle** + left icon ×3 (the #90 toggle previously had no test).
+
+### Completed requirements (verified)
+| Area | Spec | PR(s) | Evidence |
+|---|---|---|---|
+| Design system: rainbow palette (royal blue `#2463d6`, magenta `#d42a6b`, navy ink), Fredoka headings (self-hosted, OFL), pill buttons | UX/branding | #91 | Local + live render checks; muted text darkened to `#66708f` in #100 (WCAG AA on cream/white, computed) |
+| New crechewise.com homepage (hero dashboard preview, features, tour, pricing, demo, CTA) | UX/marketing | #92 | Browser-verified locally (desktop + 375px, no horizontal scroll) and live |
+| Crèche's own public page (`/s/<slug>`) — real rooms, contact strip, "Find us", footer "Powered by Creche Wise" | §7.3 (public enquiry) | #93 | Browser-verified on Angels Nest (rooms rendered from DB) |
+| **Public waiting-list / book-a-visit form** → Enquiries CRM + **crèche notification email** | §7.3 | #93, #98, #99 | Pure parsing + email builders unit-tested (5 + 4 tests); **owner confirmed live**: submitted on Angels Nest and received the notification at the portal-owner email |
+| Notifications go to the **portal owner's email** (first school_admin/super_admin), contact email only as fallback | §7.3 (owner rule) | #99 | Owner lookup checked read-only against prod (Angels Nest → owner's Gmail); Enquiries page shows the recipient |
+| Admin shell: blue top bar (working children search), cream sidebar with colour groups + collapsible sections | UX | #94 | Owner screenshot of the live admin (Angels Nest) |
+| Crèche-first admin dashboard (greeting, 4 tiles, Needs attention, Rooms right now, fees donut, arrivals, smart tip) | §7.4, §7.8, FEE-10 | #95 | `lib/dashboard/home` 8 unit tests; **owner screenshot of live dashboard with real data** |
+| Soft 3D icons (Fluent Emoji 3D, MIT; licence shipped in `public/icons/3d/LICENSE.txt`) | UX | #97, #102 | Live homepage serves the WebP assets; owner screenshot of dashboard icons |
+| Dashboard look on every admin page (3D page icon via `AdminMain` + scoped `.admin-main` CSS) | UX | #100 | Local check on Rooms-page markup; owner screenshot of Children page |
+| Teddy sign-in pages (login, register, password pages) + shared `TeddyShell` on `/get-started` | UX | #102, #103 | Browser-verified locally (desktop + mobile) and live HTML check |
+| Pricing shows **€75/month per crèche** fallback + laughing teddy; teddy as platform brand mark | Pricing | #104 | Browser-verified locally + live (`€75`, `month per crèche` in production HTML) |
+| Footer social icons (faded placeholders until set) | UX | #105, #106 | Live production HTML contains the six placeholders |
+| Homepage motion (letters, count-ups, arrivals, pop-ins, phone "video" with pause, reveal-on-scroll; all off under `prefers-reduced-motion`) | UX | #107 | Owner approved on localhost; each animation sampled via DOM in the browser; live HTML contains the motion classes |
+| Show/hide password on every password field | UX/a11y | #90 | **Unit test added in this review** (toggle + aria-pressed) |
+
+### Built but NOT fully verified — do not report as complete
+| Item | PR | Migration | Gap to close |
+|---|---|---|---|
+| Payment links for **programmes** | #87 | 106 ✅ | No guest payment completed against a programme link (needs a crèche with a connected payment account) |
+| **Parent invite link** (per child, 14-day token, sign-up / sign-in / linked-account paths) | #88 | 107 ✅ | Click-through not done: create invite → open `/invite/<token>` → create account → child appears in parent portal; token reuse/expiry not exercised |
+| Branded tenant emails for **invoice "send to parent", arrears reminder, late-collection alert, enquiry reply** | #89 | — | Only the waiting-list emails were received in practice; these four builders share `renderBrandedEmail` but were not sent live |
+| Waiting-list **family confirmation** email | #98 | — | Owner reported the form "works and I received it" (the crèche notification); the family-side confirmation was not separately confirmed |
+| **Add room / rename room** | #96 | 108 ✅ | `createClassAction` not exercised in the browser (no room created via UI yet); duplicate-name rejection relies on the existing `UNIQUE (school_id, name)` |
+| Children-page **filter fix** (44px fields, defined `.btn-primary/.btn-outline`) | #101 | — | Not viewed after deploy (admin login not used by the assistant) |
+| `/onboarding`, `/get-started/verify`, `/invite/<token>` in the teddy layout | #103 | — | Need a signed-in / tokenised session to render; only `/get-started` and `/register` were viewed |
+| **Crèche social links** (Crèche Settings → Social media) shown on sign-in, public page, footer | #102, #105 | — | Save path never exercised: **no social links are stored** for any crèche (checked read-only 2026-10-10) |
+| **Creche Wise platform social links** (Platform → Settings) | #105 | 109 ✅ | Save path never exercised; table confirmed reachable only |
+| Admin dashboard Week/Month/Term tabs, bell/sidebar count badges, "Finish setting up" checklist | #95 | — | **Not built** (intentional follow-ups) |
+
+### Outstanding work (not started)
+1. **E2E for this session's flows:** waiting-list submit (both emails), parent invite click-through, add/rename room,
+   social-link save → render, admin dashboard with seeded data — as Playwright specs once the E2E CI job is enabled.
+2. **Shared rate limiting:** `checkRateLimit` is in-memory per serverless instance; the public waiting-list form also
+   has a DB-backed per-email cap (3/hour/crèche), but a distributed limiter (e.g. Upstash) is still needed for the IP limit.
+3. **Tenant-isolation script** coverage for `parent_invites` (107) and `platform_settings` (109), and a **staging DB**
+   so the script can run without touching production.
+4. Social sign-in (Google/Apple) — explicitly **not** built; the reference icons were implemented as social *links*.
+5. SMS copy on `/pricing` ("SMS included / 500 texts") stays by owner decision until Twilio approval lands.
+
+### Manual configuration steps (this session)
+1. Migrations **106, 107, 108, 109** — ✅ applied to `xpbavfutfejlfbmnntyl`. For a fresh environment paste
+   `supabase/migrations/106_*.sql` … `109_platform_settings.sql` into the SQL editor in order.
+2. **Social links:** each crèche → *Admin → Crèche Settings → Social media*; Creche Wise → *Platform → Settings*
+   (platform-owner account only). Until then the footer shows faded placeholders.
+3. **Waiting-list emails** need `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS=no-reply@crechewise.com` and
+   `NEXT_PUBLIC_APP_URL` in Vercel (already set); crechewise.com is verified in Resend.
+4. Optional per crèche: set a **contact email** in Crèche Settings — it becomes the family's reply-to address (the
+   notification still goes to the portal-owner email).
+5. Local preview while another session holds :3000: workspace launch config **`creche-3001`** → `http://localhost:3001`.
+
+### Security considerations (this session)
+- **Public form (`submitWebsiteEnquiryAction`)** is anonymous: the crèche is resolved **server-side** from the request
+  (explicit subdomain / `/s/<slug>` wins over the visitor's session — a parent of crèche A on crèche B's page files
+  with B), never from a client field; honeypot; per-IP limit; **≤3 submissions per email per crèche per hour** (stops the
+  form being used to mail-bomb an address); all typed text HTML-escaped in both emails; notification never goes to a
+  platform address.
+- **Social links** accept only `https` URLs whose host is the network's real domain (look-alikes such as
+  `facebook.com.evil.com`, `javascript:` and credentials-in-URL are rejected — 5 unit tests); rendered with
+  `rel="noopener noreferrer"`.
+- **`platform_settings` (109)** is service-role only (RLS on, no anon/authenticated policies); writes require the
+  platform-owner check.
+- **Parent invites (107):** 256-bit random tokens, 14-day expiry, single use, `school_id`-scoped; sign-up links only
+  when the account is new (no account enumeration).
+- **Rooms:** create/update verify the chosen lead staff member belongs to the same crèche; audited (`class.created`,
+  `class.updated`).
+- Brand/third-party assets: Fluent Emoji 3D (MIT, licence shipped), Simple Icons brand glyphs (CC0), Fredoka (OFL).
+  The owner's reference icon-pack image was **not** copied (unknown licence).
+
+### Exact commands to continue (this session)
+```bash
+# repo root: E:\First Stack Solutions\Creche_Mgt_System
+git checkout main && git pull
+rm -rf .next/types                       # avoid stale route stubs
+npx tsc --noEmit
+npx eslint src --ext .ts,.tsx
+npx prettier --check "src/**/*.{ts,tsx}"
+npx vitest run                           # 1036 / 101 with the review branch merged
+npx next build                           # production build (CI also runs it)
+
+# targeted suites for this session
+npx vitest run src/lib/enquiries src/lib/social src/lib/dashboard src/components/social src/components/ui/__tests__
+
+# local preview (port 3001 if another session owns 3000)
+npm run dev -- -p 3001                   # http://localhost:3001  and  /s/angelsnest
+
+# verify the 🟡 items in the browser (owner account on Angels Nest):
+#   /admin/classes/new → create + rename a room
+#   /admin/students/<id> → "Invite a parent" → open the link in a private window → register → child visible
+#   /admin/settings → Social media → save → check /s/angelsnest/login, /s/angelsnest footer
+#   /platform/settings (platform owner) → save → check crechewise.com footer
+```
 
 ---
 
@@ -145,7 +271,10 @@ PRs: `feat/timesheet-report`, `feat/timeoff-clash`, `feat/staff-clock-in` (all r
 > branch): `tsc --noEmit` source-clean · `eslint src` clean · `prettier --check src` clean · **1001 passed / 93 files**
 > (2026-10-08).
 >
-> **Honesty:** all items below are **on open PR branches, NOT merged to `main`**, and none of the payment paths is
+> **Update 2026-10-15:** all of these are now **merged to `main`** (PRs #79–#86) and deployed. The honesty note below
+> still applies to the **payment** paths.
+>
+> **Honesty (original):** all items below were **on open PR branches** at the time, and none of the payment paths is
 > **verified end-to-end** (no crèche has connected a Stripe/Revolut account yet). Treat 🟡 = built + gated (tsc/lint/
 > tests), **not** browser/e2e-verified.
 
@@ -668,7 +797,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 **DevSecOps (spec §11):**
 - ✅ GitHub remote + PR CI (lint/type/format/unit/build); ✅ secret scanning + push protection active; ✅ anon-read
   lock-down (migs 074/075).
-- ⬜ **Branch protection** on `main` (required checks, no bypass) — checklist ready in `docs/setup/github-branch-protection.md`.
+- ✅ **Branch protection** on `main` — ruleset "protect-main" (PR + 3 required checks + up-to-date + conversation resolution; enabled 2026-09-30).
 - ⬜ Wire `scripts/verify-tenant-isolation.mjs` into a DB-enabled CI job; get the E2E job actually passing.
 - ⬜ SAST/Semgrep, SCA/Dependabot updates, Trivy, DAST/ZAP, SBOM; DPIA + threat-model sign-off (children's special-category data).
 
@@ -685,8 +814,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 4. **Confirm NCS/ECCE rates** with a Pobal/finance SME and load into FEE-03 config; replace the `CONFIRM` fallbacks.
 5. **Confirm the reference Irish room ratios** in `src/lib/ratios/ratio.ts` (flagged CONFIRM) — the ratio **UI is now
    live**, so these constants are user-facing; confirm before pilot.
-6. **⚠️ Remove `src/app/api/dev/` before production** (dev-only seed/Pro-unlock route).
-7. **Enable branch protection on `main`** now (repo exists + CI runs): `docs/setup/github-branch-protection.md`.
+6. ~~Remove `src/app/api/dev/` before production~~ — ✅ removed (directory no longer exists; confirmed 2026-10-15).
+7. ~~Enable branch protection on `main`~~ — ✅ done (ruleset "protect-main", 2026-09-30).
 8. **Before pilot / go-live:** Stripe Connect + Revolut KYC; ComReg/Twilio A2P; email sender-domain (SPF/DKIM/DMARC);
    DPIA. Provider + Vercel steps: [provider-setup.md](provider-setup.md), [deploy-checklist.md](deploy-checklist.md),
    [domain-setup-crechewise.md](domain-setup-crechewise.md).
@@ -717,7 +846,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 ```bash
 # repo root: E:\First Stack Solutions\Creche_Mgt_System
 npm ci                          # install deps (first time)
-npm run test -- run             # full vitest suite (897 tests / 78 files as of 2026-10-06)
+npm run test -- run             # full vitest suite (1036 tests / 101 files as of 2026-10-15)
 npm run type-check              # tsc --noEmit
 npm run lint                    # eslint src
 npm run format:check            # prettier --check  (CI blocks on this)
@@ -732,7 +861,8 @@ rm -rf .next/types && npm run type-check
 npm run test -- run src/lib/fees/__tests__/invoice.test.ts
 npm run test -- run src/lib/payments/__tests__/subvention.test.ts
 
-# tenant isolation + idempotency (needs .env.local with the dev DB)
+# tenant isolation + idempotency — ⚠️ WRITES test rows; .env.local points at the LIVE prod DB.
+# Run only with the owner's go-ahead (or point .env.local at a staging project first).
 node scripts/verify-tenant-isolation.mjs
 
 # git — remote is set; work on a branch and open a PR

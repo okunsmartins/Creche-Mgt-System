@@ -29,7 +29,10 @@ export function SocialLinks({
   return (
     <ul
       className={`flex flex-wrap items-center justify-center gap-3 ${className}`}
-      aria-label={`${schoolName} on social media`}
+      // Only placeholders (nothing saved yet) → purely decorative; hide the empty list.
+      {...(links.length
+        ? { 'aria-label': `${schoolName} on social media` }
+        : { 'aria-hidden': true })}
     >
       {keys.map((key) => {
         const g = SOCIAL_GLYPHS[key]
