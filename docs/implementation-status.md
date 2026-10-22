@@ -744,6 +744,7 @@ permission grant].)
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
+| **Password reset on any device** (platform-wide, 2026-10-22) | `/auth/confirm`, `lib/auth/confirm-link.ts`, `confirmEmailLinkAction`, `docs/email-templates/` | link parsing + open-redirect guard unit-tested; page renders; invalid token shows the expiry error | **Real reset email not yet tested end-to-end** — needs Supabase custom SMTP (Resend) + the reset template pasted (see `docs/email-templates/README.md`), then a reset opened on a different device. |
 
 ---
 
@@ -819,6 +820,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 8. **Before pilot / go-live:** Stripe Connect + Revolut KYC; ComReg/Twilio A2P; email sender-domain (SPF/DKIM/DMARC);
    DPIA. Provider + Vercel steps: [provider-setup.md](provider-setup.md), [deploy-checklist.md](deploy-checklist.md),
    [domain-setup-crechewise.md](domain-setup-crechewise.md).
+9. **Login emails (all crèches):** Supabase custom SMTP via Resend + branded Reset Password / Confirm signup
+   templates — one-time, platform-wide. Steps: [email-templates/README.md](email-templates/README.md).
 
 ---
 
