@@ -4,42 +4,74 @@
   Keeps {{ .ConfirmationURL }} so each sign-up still lands on the right page
   (crèche parents → their dashboard; new crèche owners → portal setup).
 -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fff8ec;padding:32px 12px;font-family:Arial,Helvetica,sans-serif;">
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="background: #fff8ec; padding: 32px 12px; font-family: Arial, Helvetica, sans-serif"
+>
   <tr>
     <td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:24px;padding:32px;">
+      <table
+        role="presentation"
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        style="max-width: 520px; background: #ffffff; border-radius: 24px; padding: 32px"
+      >
         <tr>
-          <td align="center" style="padding-bottom:8px;">
-            <img src="https://crechewise.com/apple-icon.png" width="72" height="72" alt="Creche Wise teddy" style="display:block;border:0;" />
+          <td align="center" style="padding-bottom: 8px">
+            <img
+              src="https://crechewise.com/apple-icon.png"
+              width="72"
+              height="72"
+              alt="Creche Wise teddy"
+              style="display: block; border: 0"
+            />
           </td>
         </tr>
         <tr>
-          <td align="center" style="font-size:24px;font-weight:bold;color:#1f2b57;padding-bottom:12px;">
+          <td
+            align="center"
+            style="font-size: 24px; font-weight: bold; color: #1f2b57; padding-bottom: 12px"
+          >
             Confirm your email
           </td>
         </tr>
         <tr>
-          <td style="font-size:16px;line-height:24px;color:#4a5578;padding-bottom:24px;">
-            Welcome to Creche Wise! Please confirm <strong>{{ .Email }}</strong> to finish
-            setting up your account.
+          <td style="font-size: 16px; line-height: 24px; color: #4a5578; padding-bottom: 24px">
+            Welcome to Creche Wise! Please confirm <strong>{{ .Email }}</strong> to finish setting
+            up your account.
           </td>
         </tr>
         <tr>
-          <td align="center" style="padding-bottom:24px;">
-            <a href="{{ .ConfirmationURL }}"
-               style="display:inline-block;background:#2463d6;color:#ffffff;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:999px;">
+          <td align="center" style="padding-bottom: 24px">
+            <a
+              href="{{ .ConfirmationURL }}"
+              style="
+                display: inline-block;
+                background: #2463d6;
+                color: #ffffff;
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 16px;
+                padding: 14px 28px;
+                border-radius: 999px;
+              "
+            >
               Confirm my email
             </a>
           </td>
         </tr>
         <tr>
-          <td style="font-size:14px;line-height:21px;color:#66708f;">
-            Please open this link on the same device and browser you signed up on.
-            If you didn't create a Creche Wise account, you can ignore this email.
+          <td style="font-size: 14px; line-height: 21px; color: #66708f">
+            Please open this link on the same device and browser you signed up on. If you didn't
+            create a Creche Wise account, you can ignore this email.
           </td>
         </tr>
       </table>
-      <p style="font-size:12px;color:#66708f;margin-top:16px;">Creche Wise · crechewise.com</p>
+      <p style="font-size: 12px; color: #66708f; margin-top: 16px">Creche Wise · crechewise.com</p>
     </td>
   </tr>
 </table>
