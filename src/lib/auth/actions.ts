@@ -5,6 +5,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 import { logger } from '@/lib/logging'
 import { serverEnv } from '@/lib/env'
 import { getTenantSubdomain, getTenantSchoolId } from '@/lib/tenant/server'
+import { parseConfirmLink } from './confirm-link'
 import {
   loginSchema,
   registerSchema,
@@ -224,10 +225,14 @@ export async function forgotPasswordAction(
   const appUrl = serverEnv.appUrl
   const supabase = await createSupabaseServerClient()
 
-  // Fire-and-forget: always return success to prevent email enumeration
-  await supabase.auth.resetPasswordForEmail(result.data.email, {
+  // Always return the same message (no email enumeration), but LOG a failed send —
+  // e.g. the mail provider's rate limit — so it isn't silently lost.
+  const { error } = await supabase.auth.resetPasswordForEmail(result.data.email, {
     redirectTo: `${appUrl}/api/auth/callback?next=/reset-password`,
   })
+  if (error) {
+    logger.warn('password_reset_send_failed', { reason: error.code, status: error.status })
+  }
 
   return {
     success: true,
@@ -351,4 +356,39 @@ export async function changePasswordAction(
     else if (names.some((r) => r.name === 'teacher')) path = '/teacher/dashboard'
   }
   redirect(path)
+}
+
+// ─── Confirm an email link (/auth/confirm) ────────────────────────────────────
+
+/**
+ * Verifies a password-reset / confirmation link's `token_hash` when the person
+ * clicks the button on /auth/confirm, then signs them in and sends them on
+ * (e.g. to /reset-password). Works in any browser — see lib/auth/confirm-link.ts.
+ */
+export async function confirmEmailLinkAction(
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const link = parseConfirmLink({
+    token_hash: formData.get('token_hash'),
+    type: formData.get('type'),
+    next: formData.get('next'),
+  })
+  if (!link) {
+    return { error: 'This link is invalid. Please request a new one.' }
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const { error } = await supabase.auth.verifyOtp({ token_hash: link.tokenHash, type: link.type })
+  if (error) {
+    logger.warn('email_link_verify_failed', { type: link.type, reason: error.code })
+    return {
+      error:
+        link.type === 'recovery'
+          ? 'This reset link has expired or has already been used. Please request a new one.'
+          : 'This link has expired or has already been used.',
+    }
+  }
+
+  redirect(link.next)
 }

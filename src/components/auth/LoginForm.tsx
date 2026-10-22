@@ -15,6 +15,10 @@ import type { SocialLink } from '@/lib/social/links'
 const REASON_MESSAGES: Record<string, string> = {
   auth_required: 'Please sign in to continue.',
   auth_error: 'An authentication error occurred. Please try again.',
+  link_expired:
+    'That email link has expired or was already used. Use "Forgot password?" to get a new one.',
+  link_other_browser:
+    'That email link didn\'t work. It may have expired, or been opened in a different browser from the one you requested it in. Use "Forgot password?" to get a new one.',
   session_expired: 'Your session has expired. Please sign in again.',
   password_changed: 'Your password has been updated. Please sign in with your new password.',
   teacher_required: 'Please sign in with your teacher account to continue.',
