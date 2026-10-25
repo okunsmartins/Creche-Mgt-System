@@ -37,6 +37,15 @@ type AccessFields = Pick<
  */
 export function hasProAccess(sub: AccessFields | null, now: Date = new Date()): boolean {
   if (!sub) return false
+
+  // A no-card signup trial (lib/tenant/provision.ts) is a local row with an
+  // explicit trial_ends_at: it grants full access until that date, whatever
+  // `plan` says. (Crèches created 2026-10-03 → 2026-10-25 carry plan='free' on
+  // their trial row; checking plan first locked them out on day one.)
+  if (sub.status === 'trialing' && sub.trial_ends_at) {
+    return now.getTime() <= new Date(sub.trial_ends_at).getTime()
+  }
+
   if (sub.plan === 'free') return false
 
   switch (sub.status) {

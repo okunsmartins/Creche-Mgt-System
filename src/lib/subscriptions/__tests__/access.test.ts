@@ -38,6 +38,20 @@ describe('hasProAccess', () => {
     expect(hasProAccess(sub({ status: 'trialing', trial_ends_at: daysFromNow(5) }), NOW)).toBe(true)
   })
 
+  it('new-crèche signup trial (plan free, trialing, future end) → true', () => {
+    // Regression: crèches provisioned with plan='free' on their trial row were
+    // locked out on day one because the plan check ran before the trial check.
+    expect(
+      hasProAccess(sub({ plan: 'free', status: 'trialing', trial_ends_at: daysFromNow(29) }), NOW),
+    ).toBe(true)
+  })
+
+  it('new-crèche signup trial after its end date → false (must subscribe)', () => {
+    expect(
+      hasProAccess(sub({ plan: 'free', status: 'trialing', trial_ends_at: daysFromNow(-1) }), NOW),
+    ).toBe(false)
+  })
+
   it('trialing with a past end date → false (trial expired, must subscribe)', () => {
     expect(hasProAccess(sub({ status: 'trialing', trial_ends_at: daysFromNow(-1) }), NOW)).toBe(
       false,

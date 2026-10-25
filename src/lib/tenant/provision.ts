@@ -196,7 +196,9 @@ export async function provisionSchool(
   const trialEndsAt = new Date(Date.now() + TRIAL_PERIOD_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const { error: subErr } = await adminClient.from('subscriptions').insert({
     school_id: schoolId,
-    plan: 'free',
+    // The trial is OF the single all-inclusive plan, so mark it 'pro' (a 'free'
+    // plan never has access — see hasProAccess).
+    plan: 'pro',
     status: 'trialing',
     trial_ends_at: trialEndsAt,
   })
