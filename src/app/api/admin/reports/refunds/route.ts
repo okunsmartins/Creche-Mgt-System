@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   // Advanced reports (CSV export) is a Pro feature.
   if (!admin.schoolId || !(await schoolHasProAccess(admin.schoolId))) {
-    return new Response('Upgrade to Pro to export reports.', { status: 403 })
+    return new Response('Subscribe to Creche Wise to export reports.', { status: 403 })
   }
 
   const { searchParams } = request.nextUrl

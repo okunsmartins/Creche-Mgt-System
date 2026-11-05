@@ -93,11 +93,11 @@ export default async function AdminStudentsPage({ searchParams }: PageProps) {
           ) : (
             <Link
               href="/pricing?locked=csv_import"
-              title="CSV import is a Pro feature"
+              title="CSV import needs an active subscription"
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-text-muted hover:border-primary/40 hover:text-primary"
             >
               <Lock className="h-4 w-4" aria-hidden="true" />
-              Import CSV (Pro)
+              Import CSV
             </Link>
           )}
           <Button asChild>

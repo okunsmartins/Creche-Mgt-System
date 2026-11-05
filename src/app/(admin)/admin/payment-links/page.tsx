@@ -66,8 +66,8 @@ export default async function PaymentLinksPage() {
 
       {!isPro && (
         <UpgradePrompt
-          title="Payment links are a Pro feature"
-          description="Create shareable payment links for trips, books and events. Upgrade to Pro to enable them for your crèche."
+          title="Payment links need an active subscription"
+          description="Create shareable payment links for trips, outings and extras. Subscribe to Creche Wise to keep using them after your free trial."
         />
       )}
 

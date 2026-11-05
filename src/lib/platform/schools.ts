@@ -145,7 +145,10 @@ export async function getSchoolsOverview(
       plan: sub?.plan ?? 'none',
       status: sub?.status ?? 'none',
       hasAccess,
-      smsEnabled: Boolean(sub?.sms_enabled),
+      // SMS is included with the plan, so it follows plan access (trials included) —
+      // the same rule the app enforces (hasSmsAccess). The legacy `sms_enabled`
+      // column is only set by the Stripe webhook, so it reads false during a trial.
+      smsEnabled: hasAccess,
       trialEndsAt: sub?.trial_ends_at ?? null,
       studentsCount: studentsMap.get(s.id) ?? 0,
       collectedCents: collectedMap.get(s.id) ?? 0,

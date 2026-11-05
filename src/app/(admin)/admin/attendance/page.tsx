@@ -100,10 +100,10 @@ export default async function AdminAttendancePage({
         ) : (
           <Link
             href="/pricing?locked=advanced_reports"
-            title="CSV export is a Pro feature"
+            title="CSV export needs an active subscription"
             className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-text-muted hover:border-primary hover:text-primary"
           >
-            <Lock className="h-4 w-4" /> Export CSV (Pro)
+            <Lock className="h-4 w-4" /> Export CSV
           </Link>
         )}
       </div>
