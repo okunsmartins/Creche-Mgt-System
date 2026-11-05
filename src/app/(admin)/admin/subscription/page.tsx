@@ -26,7 +26,7 @@ export default async function SubscriptionPage() {
   const isPro = hasProAccess(sub)
   const hasBilling = !!sub?.stripe_customer_id
   const onTrial = isPro && sub?.status === 'trialing'
-  const planName = isPro ? 'Creche Wise' : 'Free'
+  const planName = isPro ? 'Creche Wise' : 'No active plan'
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -93,8 +93,8 @@ export default async function SubscriptionPage() {
         {/* Past-due notice */}
         {sub?.status === 'past_due' && (
           <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Your last payment failed. Update your payment method in the billing portal to keep your
-            Pro features.
+            Your last payment failed. Update your payment method in the billing portal to keep using
+            Creche Wise.
           </div>
         )}
 
@@ -107,7 +107,7 @@ export default async function SubscriptionPage() {
               href="/pricing"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-glow transition-all hover:bg-primary-hover hover:shadow-none"
             >
-              {isPro ? 'View plans' : 'Upgrade to Pro'}
+              {isPro ? 'View plans' : 'Subscribe'}
             </Link>
           )}
           {hasBilling && !isPro && (

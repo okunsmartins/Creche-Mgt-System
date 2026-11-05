@@ -11,13 +11,14 @@ interface UpgradePromptProps {
 }
 
 /**
- * Inline "this is a Pro feature" prompt shown on locked pages (instead of a hard
- * redirect) so admins can see what Pro unlocks and upgrade in one click.
+ * Inline "needs an active subscription" prompt shown on locked pages (instead of a
+ * hard redirect) so admins can see what's locked and subscribe in one click.
+ * (Creche Wise has a single all-inclusive plan; there is no separate "Pro" tier.)
  */
 export function UpgradePrompt({
-  title = 'This is a Pro feature',
-  description = 'Upgrade your plan to unlock this feature for your crèche.',
-  cta = 'Upgrade to Pro',
+  title = 'This needs an active subscription',
+  description = 'Subscribe to Creche Wise to keep using this feature for your crèche.',
+  cta = 'Subscribe',
   href = '/pricing',
 }: UpgradePromptProps) {
   return (
