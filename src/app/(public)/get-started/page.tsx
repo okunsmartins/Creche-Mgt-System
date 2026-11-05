@@ -2,10 +2,26 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { RequestPortalForm } from '@/components/onboarding/RequestPortalForm'
 import { TeddyShell } from '@/components/auth/TeddyShell'
+import { AlreadyInACreche } from '@/components/onboarding/AlreadyInACreche'
+import { getSessionUser } from '@/lib/auth/session'
+import { existingPortalFor } from '@/lib/onboarding/existing-portal'
 
 export const metadata: Metadata = { title: 'Create your portal' }
 
-export default function GetStartedPage() {
+export default async function GetStartedPage() {
+  // Signed in to an account that already belongs to a crèche → explain that a new
+  // crèche needs its own account, instead of letting them start a sign-up that
+  // would later bounce them back to their existing portal.
+  const user = await getSessionUser()
+  const portal = existingPortalFor(user)
+  if (user && portal) {
+    return (
+      <TeddyShell>
+        <AlreadyInACreche email={user.email} portal={portal} continueTo="/get-started" />
+      </TeddyShell>
+    )
+  }
+
   return (
     <TeddyShell
       footer={

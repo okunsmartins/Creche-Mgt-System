@@ -5,7 +5,7 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 import { logger } from '@/lib/logging'
 import { serverEnv } from '@/lib/env'
 import { getTenantSubdomain, getTenantSchoolId } from '@/lib/tenant/server'
-import { parseConfirmLink } from './confirm-link'
+import { parseConfirmLink, safeNextPath } from './confirm-link'
 import {
   loginSchema,
   registerSchema,
@@ -206,6 +206,18 @@ export async function signOutAction(): Promise<never> {
   const supabase = await createSupabaseServerClient()
   await supabase.auth.signOut()
   redirect('/login')
+}
+
+/**
+ * Sign out, then carry on to `next` (a same-site path). Used by "Create your
+ * portal" when someone is signed in to an account that already belongs to a
+ * crèche: they sign out and continue setting up the new crèche with a new account.
+ */
+export async function signOutAndContinueAction(formData: FormData): Promise<never> {
+  const next = safeNextPath(formData.get('next'), '/get-started')
+  const supabase = await createSupabaseServerClient()
+  await supabase.auth.signOut()
+  redirect(next)
 }
 
 // ─── Forgot Password ──────────────────────────────────────────────────────────

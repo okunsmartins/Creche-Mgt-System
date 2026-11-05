@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { TeddyShell } from '@/components/auth/TeddyShell'
-import { CheckCircle2, XCircle, ArrowRight, LogOut } from 'lucide-react'
+import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import { verifyPortalSignupByToken, type VerifyResult } from '@/lib/onboarding/signups'
 import { getSessionUser } from '@/lib/auth/session'
-import { signOutAction } from '@/lib/auth/actions'
+import { existingPortalFor } from '@/lib/onboarding/existing-portal'
+import { AlreadyInACreche } from '@/components/onboarding/AlreadyInACreche'
 
 export const metadata: Metadata = { title: 'Confirm your email' }
 
@@ -21,6 +22,9 @@ export default async function VerifyPortalPage({
     getSessionUser(),
   ])
   const ok = outcome.result === 'verified' || outcome.result === 'already'
+  // Signed in to an account that already belongs to a crèche → it can't own a new
+  // one; offer to sign out and carry on. (Signed in with no crèche → just continue.)
+  const portal = existingPortalFor(user)
 
   return (
     <TeddyShell>
@@ -49,24 +53,13 @@ export default async function VerifyPortalPage({
             </div>
             <h1 className="text-xl font-bold text-text-primary">Email confirmed</h1>
 
-            {user ? (
-              <>
-                <p className="mt-2 text-sm text-text-secondary">
-                  You&apos;re currently signed in as{' '}
-                  <span className="font-semibold text-text-primary">{user.email}</span>. Creating a
-                  new crèche portal needs its own account — please sign out, then open this
-                  confirmation link again to register.
-                </p>
-                <form action={signOutAction} className="mt-6">
-                  <button
-                    type="submit"
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-primary/90"
-                  >
-                    <LogOut className="h-4 w-4" aria-hidden="true" />
-                    Sign out
-                  </button>
-                </form>
-              </>
+            {user && portal ? (
+              <AlreadyInACreche
+                embedded
+                email={user.email}
+                portal={portal}
+                continueTo="/onboarding"
+              />
             ) : (
               <>
                 <p className="mt-2 text-sm text-text-secondary">
