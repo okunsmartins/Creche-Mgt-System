@@ -5,6 +5,7 @@ import { requireAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import { provisionSchool, validateSubdomain } from './provision'
+import { existingPortalFor } from '@/lib/onboarding/existing-portal'
 
 export type CreateSchoolState = {
   error?: string
@@ -19,7 +20,6 @@ export type CreateSchoolState = {
  * (gated on a successful Stripe subscription). For now it provisions directly so
  * the flow is demonstrable end-to-end.
  */
-const ADMIN_ROLES = ['super_admin', 'school_admin', 'finance_admin']
 
 export async function createSchoolAction(
   _prev: CreateSchoolState,
@@ -27,12 +27,15 @@ export async function createSchoolAction(
 ): Promise<CreateSchoolState> {
   const user = await requireAuth()
 
-  // Only users with no school may create one — staff and existing parents are
-  // sent to their portal (prevents reassigning an account that already belongs
-  // to a school).
-  if (user.roles.some((r) => ADMIN_ROLES.includes(r))) redirect('/admin/dashboard')
-  if (user.roles.includes('teacher')) redirect('/teacher/dashboard')
-  if (user.schoolId) redirect('/parent/dashboard')
+  // Only accounts with no crèche may create one (prevents reassigning an account
+  // that already belongs to a crèche). The page explains this before the form is
+  // shown; this is the server-side backstop.
+  const existing = existingPortalFor(user)
+  if (existing) {
+    return {
+      error: `This account already belongs to ${existing.schoolName ?? 'a crèche'}. Sign out and use a different email address to set up a new crèche.`,
+    }
+  }
 
   const name = ((formData.get('name') as string | null) ?? '').trim()
   const subdomainRaw = (formData.get('subdomain') as string | null) ?? ''

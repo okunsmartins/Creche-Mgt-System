@@ -4,10 +4,10 @@ import { requireAuth } from '@/lib/auth/guards'
 import { hasVerifiedSignup } from '@/lib/onboarding/signups'
 import { CreateSchoolForm } from '@/components/tenant/CreateSchoolForm'
 import { TeddyShell } from '@/components/auth/TeddyShell'
+import { AlreadyInACreche } from '@/components/onboarding/AlreadyInACreche'
+import { existingPortalFor } from '@/lib/onboarding/existing-portal'
 
 export const metadata: Metadata = { title: 'Create your crèche' }
-
-const ADMIN_ROLES = ['super_admin', 'school_admin', 'finance_admin']
 
 export default async function OnboardingPage() {
   // A logged-out visitor arriving from the "Create your own portal" CTA almost
@@ -15,12 +15,17 @@ export default async function OnboardingPage() {
   // carry `next` so they land back here afterwards.
   const user = await requireAuth('/onboarding', 'register')
 
-  // Onboarding is only for users who don't already belong to a crèche. Staff go
-  // to their portal; anyone already attached to a crèche (e.g. a parent) goes to
-  // the parent portal — so creating a crèche can't reassign their account.
-  if (user.roles.some((r) => ADMIN_ROLES.includes(r))) redirect('/admin/dashboard')
-  if (user.roles.includes('teacher')) redirect('/teacher/dashboard')
-  if (user.schoolId) redirect('/parent/dashboard')
+  // Onboarding is only for accounts that don't already belong to a crèche (so
+  // creating one can't reassign an existing account). Say so clearly, with a way
+  // to sign out and carry on, rather than silently sending them to that portal.
+  const portal = existingPortalFor(user)
+  if (portal) {
+    return (
+      <TeddyShell>
+        <AlreadyInACreche email={user.email} portal={portal} continueTo="/onboarding" />
+      </TeddyShell>
+    )
+  }
 
   // Gate: the account's email must have a CONFIRMED portal sign-up — so we know
   // the address is theirs before they set up a crèche. If not, send them to the
