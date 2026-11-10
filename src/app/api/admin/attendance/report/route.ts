@@ -31,7 +31,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const admin = await requireAdmin()
   if (!admin.schoolId) return new Response('No crèche associated.', { status: 400 })
   if (!(await schoolHasProAccess(admin.schoolId)))
-    return new Response('CSV export is a Pro feature.', { status: 403 })
+    return new Response('CSV export needs an active Creche Wise subscription.', { status: 403 })
 
   const sp = request.nextUrl.searchParams
   const view = isAttendanceView(sp.get('view') ?? '')

@@ -10,7 +10,7 @@ const STEPS: { icon: typeof Users; title: string; caption: string }[] = [
   {
     icon: Users,
     title: 'A parent pays',
-    caption: 'Card payment for a trip, activity or book through your portal.',
+    caption: 'Card payment for fees, an invoice or an extra through your portal.',
   },
   {
     icon: ShieldCheck,

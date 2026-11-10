@@ -8,7 +8,7 @@ export async function GET() {
 
   // Advanced reports (CSV export) is a Pro feature.
   if (!admin.schoolId || !(await schoolHasProAccess(admin.schoolId))) {
-    return new Response('Upgrade to Pro to export reports.', { status: 403 })
+    return new Response('Subscribe to Creche Wise to export reports.', { status: 403 })
   }
 
   const adminClient = createSupabaseAdminClient()

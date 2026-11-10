@@ -72,9 +72,9 @@ export default async function ConnectPaymentsPage({
               <div className="text-sm text-text-secondary">
                 <p className="font-medium text-text-primary">You&apos;re ready to take payments.</p>
                 <p className="mt-1">
-                  Parent and guest payments for activities, trips and books go directly into your
-                  school&apos;s Stripe account. You manage payouts, refunds and receipts from your
-                  own{' '}
+                  Parent payments for fees, invoices, late collection and extras go directly into
+                  your crèche&apos;s Stripe account. You manage payouts, refunds and receipts from
+                  your own{' '}
                   <a
                     href="https://dashboard.stripe.com"
                     target="_blank"
