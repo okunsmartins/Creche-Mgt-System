@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Shield, LogOut, LogIn } from 'lucide-react'
+import { Shield, LogOut, LogIn, LayoutDashboard } from 'lucide-react'
 import { MobileNav } from './MobileNav'
 import { SchoolCrest } from './SchoolCrest'
 import { Mascot } from '@/components/marketing/Mascot'
@@ -40,15 +40,18 @@ export function SiteHeader({
   isTenant = false,
   tenantSlug,
   isAuthenticated = false,
+  portalHref,
 }: {
   schoolName?: string | null
   schoolLogoUrl?: string | null
-  /** True when a specific school's portal is active (subdomain, `/s/<school>` path, or session). */
+  /** True when the URL names a crèche (its subdomain or a `/s/<school>` path). */
   isTenant?: boolean
   /** Set when the tenant came from a `/s/<school>` PATH — school links get prefixed to keep context. */
   tenantSlug?: string | undefined
   /** Whether a user is signed in — on the platform nav this swaps Sign in → Sign out. */
   isAuthenticated?: boolean
+  /** Signed in to a crèche → its portal home; shown as "My portal" on the main-site nav. */
+  portalHref?: string | undefined
 }) {
   const pathname = usePathname()
   // No school identified (apex host, signed out) → platform branding, not a
@@ -156,12 +159,20 @@ export function SiteHeader({
               ))}
 
               {isAuthenticated ? (
-                <form action={signOutAction}>
-                  <button type="submit" className={pillOutline}>
-                    <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                    Sign out
-                  </button>
-                </form>
+                <>
+                  {portalHref && (
+                    <Link href={portalHref} className={pillCta}>
+                      <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />
+                      My portal
+                    </Link>
+                  )}
+                  <form action={signOutAction}>
+                    <button type="submit" className={pillOutline}>
+                      <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                      Sign out
+                    </button>
+                  </form>
+                </>
               ) : (
                 <>
                   <Link
@@ -190,7 +201,10 @@ export function SiteHeader({
                   { href: '/admin/dashboard', label: 'Admin' },
                 ]
               : isAuthenticated
-                ? platformLinks
+                ? [
+                    ...platformLinks,
+                    ...(portalHref ? [{ href: portalHref, label: 'My portal' }] : []),
+                  ]
                 : [
                     ...platformLinks,
                     { href: '/login', label: 'Sign in' },

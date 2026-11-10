@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Mail, Phone, MapPin } from 'lucide-react'
-import { getViewerSchool, type School } from '@/lib/tenant/server'
+import { getPublicViewerContext, type School } from '@/lib/tenant/server'
 
 export const metadata: Metadata = {
   title: 'Contact',
@@ -35,7 +35,8 @@ function formatAddress(s: School): string | null {
 }
 
 export default async function ContactPage() {
-  const school = await getViewerSchool()
+  // Same context as the header: a crèche only when the URL names one.
+  const { school } = await getPublicViewerContext()
   const address = school ? formatAddress(school) : null
   const hasDetails = !!(school && (school.email || school.phone || address))
 

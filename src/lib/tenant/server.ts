@@ -2,8 +2,8 @@ import { cache } from 'react'
 import { headers } from 'next/headers'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getSessionUser } from '@/lib/auth/session'
-import { isPlatformOwner } from '@/lib/platform/owner'
 import { parseTenantSubdomain } from './parse'
+import { crechePublicPath } from './urls'
 
 const COOKIE_SUBDOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/
 
@@ -137,26 +137,33 @@ export const getViewerSchool = cache(async (): Promise<School | null> => {
 })
 
 /**
- * The school + path-tenant context for the PUBLIC site (header + landing page),
- * with one override: the platform owner on the bare apex (no subdomain, no
- * `/s/<slug>` path — i.e. the school would only come from their own session) sees
- * the platform landing, not their linked school's portal. They can still browse a
- * specific school via a `/s/<slug>` link. Everyone else is unchanged.
+ * The school + path-tenant context for the PUBLIC site (header, landing page,
+ * contact/privacy, waiting-list form).
+ *
+ * Only an EXPLICIT tenant counts: a crèche's own host subdomain or a
+ * `/s/<slug>` path. The bare apex (crechewise.com) is ALWAYS the Creche Wise
+ * main site, even for someone signed in to a crèche. Their own crèche's page is
+ * at `/s/<slug>` (the admin "View site" button links there), and the platform
+ * header gives them a "My portal" button. (Previously a signed-in user's crèche
+ * took over the apex, and "Exit portal" could never leave it.)
  */
 export const getPublicViewerContext = cache(
   async (): Promise<{ school: School | null; tenantSlug: string | null }> => {
-    const [school, tenantSlug, subdomain] = await Promise.all([
-      getViewerSchool(),
-      getPathTenantSlug(),
-      getTenantSubdomain(),
-    ])
-    if (school && !subdomain) {
-      const user = await getSessionUser()
-      if (isPlatformOwner(user)) return { school: null, tenantSlug: null }
-    }
+    const [school, tenantSlug] = await Promise.all([getTenantSchool(), getPathTenantSlug()])
     return { school, tenantSlug }
   },
 )
+
+/** The public page path for a school id. Memoised per request. */
+export const getSchoolPublicPath = cache(async (schoolId: string): Promise<string> => {
+  const adminClient = createSupabaseAdminClient()
+  const { data } = await adminClient
+    .from('schools')
+    .select('subdomain')
+    .eq('id', schoolId)
+    .maybeSingle()
+  return crechePublicPath((data as { subdomain: string | null } | null)?.subdomain)
+})
 
 /**
  * Logo URL for a SPECIFIC school id — for the AUTHENTICATED portals
