@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
-import { getViewerSchool } from '@/lib/tenant/server'
+import { getPublicViewerContext } from '@/lib/tenant/server'
 
 export const metadata: Metadata = {
   title: 'Privacy Notice',
 }
 
 export default async function PrivacyPage() {
-  // Tenant-aware: on a crèche's portal the SCHOOL is the data controller; on the
-  // apex (no tenant, nobody signed in) this is the platform-level notice.
-  const school = await getViewerSchool()
+  // Tenant-aware: on a crèche's portal (subdomain or /s/<slug>) the CRÈCHE is the
+  // data controller; on the bare apex this is the platform-level notice.
+  const { school } = await getPublicViewerContext()
   const controller = school?.name ?? null
   const contactEmail = school?.email ?? null
 

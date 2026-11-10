@@ -11,7 +11,16 @@ const sq =
  * Admin top bar: royal-blue band with the crèche's identity, a children search
  * (GET → /admin/students?q=), alerts, help and the signed-in user.
  */
-export function AdminTopBar({ user, logoUrl }: { user: SessionUser; logoUrl?: string | null }) {
+export function AdminTopBar({
+  user,
+  logoUrl,
+  siteHref = '/',
+}: {
+  user: SessionUser
+  logoUrl?: string | null
+  /** The crèche's own public page (`/s/<subdomain>`). */
+  siteHref?: string
+}) {
   const schoolName = user.schoolName ?? 'Creche Wise'
   const first = user.profile?.firstName ?? ''
   const last = user.profile?.lastName ?? ''
@@ -79,7 +88,7 @@ export function AdminTopBar({ user, logoUrl }: { user: SessionUser; logoUrl?: st
             <CircleHelp className="h-[18px] w-[18px]" aria-hidden="true" />
           </a>
           <Link
-            href="/"
+            href={siteHref}
             aria-label="View your crèche's public page"
             title="View your public page"
             className={`${sq} hidden bg-accent-sunny text-text-primary sm:flex`}
