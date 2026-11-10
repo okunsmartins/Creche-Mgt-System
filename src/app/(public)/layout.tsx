@@ -3,19 +3,16 @@ import { SiteFooter } from '@/components/layout/SiteFooter'
 import { getPublicViewerContext } from '@/lib/tenant/server'
 import { getSessionUser } from '@/lib/auth/session'
 import { getPlatformSocialLinks, getSchoolSocialLinks } from '@/lib/social/queries'
+import { existingPortalFor } from '@/lib/onboarding/existing-portal'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
-  // Viewer-aware, and may be null: with no tenant and nobody signed in there is
-  // no school to brand with — SiteHeader falls back to platform branding. The
-  // platform owner on the bare apex is treated as a platform visitor (see
-  // getPublicViewerContext), so they get the platform nav, not a crèche portal.
+  // A crèche is shown only when the URL names one (its subdomain or `/s/<slug>`);
+  // the bare apex is always the Creche Wise main site (see getPublicViewerContext).
   const [{ school, tenantSlug }, user] = await Promise.all([
     getPublicViewerContext(),
     getSessionUser(),
   ])
-  // "In a crèche context" = a crèche is resolved for this viewer (subdomain,
-  // /s/<school> path, OR a signed-in school user's own school). Keeps the nav
-  // consistent with the branding.
+  // "In a crèche context" = the URL names a crèche (subdomain or /s/<school> path).
   const isTenant = school !== null
   // Footer social buttons: the crèche's own links in its portal, else Creche Wise's.
   const socialLinks = school
@@ -29,6 +26,7 @@ export default async function PublicLayout({ children }: { children: React.React
         isTenant={isTenant}
         tenantSlug={tenantSlug ?? undefined}
         isAuthenticated={user !== null}
+        portalHref={existingPortalFor(user)?.href}
       />
       <main id="main-content" className="flex-1">
         {children}

@@ -18,3 +18,11 @@ export function schoolPublicOrigin(appUrl: string): string {
 export function schoolPayLinkUrl(appUrl: string, token: string): string {
   return `${schoolPublicOrigin(appUrl)}/pay/${token}`
 }
+
+/**
+ * A crèche's public page path on the apex: `/s/<subdomain>` (the bare apex is the
+ * Creche Wise main site). Falls back to `/` when the crèche has no subdomain.
+ */
+export function crechePublicPath(subdomain: string | null | undefined): string {
+  return subdomain ? `/s/${encodeURIComponent(subdomain)}` : '/'
+}

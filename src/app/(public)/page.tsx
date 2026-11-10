@@ -10,13 +10,11 @@ import { getSchoolSocialLinks } from '@/lib/social/queries'
 export const metadata: Metadata = { title: 'Home' }
 
 export default async function HomePage() {
-  // Viewer-aware so the page agrees with the header rendered by (public)/layout.tsx.
-  // The platform owner on the bare apex is treated as a platform visitor here too.
+  // Same context as the header rendered by (public)/layout.tsx.
   const { school, tenantSlug } = await getPublicViewerContext()
 
-  // Main landing = no school resolved for this viewer (anonymous apex). A
-  // signed-in school user (even on the apex) is in their school's context, so
-  // they get the crèche page, not the platform marketing — this matches the
+  // Main landing = the URL names no crèche (the bare apex), whoever is signed in.
+  // A crèche's page lives at its subdomain or `/s/<slug>` — this matches the
   // header nav decided in (public)/layout.tsx.
   if (school === null) {
     // Same Stripe-backed price as /pricing so the two never disagree; falls back to
