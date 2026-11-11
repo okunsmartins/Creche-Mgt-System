@@ -14,12 +14,15 @@ interface SubscribeButtonProps {
   label?: string
   /** When true the button is disabled (e.g. no price configured yet). */
   disabled?: boolean
+  /** Stretch to the container's width (default). Off for inline use, e.g. a banner. */
+  fullWidth?: boolean
 }
 
 export function SubscribeButton({
   priceId,
   label = 'Subscribe',
   disabled = false,
+  fullWidth = true,
 }: SubscribeButtonProps) {
   const [state, formAction, isPending] = useActionState<SubscriptionCheckoutState, FormData>(
     createSubscriptionCheckoutAction,
@@ -33,13 +36,13 @@ export function SubscribeButton({
   const isRedirecting = !!state?.url
 
   return (
-    <div className="space-y-3">
+    <div className={fullWidth ? 'space-y-3' : 'inline-flex flex-col items-center gap-2'}>
       {state?.error && <Alert variant="error">{state.error}</Alert>}
       <form action={formAction}>
         <input type="hidden" name="priceId" value={priceId} />
         <Button
           type="submit"
-          className="w-full"
+          className={fullWidth ? 'w-full' : undefined}
           loading={isPending || isRedirecting}
           disabled={disabled}
         >
