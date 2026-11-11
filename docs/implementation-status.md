@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-11 (login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-11 (SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -112,7 +112,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | **PR #112: "Create your portal" while signed in to a crèche** now shows a "You're signed in to <crèche>" card on `/get-started`, `/onboarding` and `/get-started/verify`, with *Sign out and set up a new crèche* (`signOutAndContinueAction`, same-site `next` only) and *Go to my portal*. `createSchoolAction` returns an error instead of redirecting. | onboarding | 🟡 | `existingPortalFor` unit tests, plus a component test for the card. Localhost: the card renders (teddy layout); sign-out-and-continue goes to `/get-started`; the signed-out flows are unchanged. | **Not exercised signed in as a real crèche account** on production. |
 | **Review fix:** the platform owner's Schools/Overview **SMS** column and count now follow plan access, trials included (it read the legacy `sms_enabled` flag, which is false during trials) | single plan | ✅ (tsc/lint/tests) | One-line mapping to the same rule as `hasSmsAccess`. | Not browser-checked on `/platform`. |
 | **Review fix:** leftover **"Pro"** wording (the plan no longer exists) changed to "Subscribe" / "needs an active subscription", in the subscription page, `UpgradePrompt`, CSV import/export, payment links and report APIs. Payment Setup copy changed from school ("trips, books", "school's Stripe account") to crèche wording. | single plan / crèche copy | ✅ (tsc/lint/tests) | Copy only. | Not browser-checked. |
-| **Twilio CRECHEWISE alphanumeric sender** approved for Ireland (2026-10-22, account `AC4e1dded…`) | SMS / ComReg | ⬜ config | Twilio approval email. The app sends with `MessagingServiceSid` only, so the sender comes from the service's sender pool. | Add CRECHEWISE to the **Creche Wise** service `MG2a6a7dbf8ec1476dd3bfa919d910d836`, set the 4 `TWILIO_*` vars in the **creche-mgt-system** Vercel project, redeploy, then send a test text (plain text, no emojis). |
+| **Twilio CRECHEWISE alphanumeric sender** approved for Ireland (2026-10-22, account `AC4e1dded…`) | SMS / ComReg | ✅ live 2026-11-11 | Twilio approval email. The app sends with `MessagingServiceSid` only, so the sender comes from the service's sender pool. | ✅ Done: CrecheWise in the service sender pool (Ireland + generic), 4 `TWILIO_*` vars set in **creche-mgt-system**, redeployed. Live test from Angels Nest to the test child's parent (owner's phone): arrived as **CrecheWise**, `sms_notifications` status `delivered` within 5s (status callback working), 1 credit used of 500. |
 | **Supabase login emails via Resend SMTP** plus branded templates | §10 | ✅ 2026-11-11 | URL Configuration checked correct (Site URL `https://crechewise.com`; redirects for apex, www and the vercel.app domain). | Done: custom SMTP (`smtp.resend.com:465`, own Resend key), email rate limit 100/hour, Reset Password + Confirm signup templates pasted with Creche Wise subjects. The confirm-signup email hasn't been seen live yet. |
 
 ### Live data (read-only, 2026-11-05)
@@ -915,7 +915,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
     - Swap the 5 variables to live values and redeploy.
     - Copy the Connect branding to live.
     - Have every crèche reconnect, including Angels Nest, which is currently on a **test** connected account.
-11. **Twilio SMS, ⬜ still to do.** The CRECHEWISE alphanumeric sender was approved for Ireland on 2026-10-22.
+11. **Twilio SMS, ✅ done and verified live 2026-11-11** (text arrived as CrecheWise; delivery status `delivered`). The CRECHEWISE alphanumeric sender was approved for Ireland on 2026-10-22.
     - Twilio → Messaging → Services → **Creche Wise** (`MG2a6a7dbf8ec1476dd3bfa919d910d836`) → Sender Pool → add
       **Alpha Sender** `CRECHEWISE`.
     - In the Vercel **creche-mgt-system** project (not Skool Bido!) set:
@@ -927,7 +927,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 12. **Angels Nest housekeeping:**
     - ✅ Unlocked 2026-11-11 by subscribing in Stripe **test** mode. At go-live, cancel the test subscription and have
       Tracy subscribe for real (live mode).
-    - Mark the test child inactive now that test (b) is done: **MichaelTest JordanTest** (fee schedule "Test €1", INV-2026-000025 paid).
+    - Mark the test child inactive now that test (b) is done: **MichaelTest JordanTest** (fee schedule "Test €1", INV-2026-000025 paid). The owner's phone was added to this test family for the SMS test; remove it too.
+    - FYI: a school-wide test text ("Testing the SMS from crechewise.com") went to **2 Angels Nest parents** on 2026-10-21 (both delivered).
     - **Known bug to fix:** the monthly invoice for the 1–30 Nov schedule shows period **1 Nov → 5 Dec**. The period end runs past the schedule end.
 
 ---
@@ -1011,7 +1012,7 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
 **Recommended next (as of 2026-11-05):**
-0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Stripe tests **(b)** (a parent pays a €1 invoice) and **(c)** (the crèche subscribes) ✅ both passed in **test mode** on 2026-11-11. Password reset ✅ verified live 2026-11-11 (Manual configuration 9 done). SMS is still to verify after Manual configuration 11. FEE-08 is ✅ in test mode only: re-run (b) and (c) once in **live** mode at go-live.
+0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Stripe tests **(b)** (a parent pays a €1 invoice) and **(c)** (the crèche subscribes) ✅ both passed in **test mode** on 2026-11-11. Password reset ✅ verified live 2026-11-11 (Manual configuration 9 done). SMS ✅ verified live 2026-11-11 (Manual configuration 11 done). FEE-08 is ✅ in test mode only: re-run (b) and (c) once in **live** mode at go-live.
 1. **Funding & Hive Centre** (see the dedicated section above): extend tenant-isolation to the three uncovered Phase 2–4
    tables (release-blocker), wire operational mutations → compliance (addendum §9), then Phase 5 (AIM) behind its own
    permission + privacy review. (Branch protection on `main` is already **enabled** — ruleset "protect-main".)
