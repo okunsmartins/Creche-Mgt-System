@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-11 (€75 subscription verified end-to-end on Angels Nest; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-11 (Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -815,8 +815,10 @@ permission grant].)
 | **Password reset on any device** (PR #110, platform-wide) | `/auth/confirm`, `lib/auth/confirm-link.ts`, `confirmEmailLinkAction`, `docs/email-templates/` | link parsing + open-redirect guard unit-tested; localhost browser checks; live `/auth/confirm` 200 | **Real reset email not tested end-to-end.** Needs Supabase custom SMTP (Resend) and the reset template pasted in, then a reset opened on a different device. |
 | **New-crèche 30-day trial** (PR #111) | `lib/subscriptions/access.ts`, `lib/tenant/provision.ts` | regression + provisioning tests; data-level check of the live Flomat row | The owner hasn't confirmed logging in to a new crèche's dashboard since the deploy. |
 | **"Create your portal" while signed in** (PR #112) | `AlreadyInACreche`, `lib/onboarding/existing-portal.ts`, `signOutAndContinueAction` | unit + component tests; localhost card + sign-out-and-continue | Not exercised signed in to a real crèche on production. |
-| **FEE-08 parent card payment + €75 subscription (Stripe sandbox)** | `/parent/invoices`, `/admin/subscription` | Stripe sandbox + both webhooks ✅; Connect onboarding ✅ (Angels Nest); **test (c) ✅ 2026-11-11**: Angels Nest admin subscribed from the `/pricing` banner with 4242 → `checkout.session.completed`, `customer.subscription.created/updated`, `invoice.payment_succeeded` all recorded in `webhook_events`; row `pro/active`, period end 2026-12-11; `/admin/subscription` shows Active; dashboard unlocked | Test (b), a parent paying a €1 invoice, **not run**. |
+| **FEE-08 parent card payment + €75 subscription (Stripe sandbox)** | `/parent/invoices`, `/admin/subscription` | Stripe sandbox + both webhooks ✅; Connect onboarding ✅ (Angels Nest); **test (c) ✅ 2026-11-11**: Angels Nest admin subscribed from the `/pricing` banner with 4242 → `checkout.session.completed`, `customer.subscription.created/updated`, `invoice.payment_succeeded` all recorded in `webhook_events`; row `pro/active`, period end 2026-12-11; `/admin/subscription` shows Active; dashboard unlocked | ✅ **Test (b) passed 2026-11-11:** test parent (owner's `+test` Gmail) paid INV-2026-000025 (€1.00) via Stripe Connect test checkout. Invoice `paid`, `amount_paid_cents` 100, Connect `checkout.session.completed` recorded. Both FEE-08 sandbox flows verified. **Live mode not yet tested.** |
 | **Locked-crèche banner** (PR #115) | `lib/subscriptions/locked-banner.ts`, `LockedCrecheBanner`, `/pricing` | unit + component tests; **live ✅ 2026-11-11**: banner showed "Angels Nest Crèche" + Subscribe for its admin, and the Subscribe button completed test (c) | The staff/parent version ("contact your crèche manager") hasn't been seen live. |
+| **Parent Fees & Invoices card + Fees menu** (PR #117) | `ParentFeesCard`, `lib/fees/parent-summary.ts`, `ParentHeader` | unit + component tests; **live ✅ 2026-11-11**: showed "All paid, thank you" after test (b) | The red "€x due" state hasn't been seen live; it was only checked on localhost. |
+| **Parent page layout + "Payment received" message** (PR #118) | invoices, late-fees, activities, programmes pages; `ParentHeader` | localhost visual check (header at 1100/1920px, message) | Not yet checked signed in as a parent on production. |
 
 ---
 
@@ -925,7 +927,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 12. **Angels Nest housekeeping:**
     - ✅ Unlocked 2026-11-11 by subscribing in Stripe **test** mode. At go-live, cancel the test subscription and have
       Tracy subscribe for real (live mode).
-    - Mark the test child inactive after the payment test.
+    - Mark the test child inactive now that test (b) is done: **MichaelTest JordanTest** (fee schedule "Test €1", INV-2026-000025 paid).
+    - **Known bug to fix:** the monthly invoice for the 1–30 Nov schedule shows period **1 Nov → 5 Dec**. The period end runs past the schedule end.
 
 ---
 
@@ -1008,7 +1011,7 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
 **Recommended next (as of 2026-11-05):**
-0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Then run Stripe test **(b)**: a parent pays a €1 invoice with `4242 4242 4242 4242`. Test (c), the crèche subscribing, ✅ passed 2026-11-11. Only then mark FEE-08, SMS and password reset ✅.
+0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Stripe tests **(b)** (a parent pays a €1 invoice) and **(c)** (the crèche subscribes) ✅ both passed in **test mode** on 2026-11-11. SMS and password reset are still to verify after Manual configuration 9 and 11. FEE-08 is ✅ in test mode only: re-run (b) and (c) once in **live** mode at go-live.
 1. **Funding & Hive Centre** (see the dedicated section above): extend tenant-isolation to the three uncovered Phase 2–4
    tables (release-blocker), wire operational mutations → compliance (addendum §9), then Phase 5 (AIM) behind its own
    permission + privacy review. (Branch protection on `main` is already **enabled** — ruleset "protect-main".)
