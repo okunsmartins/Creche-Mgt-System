@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
+import { Alert } from '@/components/ui/Alert'
 import { formatCurrency } from '@/lib/utils'
 import { PayInvoiceButton } from '@/components/fees/PayInvoiceButton'
 import { PARENT_VISIBLE_INVOICE_STATUSES, summariseParentInvoices } from '@/lib/fees/parent-summary'
@@ -27,7 +28,12 @@ const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'default'> = {
   issued: 'default',
 }
 
-export default async function ParentInvoicesPage() {
+export default async function ParentInvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paid?: string }>
+}) {
+  const { paid } = await searchParams
   const parent = await requireVerifiedAuth()
   const db = createSupabaseAdminClient()
 
@@ -57,7 +63,12 @@ export default async function ParentInvoicesPage() {
   const { outstandingCents } = summariseParentInvoices(invoices)
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      {paid === '1' && (
+        <Alert variant="success" title="Payment received, thank you">
+          Your card payment went through. It can take a minute to show as paid below.
+        </Alert>
+      )}
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Fees &amp; Invoices</h1>
         <p className="mt-1 text-sm text-text-muted">
