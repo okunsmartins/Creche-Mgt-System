@@ -49,7 +49,7 @@ export default async function ParentActivitiesPage() {
 
   if (linkedStudents.length === 0) {
     return (
-      <div>
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold text-text-primary">Activities</h1>
         <div className="rounded-lg border border-border bg-surface p-8 text-center">
           <p className="text-text-muted">
@@ -108,7 +108,7 @@ export default async function ParentActivitiesPage() {
 
   if (allActivityIds.length === 0) {
     return (
-      <div>
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold text-text-primary">Activities</h1>
         <p className="text-text-muted">
           There are no activities available for your children&apos;s classes at the moment.
@@ -206,7 +206,7 @@ export default async function ParentActivitiesPage() {
   })
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Activities</h1>
