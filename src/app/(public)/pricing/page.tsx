@@ -6,6 +6,10 @@ import { serverEnv } from '@/lib/env'
 import { getProPrices } from '@/lib/stripe/prices'
 import { SubscribeButton } from '@/components/subscriptions/SubscribeButton'
 import { TRIAL_PERIOD_DAYS } from '@/lib/subscriptions/trial'
+import { getSessionUser } from '@/lib/auth/session'
+import { schoolHasProAccess } from '@/lib/subscriptions/access'
+import { lockReasonFrom, lockedBannerFor } from '@/lib/subscriptions/locked-banner'
+import { LockedCrecheBanner } from '@/components/subscriptions/LockedCrecheBanner'
 
 export const metadata: Metadata = { title: 'Pricing' }
 
@@ -36,25 +40,24 @@ export default async function PricingPage({
   const subscriptionsEnabled = !!(monthlyPriceId || annualPriceId)
   const prices = subscriptionsEnabled ? await getProPrices() : { monthly: null, annual: null }
 
+  // A locked crèche's people are sent here from their portal. Name the crèche
+  // and, for its admin, put the Subscribe button right in the banner.
+  const lockReason = lockReasonFrom({ reason, locked })
+  const user = lockReason ? await getSessionUser() : null
+  const banner = lockedBannerFor({
+    reason: lockReason,
+    user,
+    schoolHasAccess: user?.schoolId ? await schoolHasProAccess(user.schoolId) : false,
+  })
+
   return (
     <>
-      {reason === 'start_trial' && (
-        <div className="border-b border-primary/20 bg-primary/5 px-4 py-3 text-center text-sm text-primary">
-          Create your portal to <strong>start your {TRIAL_PERIOD_DAYS}-day free trial</strong> — no
-          card required, and you can cancel anytime.
-        </div>
-      )}
-      {reason === 'trial_ended' && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-          Your crèche&apos;s <strong>{TRIAL_PERIOD_DAYS}-day free trial has ended</strong>.
-          Subscribe below to continue using the portal.
-        </div>
-      )}
-      {locked && (
-        <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
-          Your <strong>free trial has ended</strong>. Subscribe below to unlock it for your crèche.
-        </div>
-      )}
+      <LockedCrecheBanner
+        banner={banner}
+        trialDays={TRIAL_PERIOD_DAYS}
+        priceId={monthlyPriceId}
+        priceLabel={prices.monthly}
+      />
       {/* Hero */}
       <section
         className="py-16 text-text-primary md:py-20"
