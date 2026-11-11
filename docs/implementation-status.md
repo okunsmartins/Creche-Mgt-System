@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-11 (Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-11 (login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -95,7 +95,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 - **Not run:**
   - Playwright E2E (CI job still skipped)
   - `scripts/verify-tenant-isolation.mjs`: it writes rows to the live DB, so it needs the owner's go-ahead
-  - A real password-reset email, which needs Supabase SMTP to be set up first
+  - Opening a reset link a second time (it should show "expired"), and opening one on a different device
 
 ### What was delivered, against the spec
 
@@ -105,7 +105,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | **Crèche connects its own Stripe account** (Standard, direct charges) | FEE-08 per-tenant | ✅ sandbox | Angels Nest finished sandbox onboarding. `/admin/payments/connect` showed "Connected · You're ready to take payments", and webhook B received `account.updated` 200. | Each crèche still needs live KYC. ⚠️ Angels Nest is linked to a **test** account and must **reconnect** after the switch to live keys. |
 | **Parent pays an invoice by card** (direct charge to the crèche) | FEE-08 | 🟡 | Code unchanged since #86. Test child/parent set up. | **Test (b) not run.** Blocked because Angels Nest is locked (trial ended 2026-10-24). |
 | **Crèche subscribes (€75/mo)** | pricing | 🟡 | Price exists in the sandbox. Checkout code unchanged. | **Test (c) not run.** It would also unlock Angels Nest. |
-| **PR #110: password reset works on any device** (`/auth/confirm` + `token_hash` + `verifyOtp` on a button press, `confirmEmailLinkAction`, `lib/auth/confirm-link.ts`) | §10 / account recovery | 🟡 | Unit tests (`confirm-link.test.ts`). Localhost browser checks: the page renders; a fake token shows the expired message; a missing token shows "Link invalid"; `error_code=otp_expired` shows the expired-link login message. Live `/auth/confirm` returns 200. | **A real reset email hasn't been tested.** It needs Supabase custom SMTP (Resend) **and** the reset template pasted in ([email-templates/README.md](email-templates/README.md)). The old `?code=` callback still serves any links already sent. |
+| **PR #110: password reset works on any device** (`/auth/confirm` + `token_hash` + `verifyOtp` on a button press, `confirmEmailLinkAction`, `lib/auth/confirm-link.ts`) | §10 / account recovery | ✅ | Unit tests (`confirm-link.test.ts`). Localhost browser checks: the page renders; a fake token shows the expired message; a missing token shows "Link invalid"; `error_code=otp_expired` shows the expired-link login message. Live `/auth/confirm` returns 200. | ✅ **Real reset email tested live 2026-11-11** (test parent): branded email from `noreply@crechewise.com` arrived, the link opened "Set a new password", the new password was saved and sign-in worked. Not yet tried: reusing the link, or opening it on a different device. |
 | PR #110: **open redirect fixed** in `/api/auth/callback` (`next=//evil.com` was accepted) | §10 | ✅ | `safeNextPath` unit tests, plus a localhost browser check: `next=//evil.com` now lands on `/login`. | — |
 | PR #110: failed reset-email sends are now **logged** (`password_reset_send_failed`); the message shown is unchanged, so there's no email enumeration | §10 | ✅ (code + tsc) | — | No alerting on that log line. |
 | **PR #111: new crèches get their 30-day trial.** Root cause: from 0858ab8 (2026-10-03), provisioning wrote `plan='free'`, and `hasProAccess` rejected `free` before checking the trial dates. | no-card trial | 🟡 (logic ✅) | Regression tests for `plan='free'` trials, plus a `provisionSchool` test: access on day 1, locked after day 30. **Data-level check (2026-11-05):** Flomat's row (`free/trialing`, ends 2026-11-23) passes the new rule. | **The owner hasn't yet confirmed logging in to Flomat's dashboard** after the deploy. |
@@ -113,7 +113,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 | **Review fix:** the platform owner's Schools/Overview **SMS** column and count now follow plan access, trials included (it read the legacy `sms_enabled` flag, which is false during trials) | single plan | ✅ (tsc/lint/tests) | One-line mapping to the same rule as `hasSmsAccess`. | Not browser-checked on `/platform`. |
 | **Review fix:** leftover **"Pro"** wording (the plan no longer exists) changed to "Subscribe" / "needs an active subscription", in the subscription page, `UpgradePrompt`, CSV import/export, payment links and report APIs. Payment Setup copy changed from school ("trips, books", "school's Stripe account") to crèche wording. | single plan / crèche copy | ✅ (tsc/lint/tests) | Copy only. | Not browser-checked. |
 | **Twilio CRECHEWISE alphanumeric sender** approved for Ireland (2026-10-22, account `AC4e1dded…`) | SMS / ComReg | ⬜ config | Twilio approval email. The app sends with `MessagingServiceSid` only, so the sender comes from the service's sender pool. | Add CRECHEWISE to the **Creche Wise** service `MG2a6a7dbf8ec1476dd3bfa919d910d836`, set the 4 `TWILIO_*` vars in the **creche-mgt-system** Vercel project, redeploy, then send a test text (plain text, no emojis). |
-| **Supabase login emails via Resend SMTP** plus branded templates | §10 | ⬜ manual | URL Configuration checked correct (Site URL `https://crechewise.com`; redirects for apex, www and the vercel.app domain). | Until this is done, login emails come from Supabase's default mailer, which has a very low hourly limit and only delivers to the project team's addresses, so **real parents may not receive reset or confirm emails.** |
+| **Supabase login emails via Resend SMTP** plus branded templates | §10 | ✅ 2026-11-11 | URL Configuration checked correct (Site URL `https://crechewise.com`; redirects for apex, www and the vercel.app domain). | Done: custom SMTP (`smtp.resend.com:465`, own Resend key), email rate limit 100/hour, Reset Password + Confirm signup templates pasted with Creche Wise subjects. The confirm-signup email hasn't been seen live yet. |
 
 ### Live data (read-only, 2026-11-05)
 | Crèche | Subscription row | Access |
@@ -812,7 +812,7 @@ permission grant].)
 | Daily records / enquiries admin UIs | `/admin/daily-records`, `/admin/enquiries` | pages render; engines + migrations tested/verified | **Create/update flows not exercised via automated E2E.** |
 | Subvention report + commercial dashboard | `/admin/subvention-report`, `/admin/commercial` | engines tested; data layer script-verified | **No browser E2E**; commercial "occupancy" uses present-now, not licensed capacity. |
 | Reminders preview | `/admin/reminders` | selection engine tested; page renders who is due | **Does not send** — no email/SMS dispatch wired (provider-gated). |
-| **Password reset on any device** (PR #110, platform-wide) | `/auth/confirm`, `lib/auth/confirm-link.ts`, `confirmEmailLinkAction`, `docs/email-templates/` | link parsing + open-redirect guard unit-tested; localhost browser checks; live `/auth/confirm` 200 | **Real reset email not tested end-to-end.** Needs Supabase custom SMTP (Resend) and the reset template pasted in, then a reset opened on a different device. |
+| **Password reset on any device** (PR #110, platform-wide) | `/auth/confirm`, `lib/auth/confirm-link.ts`, `confirmEmailLinkAction`, `docs/email-templates/` | link parsing + open-redirect guard unit-tested; localhost browser checks; live `/auth/confirm` 200 | ✅ Real reset email tested live 2026-11-11. Still to try: opening a link on a different device, and reusing a link. Follow-up fix: the set-password page now gives the real reason for a failure (e.g. "must be different from your current password") instead of always saying the link expired. |
 | **New-crèche 30-day trial** (PR #111) | `lib/subscriptions/access.ts`, `lib/tenant/provision.ts` | regression + provisioning tests; data-level check of the live Flomat row | The owner hasn't confirmed logging in to a new crèche's dashboard since the deploy. |
 | **"Create your portal" while signed in** (PR #112) | `AlreadyInACreche`, `lib/onboarding/existing-portal.ts`, `signOutAndContinueAction` | unit + component tests; localhost card + sign-out-and-continue | Not exercised signed in to a real crèche on production. |
 | **FEE-08 parent card payment + €75 subscription (Stripe sandbox)** | `/parent/invoices`, `/admin/subscription` | Stripe sandbox + both webhooks ✅; Connect onboarding ✅ (Angels Nest); **test (c) ✅ 2026-11-11**: Angels Nest admin subscribed from the `/pricing` banner with 4242 → `checkout.session.completed`, `customer.subscription.created/updated`, `invoice.payment_succeeded` all recorded in `webhook_events`; row `pro/active`, period end 2026-12-11; `/admin/subscription` shows Active; dashboard unlocked | ✅ **Test (b) passed 2026-11-11:** test parent (owner's `+test` Gmail) paid INV-2026-000025 (€1.00) via Stripe Connect test checkout. Invoice `paid`, `amount_paid_cents` 100, Connect `checkout.session.completed` recorded. Both FEE-08 sandbox flows verified. **Live mode not yet tested.** |
@@ -893,7 +893,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 8. **Before pilot / go-live:** Stripe Connect + Revolut KYC; ComReg/Twilio A2P; email sender-domain (SPF/DKIM/DMARC);
    DPIA. Provider + Vercel steps: [provider-setup.md](provider-setup.md), [deploy-checklist.md](deploy-checklist.md),
    [domain-setup-crechewise.md](domain-setup-crechewise.md).
-9. **Login emails (all crèches), ⬜ still to do:**
+9. **Login emails (all crèches), ✅ done 2026-11-11** (reset email tested live):
    - In Supabase, turn on custom SMTP via Resend:
      - host `smtp.resend.com:465`, username `resend`
      - password: a new Resend key with "Sending access"
@@ -1011,7 +1011,7 @@ git push -u origin feat/<name>   # then open the PR on GitHub
 ```
 
 **Recommended next (as of 2026-11-05):**
-0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Stripe tests **(b)** (a parent pays a €1 invoice) and **(c)** (the crèche subscribes) ✅ both passed in **test mode** on 2026-11-11. SMS and password reset are still to verify after Manual configuration 9 and 11. FEE-08 is ✅ in test mode only: re-run (b) and (c) once in **live** mode at go-live.
+0. **Finish this session's manual steps** (Manual configuration 9, 11 and 12). Stripe tests **(b)** (a parent pays a €1 invoice) and **(c)** (the crèche subscribes) ✅ both passed in **test mode** on 2026-11-11. Password reset ✅ verified live 2026-11-11 (Manual configuration 9 done). SMS is still to verify after Manual configuration 11. FEE-08 is ✅ in test mode only: re-run (b) and (c) once in **live** mode at go-live.
 1. **Funding & Hive Centre** (see the dedicated section above): extend tenant-isolation to the three uncovered Phase 2–4
    tables (release-blocker), wire operational mutations → compliance (addendum §9), then Phase 5 (AIM) behind its own
    permission + privacy review. (Branch protection on `main` is already **enabled** — ruleset "protect-main".)

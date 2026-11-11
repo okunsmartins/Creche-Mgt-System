@@ -6,6 +6,7 @@ import { logger } from '@/lib/logging'
 import { serverEnv } from '@/lib/env'
 import { getTenantSubdomain, getTenantSchoolId } from '@/lib/tenant/server'
 import { parseConfirmLink, safeNextPath } from './confirm-link'
+import { updatePasswordErrorMessage } from './password-errors'
 import {
   loginSchema,
   registerSchema,
@@ -279,10 +280,7 @@ export async function updatePasswordAction(
 
   if (error) {
     logger.warn('update_password_failed', { reason: error.code })
-    return {
-      error:
-        'Unable to update password. The reset link may have expired. Please request a new one.',
-    }
+    return { error: updatePasswordErrorMessage(error) }
   }
 
   // FR-AUTH-005: sign out all sessions after password change so other
