@@ -205,7 +205,35 @@ export function buildInvoiceDrafts(params: BuildInvoiceParams): InvoiceDraft[] {
     draft.providerReceivableNcsCents += week.providerNcsSubsidyCents
   })
 
-  return order.map((k) => buckets.get(k)!)
+  return order.map((k) => labelPeriod(buckets.get(k)!, params))
+}
+
+const minISO = (a: string, b: string): string => (a < b ? a : b)
+const maxISO = (a: string, b: string): string => (a > b ? a : b)
+
+/**
+ * Fix up a draft's period dates (amounts are untouched):
+ *  - an invoice never ends after the schedule does (the last billing week can run
+ *    past `endISO`, e.g. a 1–30 Nov schedule's last week starts 29 Nov);
+ *  - a FLAT monthly fee covers its calendar month (1 Nov → 30 Nov), clamped to the
+ *    schedule window, and is due on the first day of that range. Hours-based
+ *    monthly invoices keep week-aligned dates, since they bill whole weeks.
+ */
+function labelPeriod(draft: InvoiceDraft, params: BuildInvoiceParams): InvoiceDraft {
+  const { startISO, endISO, frequency } = params
+  if (frequency === 'monthly' && params.flatAmountCents != null) {
+    const d = toUtc(draft.periodStart)
+    const monthStart = fromUtc(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)))
+    const monthEnd = fromUtc(new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)))
+    const periodStart = maxISO(monthStart, startISO)
+    return {
+      ...draft,
+      periodStart,
+      periodEnd: minISO(monthEnd, endISO),
+      dueDate: periodStart,
+    }
+  }
+  return { ...draft, periodEnd: minISO(draft.periodEnd, endISO) }
 }
 
 /** Total the parent pays across all drafts, cents. */
