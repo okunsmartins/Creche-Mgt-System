@@ -9,6 +9,7 @@ import {
   resolveRevolutWebhookSecret,
   resolveRevolutApiKey,
 } from '@/lib/revolut/perSchool'
+import { recordFeePayment } from '@/lib/fees/record-payment'
 
 // Excluded from auth middleware (see middleware.ts matcher). Raw body is read
 // BEFORE any JSON parse — required for HMAC signature verification.
@@ -275,7 +276,7 @@ async function handleOrderCompleted(
   }
 }
 
-/** Parent paid a fees invoice via Revolut — mark it (part-)paid and record the payment. */
+/** Parent paid a fees invoice via Revolut — record it and settle the invoice (retry-safe). */
 async function applyRevolutInvoicePayment(
   order: RetrievedRevolutOrder,
   revolutOrderId: string,
@@ -285,40 +286,17 @@ async function applyRevolutInvoicePayment(
   const invoiceId = order.metadata?.invoice_id
   if (!invoiceId) throw new Error(`No invoice_id in metadata for Revolut order ${revolutOrderId}`)
   if (paidCents <= 0) throw new Error(`Invalid amount ${paidCents} for invoice ${invoiceId}`)
-
-  const { data: invRow, error: fetchError } = await adminClient
-    .from('invoices')
-    .select('net_parent_cents, amount_paid_cents, status')
-    .eq('id', invoiceId)
-    .single()
-  if (fetchError || !invRow) throw new Error(`Invoice ${invoiceId} not found for payment`)
-  const inv = invRow as { net_parent_cents: number; amount_paid_cents: number; status: string }
-
-  if (inv.status === 'issued' || inv.status === 'part_paid') {
-    const newPaid = inv.amount_paid_cents + paidCents
-    const newStatus = newPaid >= inv.net_parent_cents ? 'paid' : 'part_paid'
-    const { error: updErr } = await adminClient
-      .from('invoices')
-      .update({ amount_paid_cents: newPaid, status: newStatus })
-      .eq('id', invoiceId)
-      .in('status', ['issued', 'part_paid'])
-    if (updErr) throw new Error(updErr.message)
-  }
-
-  const { error: payErr } = await adminClient.from('payments').insert({
-    invoice_id: invoiceId,
+  await recordFeePayment(adminClient, {
+    kind: 'invoice',
+    subjectId: invoiceId,
     provider: 'revolut',
-    provider_order_id: revolutOrderId,
-    amount_cents: paidCents,
+    amountCents: paidCents,
     currency: 'EUR',
-    status: 'paid',
-    paid_at: new Date().toISOString(),
+    providerOrderId: revolutOrderId,
   })
-  if (payErr && payErr.code !== '23505') throw new Error(payErr.message)
-  logger.info('revolut_invoice_payment_recorded', { invoiceId, revolutOrderId, paidCents })
 }
 
-/** Parent paid a late-collection fee via Revolut — mark it paid and record the payment. */
+/** Parent paid a late-collection fee via Revolut — record it and settle the fee (retry-safe). */
 async function applyRevolutLateFeePayment(
   order: RetrievedRevolutOrder,
   revolutOrderId: string,
@@ -329,34 +307,14 @@ async function applyRevolutLateFeePayment(
   if (!lateId)
     throw new Error(`No late_collection_id in metadata for Revolut order ${revolutOrderId}`)
   if (paidCents <= 0) throw new Error(`Invalid amount ${paidCents} for late fee ${lateId}`)
-
-  const { data: lcRow, error: fetchError } = await adminClient
-    .from('late_collections')
-    .select('fee_cents, amount_paid_cents')
-    .eq('id', lateId)
-    .single()
-  if (fetchError || !lcRow) throw new Error(`Late collection ${lateId} not found for payment`)
-  const lc = lcRow as { fee_cents: number; amount_paid_cents: number }
-  const newPaid = lc.amount_paid_cents + paidCents
-  const fullyPaid = newPaid >= lc.fee_cents
-
-  const { error: updErr } = await adminClient
-    .from('late_collections')
-    .update({ amount_paid_cents: newPaid, paid_at: fullyPaid ? new Date().toISOString() : null })
-    .eq('id', lateId)
-  if (updErr) throw new Error(updErr.message)
-
-  const { error: payErr } = await adminClient.from('payments').insert({
-    late_collection_id: lateId,
+  await recordFeePayment(adminClient, {
+    kind: 'late_fee',
+    subjectId: lateId,
     provider: 'revolut',
-    provider_order_id: revolutOrderId,
-    amount_cents: paidCents,
+    amountCents: paidCents,
     currency: 'EUR',
-    status: 'paid',
-    paid_at: new Date().toISOString(),
+    providerOrderId: revolutOrderId,
   })
-  if (payErr && payErr.code !== '23505') throw new Error(payErr.message)
-  logger.info('revolut_latefee_payment_recorded', { lateId, revolutOrderId, paidCents })
 }
 
 async function handleOrderFailed(

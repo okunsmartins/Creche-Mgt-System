@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-11 (SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-11 (fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -384,15 +384,20 @@ PRs: `feat/timesheet-report`, `feat/timeoff-clash`, `feat/staff-clock-in` (all r
   `amount_paid_cents`+`status`) or the late-fee `paid_at`, and insert a payment row (idempotent via the new unique
   indexes / `provider_order_id`). Reflected in **parent + child + admin** views and admin money-collected.
 - **Gap to close (release-blocking for FEE-08):** **no crèche has connected a payment account**, so the pay→paid loop
-  is **unverified end-to-end**. Also: overpayment isn't capped in the invoice webhook (caps `status`, not `amount_paid`);
-  no automated test of the webhook propagation (webhook handlers aren't unit-tested); no receipt email on invoice/late-fee
-  payment yet.
+  is **unverified end-to-end**. ✅ **Update 2026-11-11 (PR `fix/invoice-payment-hardening`):** the overpayment cap,
+  webhook tests and receipt email below are now done (see item 2/3); the Stripe pay→paid loop passed test (b) in test mode.
 
 **Outstanding (not done — do not report as complete):**
 1. **Verify FEE-08 end-to-end** once a crèche connects Stripe (test mode) or Revolut: pay → invoice/late-fee flips to paid
    in all three views; test idempotency (replay webhook) and partial payment.
-2. **Webhook unit tests** for invoice/late-fee propagation + idempotency; **overpayment cap** in the invoice webhook.
-3. **Receipt email** on a successful invoice/late-fee payment.
+2. ✅ **Done 2026-11-11.** Both webhooks (Stripe + Revolut) now share `lib/fees/record-payment.ts`: the payment row
+   is inserted first (the idempotency gate), then the invoice/late fee is settled from the **total** of its payment rows
+   (`lib/fees/settle-payment.ts`), so a retry can't double-count. `amount_paid_cents` is capped at what was owed; any
+   excess (paid twice, or paid after a void) is logged as `fee_overpayment` and **emailed to the crèche owner** to refund.
+   Tests: `settle-payment.test.ts` (11), `record-payment.test.ts` (8, fake DB: settle, retry, overpayment, void, Revolut
+   dedupe, late fee, email failure). Not yet seen live: the overpayment alert email.
+3. ✅ **Done 2026-11-11.** Receipt email to every linked parent after an invoice/late-fee payment
+   (`lib/fees/payment-emails.ts`, 5 tests). Best-effort: a failed email never fails the webhook. Not yet seen live.
 4. **Merge the 7 open PRs** (invoice-payments **before** the stacked late-collection-payments).
 
 ### Manual configuration steps (this session)
