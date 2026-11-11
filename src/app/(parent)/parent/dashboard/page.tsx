@@ -3,13 +3,18 @@ import Link from 'next/link'
 import { Users, CreditCard, History, CalendarDays, ArrowRight, ClipboardCheck } from 'lucide-react'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { getParentPermissionSlips } from '@/lib/permission-slips/queries'
+import { getParentFeesSummary } from '@/lib/fees/parent-summary'
+import { ParentFeesCard } from '@/components/fees/ParentFeesCard'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
 export default async function ParentDashboardPage() {
   const user = await requireVerifiedAuth()
 
-  const slipChildren = await getParentPermissionSlips(user.id)
+  const [slipChildren, fees] = await Promise.all([
+    getParentPermissionSlips(user.id),
+    getParentFeesSummary(user.id),
+  ])
   const awaitingSlips = slipChildren.reduce(
     (n, c) => n + c.slips.filter((s) => s.response === null).length,
     0,
@@ -83,6 +88,8 @@ export default async function ParentDashboardPage() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
+        {/* Fees first: the regular bill every family has. */}
+        <ParentFeesCard summary={fees} />
         {cards.map(({ href, label, sublabel, icon: Icon, glow, cta }) => (
           <Link
             key={href}

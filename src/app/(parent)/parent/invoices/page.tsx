@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
 import { PayInvoiceButton } from '@/components/fees/PayInvoiceButton'
+import { PARENT_VISIBLE_INVOICE_STATUSES, summariseParentInvoices } from '@/lib/fees/parent-summary'
 
 export const metadata: Metadata = { title: 'Fees & Invoices' }
 
@@ -47,14 +48,13 @@ export default async function ParentInvoicesPage() {
         'id, invoice_number, student_id, period_start, period_end, due_date, net_parent_cents, amount_paid_cents, status, students(first_name, last_name)',
       )
       .in('student_id', childIds)
-      .in('status', ['issued', 'part_paid', 'paid'])
+      .in('status', [...PARENT_VISIBLE_INVOICE_STATUSES])
       .order('due_date')
     invoices = (data ?? []) as unknown as InvoiceRow[]
   }
 
-  const outstandingCents = invoices
-    .filter((i) => i.status !== 'paid')
-    .reduce((sum, i) => sum + Math.max(0, i.net_parent_cents - i.amount_paid_cents), 0)
+  // Same rule as the dashboard's Fees & Invoices card.
+  const { outstandingCents } = summariseParentInvoices(invoices)
 
   return (
     <div className="space-y-6">

@@ -49,6 +49,13 @@ const NAV: NavEntry[] = [
     ],
   },
   {
+    label: 'Fees',
+    items: [
+      { href: '/parent/invoices', label: 'Fees & Invoices' },
+      { href: '/parent/late-fees', label: 'Late Fees' },
+    ],
+  },
+  {
     label: 'Contact',
     items: [
       { href: '/parent/messages', label: 'Messages' },
@@ -58,8 +65,6 @@ const NAV: NavEntry[] = [
   {
     label: 'Crèche',
     items: [
-      { href: '/parent/invoices', label: 'Fees & Invoices' },
-      { href: '/parent/late-fees', label: 'Late Fees' },
       { href: '/parent/permission-slips', label: 'Permission Slips' },
       { href: '/parent/collectors', label: 'Who Can Collect' },
       { href: '/parent/collection', label: 'School Collection' },
