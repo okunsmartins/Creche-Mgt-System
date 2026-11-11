@@ -115,3 +115,60 @@ describe('buildInvoiceDrafts — ECCE zero-rating', () => {
     expect(d[1]!.ecceZeroRatedHours).toBe(0)
   })
 })
+
+describe('buildInvoiceDrafts — period dates never run past the schedule', () => {
+  it('the reported case: flat €1 monthly, 1–30 Nov → one invoice 1 Nov → 30 Nov (was → 5 Dec)', () => {
+    const d = buildInvoiceDrafts({
+      frequency: 'monthly',
+      startISO: '2026-11-01',
+      endISO: '2026-11-30',
+      flatAmountCents: 100,
+    })
+    expect(d).toHaveLength(1)
+    expect(d[0]).toMatchObject({
+      periodStart: '2026-11-01',
+      periodEnd: '2026-11-30',
+      dueDate: '2026-11-01',
+      netParentCents: 100,
+    })
+  })
+
+  it('flat monthly fees are labelled by calendar month, clamped to the window', () => {
+    const d = buildInvoiceDrafts({
+      frequency: 'monthly',
+      startISO: '2026-11-10',
+      endISO: '2027-01-20',
+      flatAmountCents: 24000,
+    })
+    expect(d.map((x) => [x.periodStart, x.periodEnd, x.dueDate])).toEqual([
+      ['2026-11-10', '2026-11-30', '2026-11-10'],
+      ['2026-12-01', '2026-12-31', '2026-12-01'],
+      ['2027-01-01', '2027-01-20', '2027-01-01'],
+    ])
+    expect(d.every((x) => x.netParentCents === 24000)).toBe(true)
+  })
+
+  it('weekly: the last (partial) week ends on the schedule end date', () => {
+    const d = buildInvoiceDrafts({
+      frequency: 'weekly',
+      startISO: '2026-11-01',
+      endISO: '2026-11-30',
+      flatAmountCents: 5000,
+    })
+    expect(d.at(-1)).toMatchObject({ periodStart: '2026-11-29', periodEnd: '2026-11-30' })
+    expect(d.every((x) => x.periodEnd <= '2026-11-30')).toBe(true)
+  })
+
+  it('hours-based monthly keeps week-aligned dates but is clamped to the window', () => {
+    const d = buildInvoiceDrafts({
+      frequency: 'monthly',
+      startISO: '2026-11-01',
+      endISO: '2026-11-30',
+      providerHourlyRateCents: 600,
+      contractedDayHours: [8, 8, 8, 8, 8],
+    })
+    expect(d).toHaveLength(1)
+    expect(d[0]!.periodStart).toBe('2026-11-01')
+    expect(d[0]!.periodEnd).toBe('2026-11-30')
+  })
+})
