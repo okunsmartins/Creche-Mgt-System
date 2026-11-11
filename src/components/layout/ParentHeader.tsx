@@ -49,6 +49,13 @@ const NAV: NavEntry[] = [
     ],
   },
   {
+    label: 'Fees',
+    items: [
+      { href: '/parent/invoices', label: 'Fees & Invoices' },
+      { href: '/parent/late-fees', label: 'Late Fees' },
+    ],
+  },
+  {
     label: 'Contact',
     items: [
       { href: '/parent/messages', label: 'Messages' },
@@ -58,8 +65,6 @@ const NAV: NavEntry[] = [
   {
     label: 'Crèche',
     items: [
-      { href: '/parent/invoices', label: 'Fees & Invoices' },
-      { href: '/parent/late-fees', label: 'Late Fees' },
       { href: '/parent/permission-slips', label: 'Permission Slips' },
       { href: '/parent/collectors', label: 'Who Can Collect' },
       { href: '/parent/collection', label: 'School Collection' },
@@ -96,14 +101,17 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-sm">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/parent/dashboard" className="flex items-center gap-3" aria-label="Dashboard">
+        <Link
+          href="/parent/dashboard"
+          className="flex min-w-0 shrink-0 items-center gap-3"
+          aria-label="Dashboard"
+        >
           <SchoolCrest name={brandName} size={36} logoUrl={logoUrl} />
           <span className="hidden text-sm font-bold leading-tight text-primary sm:block">
-            {brandName}
-            <br />
-            <span className="text-xs font-normal text-text-secondary">Parent Portal</span>
+            <span className="block max-w-[14rem] truncate whitespace-nowrap">{brandName}</span>
+            <span className="block text-xs font-normal text-text-secondary">Parent Portal</span>
           </span>
         </Link>
 
@@ -148,8 +156,10 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
         </Link>
 
         {/* Desktop: user avatar + sign out */}
-        <div className="hidden items-center gap-3 lg:flex">
-          <span className="hidden text-sm text-text-muted xl:inline">{displayName}</span>
+        <div className="hidden shrink-0 items-center gap-3 lg:flex">
+          <span className="hidden whitespace-nowrap text-sm text-text-muted 2xl:inline">
+            {displayName}
+          </span>
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white"
             aria-hidden="true"
@@ -160,7 +170,7 @@ export function ParentHeader({ user, logoUrl }: ParentHeaderProps) {
             <button
               type="submit"
               suppressHydrationWarning
-              className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-gray-100 hover:text-text-primary"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-gray-100 hover:text-text-primary"
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               Sign out

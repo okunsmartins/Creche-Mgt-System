@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Alert } from '@/components/ui/Alert'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { Badge } from '@/components/ui/Badge'
@@ -18,7 +19,12 @@ interface LateRow {
   students: { first_name: string; last_name: string } | null
 }
 
-export default async function ParentLateFeesPage() {
+export default async function ParentLateFeesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ paid?: string }>
+}) {
+  const { paid } = await searchParams
   const parent = await requireVerifiedAuth()
   const db = createSupabaseAdminClient()
 
@@ -48,7 +54,12 @@ export default async function ParentLateFeesPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      {paid === '1' && (
+        <Alert variant="success" title="Payment received, thank you">
+          Your late-fee payment went through. It can take a minute to show as paid below.
+        </Alert>
+      )}
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Late collection fees</h1>
         <p className="mt-1 text-sm text-text-muted">

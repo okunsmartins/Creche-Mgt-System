@@ -58,7 +58,7 @@ export default async function ParentProgrammesPage() {
 
   if (linkedStudents.length === 0) {
     return (
-      <div>
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold text-text-primary">Programmes</h1>
         <div className="rounded-lg border border-border bg-surface p-8 text-center">
           <p className="text-text-muted">
@@ -99,7 +99,7 @@ export default async function ParentProgrammesPage() {
 
   if (eligibleProgrammeIds.length === 0) {
     return (
-      <div>
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <h1 className="mb-6 text-2xl font-bold text-text-primary">Programmes</h1>
         <p className="text-text-muted">
           There are no programmes available for your children&apos;s classes at the moment.
@@ -176,7 +176,7 @@ export default async function ParentProgrammesPage() {
   })
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Programmes</h1>
