@@ -2,6 +2,10 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ClipboardCheck, Users, ArrowRight, Plus } from 'lucide-react'
 import { requireTeacher } from '@/lib/auth/guards'
+import {
+  StaffOnParentPageNotice,
+  PARENT_PAGE_NOTICE,
+} from '@/components/auth/StaffOnParentPageNotice'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { resolveTeacherClasses, selectTeacherClass } from '@/lib/teachers/classes'
 import { ClassSwitcher } from '@/components/teacher/ClassSwitcher'
@@ -13,11 +17,11 @@ export const metadata: Metadata = { title: 'Teacher Dashboard' }
 export default async function TeacherDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ classId?: string }>
+  searchParams: Promise<{ classId?: string; notice?: string }>
 }) {
   const user = await requireTeacher()
   const adminClient = createSupabaseAdminClient()
-  const { classId } = await searchParams
+  const { classId, notice } = await searchParams
 
   const firstName = user.profile?.firstName ?? user.email.split('@')[0] ?? 'there'
 
@@ -125,6 +129,7 @@ export default async function TeacherDashboardPage({
 
   return (
     <div className="space-y-8">
+      {notice === PARENT_PAGE_NOTICE && <StaffOnParentPageNotice />}
       <div>
         <h1 className="text-2xl font-bold text-text-primary">
           Good {getTimeOfDay()}, {firstName}
