@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-12 (staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-12 (cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -35,7 +35,7 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 > `scripts/verify-tenant-isolation.mjs` — as a production change: run it only with the owner's go-ahead, ideally against
 > a separate staging project.
 | Manual browser E2E (import, hero, fees UI, nav, check-in→ratios, arrears) | dev server + manager sign-in | ✅ see per-feature notes |
-| Tenant isolation + idempotency (fee + collection + **all** funding tables) | `node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED** (re-run after mig 088): scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
+| Tenant isolation + idempotency (fee + collection + **all** funding tables) | `ISO_CHILD_ID=<test child> node scripts/verify-tenant-isolation.mjs` | ✅ **ALL CHECKS PASSED — latest live run 2026-11-12** (owner-approved, 64 checks, Tenant A = Angels Nest via test child MichaelTest, Tenant B = Flomat; cleanup verified, no rows left; used one invoice number). Earlier run after mig 088: scoping/action-guard/anon-RLS/dup-reject across fee, collection, and all six funding tables incl. `ncs_claim_versions`, `funding_readiness_items`, `core_funding_snapshots`, `aim_cases` |
 | Anon-key read sweep (all tenant tables) | service-role/anon script | ✅ no table returns rows to the anon key (after migs 074/075) |
 | E2E (Playwright) | `npm run test:e2e` | ⬜ **not run** (needs running app + env) |
 | Secret scanning + push protection (GitHub) | repo Settings | ✅ **active** (blocked a Twilio SID push; SID redacted from history) |
@@ -94,7 +94,7 @@ gitignored `creche-dev-credentials.local.txt`). Note: since 2026-11-12 the DB ho
   - Tenant/subscription rows read with the service role (see "Live data" below)
 - **Not run:**
   - Playwright E2E (CI job still skipped)
-  - `scripts/verify-tenant-isolation.mjs`: it writes rows to the live DB, so it needs the owner's go-ahead
+  - (`scripts/verify-tenant-isolation.mjs` ✅ run live 2026-11-12 with the owner's go-ahead: 64/64 passed)
   - Opening a reset link a second time (it should show "expired"), and opening one on a different device
 
 ### What was delivered, against the spec
@@ -1000,7 +1000,8 @@ npm run test -- run src/lib/payments/__tests__/subvention.test.ts
 
 # tenant isolation + idempotency — ⚠️ WRITES test rows; .env.local points at the LIVE prod DB.
 # Run only with the owner's go-ahead (or point .env.local at a staging project first).
-node scripts/verify-tenant-isolation.mjs
+# ISO_CHILD_ID is required: every Tenant A test row is attached to that TEST child.
+ISO_CHILD_ID=<test child uuid> node scripts/verify-tenant-isolation.mjs
 
 # this session's suites
 npm run test -- run src/lib/auth src/lib/subscriptions src/lib/tenant src/lib/onboarding src/components/onboarding
