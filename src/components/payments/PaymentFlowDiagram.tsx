@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { Users, ShieldCheck, Landmark, ArrowRight } from 'lucide-react'
 
 /**
@@ -34,25 +35,27 @@ export function PaymentFlowDiagram() {
         </span>
       </div>
 
-      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+      {/* Steps sit top-aligned with the arrows as separate items between them, so
+          every icon lines up on the same row whatever the caption length. */}
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-start">
         {STEPS.map(({ icon: Icon, title, caption }, i) => (
-          <div key={title} className="flex flex-1 items-center gap-3 sm:flex-col sm:text-center">
-            <div className="flex flex-col items-center gap-2 sm:w-full">
+          <Fragment key={title}>
+            <div className="flex flex-1 items-center gap-3 sm:flex-col sm:text-center">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface ring-1 ring-primary/20">
                 <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
               </div>
-            </div>
-            <div className="sm:mt-1">
-              <p className="text-sm font-semibold text-text-primary">{title}</p>
-              <p className="mt-0.5 text-xs text-text-muted">{caption}</p>
+              <div className="sm:mt-1">
+                <p className="text-sm font-semibold text-text-primary">{title}</p>
+                <p className="mt-0.5 text-xs text-text-muted">{caption}</p>
+              </div>
             </div>
             {i < STEPS.length - 1 && (
               <ArrowRight
-                className="mx-2 hidden h-5 w-5 shrink-0 rotate-90 text-primary/50 sm:block sm:rotate-0"
+                className="hidden h-5 w-5 shrink-0 text-primary/50 sm:mt-3.5 sm:block"
                 aria-hidden="true"
               />
             )}
-          </div>
+          </Fragment>
         ))}
       </div>
 
