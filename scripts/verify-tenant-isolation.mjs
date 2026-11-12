@@ -6,7 +6,11 @@
  * CI has no DB credentials. Run it locally (or in a DB-enabled pipeline) against the
  * dev project. It exits non-zero on any failure so it can gate a deploy later.
  *
- *   node scripts/verify-tenant-isolation.mjs
+ *   ISO_CHILD_ID=<test child uuid> node scripts/verify-tenant-isolation.mjs
+ *
+ * ISO_CHILD_ID is REQUIRED: all Tenant A test rows are attached to that child, so
+ * point it at a TEST child — never a real family's. Tenant A = that child's crèche,
+ * Tenant B = any other crèche.
  *
  * Coverage: `fee_schedules`, `child_funding_registrations`, `invoices`,
  * `authorised_collectors`, the collection tables, and the Funding & Hive Centre
@@ -20,7 +24,8 @@
  *      so a forgotten `school_id` filter still can't leak across tenants.
  *   3. Idempotency — a duplicate invoice_number is rejected by the unique constraint.
  *
- * Cleans up everything it creates.
+ * Cleans up everything it creates — even if a step throws — and fails loudly if any
+ * test row could not be removed.
  */
 import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
@@ -58,25 +63,26 @@ const created = {
 }
 
 async function main() {
-  // Two tenants. The dev DB has 2 schools; Tenant A must have at least one child.
-  const { data: schools } = await admin.from('schools').select('id, name')
-  if (!schools || schools.length < 2) {
-    console.error(`Need >=2 schools to test isolation; found ${schools?.length ?? 0}.`)
+  // Tenant A = the crèche of the explicitly named TEST child; Tenant B = another crèche.
+  const childA = process.env.ISO_CHILD_ID
+  if (!childA) {
+    console.error('Set ISO_CHILD_ID to a TEST child id (test rows are attached to it).')
     process.exit(1)
   }
-  let tenantA = null
-  let childA = null
-  for (const s of schools) {
-    const { data: kids } = await admin.from('students').select('id').eq('school_id', s.id).limit(1)
-    if (kids && kids.length) {
-      tenantA = s.id
-      childA = kids[0].id
-      break
-    }
+  const { data: child } = await admin
+    .from('students')
+    .select('id, school_id, first_name')
+    .eq('id', childA)
+    .maybeSingle()
+  if (!child) {
+    console.error(`ISO_CHILD_ID ${childA} not found.`)
+    process.exit(1)
   }
-  const tenantB = schools.find((s) => s.id !== tenantA)?.id
-  if (!tenantA || !tenantB) {
-    console.error('Could not pick Tenant A (with a child) and a distinct Tenant B.')
+  const tenantA = child.school_id
+  const { data: others } = await admin.from('schools').select('id').neq('id', tenantA).limit(1)
+  const tenantB = others?.[0]?.id
+  if (!tenantB) {
+    console.error('Need a second crèche (Tenant B) to test isolation.')
     process.exit(1)
   }
   console.log(`Tenant A = ${tenantA} (child ${childA})`)
@@ -615,41 +621,51 @@ async function main() {
     dup.error ? 'rejected' : 'ALLOWED (!)',
   )
 
-  // ── Cleanup ──────────────────────────────────────────────────────────────────
-  if (created.aimCase) await admin.from('aim_cases').delete().eq('id', created.aimCase)
-  if (created.coreSnapshot)
-    await admin.from('core_funding_snapshots').delete().eq('id', created.coreSnapshot)
-  if (created.readinessItem)
-    await admin.from('funding_readiness_items').delete().eq('id', created.readinessItem)
-  if (created.claimVersion)
-    await admin.from('ncs_claim_versions').delete().eq('id', created.claimVersion)
-  if (created.hiveAction)
-    await admin.from('hive_action_items').delete().eq('id', created.hiveAction)
-  if (created.ncsSnapshot)
-    await admin.from('ncs_weekly_compliance_snapshots').delete().eq('id', created.ncsSnapshot)
-  if (created.fundingConfig)
-    await admin.from('funding_programme_config').delete().eq('id', created.fundingConfig)
-  if (created.collectionRegister)
-    await admin.from('collection_register').delete().eq('id', created.collectionRegister)
-  if (created.collectionEnrolment)
-    await admin.from('collection_enrolments').delete().eq('id', created.collectionEnrolment)
-  if (created.collectionRun)
-    await admin.from('collection_runs').delete().eq('id', created.collectionRun)
-  if (created.collectionMethod)
-    await admin.from('collection_methods').delete().eq('id', created.collectionMethod)
-  if (created.collector)
-    await admin.from('authorised_collectors').delete().eq('id', created.collector)
-  if (created.invoice) await admin.from('invoices').delete().eq('id', created.invoice)
-  if (created.registration)
-    await admin.from('child_funding_registrations').delete().eq('id', created.registration)
-  if (created.schedule) await admin.from('fee_schedules').delete().eq('id', created.schedule)
-  console.log('\ncleanup: done')
-
   console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'}`)
-  process.exit(failures === 0 ? 0 : 1)
 }
 
-main().catch((e) => {
-  console.error(e)
-  process.exit(1)
-})
+// Delete every row this run created (children before parents) and verify each delete.
+async function cleanup() {
+  const steps = [
+    ['aim_cases', created.aimCase],
+    ['core_funding_snapshots', created.coreSnapshot],
+    ['funding_readiness_items', created.readinessItem],
+    ['ncs_claim_versions', created.claimVersion],
+    ['hive_action_items', created.hiveAction],
+    ['ncs_weekly_compliance_snapshots', created.ncsSnapshot],
+    ['funding_programme_config', created.fundingConfig],
+    ['collection_register', created.collectionRegister],
+    ['collection_enrolments', created.collectionEnrolment],
+    ['collection_runs', created.collectionRun],
+    ['collection_methods', created.collectionMethod],
+    ['authorised_collectors', created.collector],
+    ['invoices', created.invoice],
+    ['child_funding_registrations', created.registration],
+    ['fee_schedules', created.schedule],
+  ]
+  let left = 0
+  for (const [table, id] of steps) {
+    if (!id) continue
+    const { error } = await admin.from(table).delete().eq('id', id)
+    const { data } = await admin.from(table).select('id').eq('id', id).maybeSingle()
+    if (error || data) {
+      left++
+      console.error(`cleanup FAILED: ${table} ${id}${error ? ' — ' + error.message : ''}`)
+    }
+  }
+  console.log(
+    left === 0 ? '\ncleanup: done, all test rows removed' : `\ncleanup: ${left} row(s) LEFT BEHIND`,
+  )
+  return left
+}
+
+let exitCode = 1
+main()
+  .then(() => {
+    exitCode = failures === 0 ? 0 : 1
+  })
+  .catch((e) => console.error(e))
+  .finally(async () => {
+    const left = await cleanup()
+    process.exit(left > 0 ? 1 : exitCode)
+  })
