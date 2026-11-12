@@ -4,7 +4,6 @@ import { CheckCircle } from 'lucide-react'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { schoolHasProAccess } from '@/lib/subscriptions/access'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
-import { isRevolutConfigured } from '@/lib/revolut/client'
 import { schoolHasOwnRevolut } from '@/lib/revolut/perSchool'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { StatusBadge } from '@/components/ui/Badge'
@@ -47,8 +46,7 @@ export default async function ParentOrderDetailPage({
   const instalmentsEnabled = user.schoolId ? await schoolHasProAccess(user.schoolId) : false
   // Revolut is offered when the platform key is set OR this parent's school has
   // connected its own Revolut account (per-school Connect model).
-  const revolutEnabled =
-    isRevolutConfigured() || (user.schoolId ? await schoolHasOwnRevolut(user.schoolId) : false)
+  const revolutEnabled = user.schoolId ? await schoolHasOwnRevolut(user.schoolId) : false
 
   // Use admin client: auth.uid() is null in Server Component contexts; the RLS
   // policies parents_read_own_orders and parents_read_own_order_items both use

@@ -5,51 +5,84 @@ import { requireAdmin } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { encryptSecret, isEncryptionConfigured } from '@/lib/crypto/secrets'
 import { logger } from '@/lib/logging'
+import { isRevolutSandbox } from './client'
+import { resolveOwnRevolutApiKey } from './perSchool'
+import { registerRevolutWebhook, removeRevolutWebhooks } from './webhooks'
 
 export type RevolutSettingsState = { error?: string; success?: boolean } | null
 
 /**
- * Save a school's own Revolut Merchant API key (+ optional webhook signing
- * secret), encrypted at rest. Admin-only. Once set, this school's Revolut parent
- * payments and refunds run on its own Revolut account.
+ * Connect a crèche's own Revolut Business account. Admin-only.
+ *
+ * The admin pastes ONE thing: their Merchant API secret key. We then register
+ * Creche Wise's webhook on their account automatically (which also proves the key
+ * works) and store the key + the returned signing secret, encrypted at rest. An
+ * optional manually-entered signing secret is still accepted as a fallback.
  */
 export async function saveRevolutCredentialsAction(
   _prev: RevolutSettingsState,
   formData: FormData,
 ): Promise<RevolutSettingsState> {
   const admin = await requireAdmin()
-  if (!admin.schoolId) return { error: 'No school is associated with your account.' }
+  if (!admin.schoolId) return { error: 'No crèche is associated with your account.' }
   if (!isEncryptionConfigured()) {
     return { error: 'Secure secret storage isn’t configured yet. Please contact support.' }
   }
 
   const apiKey = ((formData.get('apiKey') as string | null) ?? '').trim()
-  const webhookSecret = ((formData.get('webhookSecret') as string | null) ?? '').trim()
-  if (!apiKey) return { error: 'Enter your Revolut Merchant API key.' }
+  const manualSecret = ((formData.get('webhookSecret') as string | null) ?? '').trim()
+  if (!apiKey) return { error: 'Paste your Revolut Merchant API secret key.' }
+  if (/^pk_/i.test(apiKey)) {
+    return {
+      error:
+        'That’s your Public key. Paste the Secret key instead (Revolut Business → APIs → Merchant API).',
+    }
+  }
+
+  let signingSecret = manualSecret
+  if (!signingSecret) {
+    const reg = await registerRevolutWebhook(apiKey)
+    if (!reg.ok) {
+      const mode = isRevolutSandbox() ? 'Sandbox (test)' : 'live'
+      const msg =
+        reg.reason === 'bad_key'
+          ? `Revolut didn’t accept that key. Check you copied the whole Merchant API Secret key, and that it’s a ${mode} key.`
+          : reg.reason === 'too_many'
+            ? 'Your Revolut account already has the maximum of 10 webhooks. Delete an unused one in Revolut Business (APIs → Webhooks), then try again.'
+            : 'We couldn’t finish connecting to Revolut. Please try again in a minute.'
+      return { error: msg }
+    }
+    signingSecret = reg.signingSecret
+  }
 
   const adminClient = createSupabaseAdminClient()
-  const update: { revolut_api_key_enc: string; revolut_webhook_secret_enc?: string } = {
-    revolut_api_key_enc: encryptSecret(apiKey),
-  }
-  if (webhookSecret) update.revolut_webhook_secret_enc = encryptSecret(webhookSecret)
-
-  const { error } = await adminClient.from('schools').update(update).eq('id', admin.schoolId)
+  const { error } = await adminClient
+    .from('schools')
+    .update({
+      revolut_api_key_enc: encryptSecret(apiKey),
+      revolut_webhook_secret_enc: encryptSecret(signingSecret),
+    })
+    .eq('id', admin.schoolId)
   if (error) {
     logger.error('revolut_creds_save_failed', { schoolId: admin.schoolId, error: error.message })
     return { error: 'Could not save your Revolut details. Please try again.' }
   }
-  logger.info('revolut_creds_saved', { schoolId: admin.schoolId })
+  logger.info('revolut_creds_saved', { schoolId: admin.schoolId, auto: !manualSecret })
   revalidatePath('/admin/payments/connect')
   return { success: true }
 }
 
-/** Remove a school's Revolut credentials (revert to platform / disable). */
+/** Disconnect the crèche's Revolut account: remove our webhook there, then clear the keys. */
 export async function disconnectRevolutAction(
   _prev: RevolutSettingsState,
   _formData: FormData,
 ): Promise<RevolutSettingsState> {
   const admin = await requireAdmin()
-  if (!admin.schoolId) return { error: 'No school is associated with your account.' }
+  if (!admin.schoolId) return { error: 'No crèche is associated with your account.' }
+
+  // Best-effort: stop Revolut sending us events for this account.
+  const key = await resolveOwnRevolutApiKey(admin.schoolId)
+  if (key) await removeRevolutWebhooks(key)
 
   const adminClient = createSupabaseAdminClient()
   const { error } = await adminClient

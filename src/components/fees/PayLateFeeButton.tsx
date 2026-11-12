@@ -1,37 +1,23 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { createLateFeePaymentCheckoutAction } from '@/lib/fees/payment'
+import { FeePayButtons, type FeePayOptions } from './FeePayButtons'
 
 /**
- * Parent action: pay a late-collection fee online. Starts a checkout on the crèche's
- * connected account (Stripe or Revolut) and redirects. Shows an inline error if the
- * crèche hasn't set up card payments yet.
+ * Parent action: pay a late-collection fee online — by card and/or with Revolut,
+ * whichever the crèche has connected. Money goes to the crèche's own account.
  */
-export function PayLateFeeButton({ lateFeeId }: { lateFeeId: string }) {
-  const [pending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-
-  function onClick() {
-    setError(null)
-    startTransition(async () => {
-      const res = await createLateFeePaymentCheckoutAction(lateFeeId)
-      if ('url' in res) window.location.href = res.url
-      else setError(res.error)
-    })
-  }
-
+export function PayLateFeeButton({
+  lateFeeId,
+  options = { card: true, revolut: false },
+}: {
+  lateFeeId: string
+  options?: FeePayOptions
+}) {
   return (
-    <span className="inline-flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={pending}
-        className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-hover disabled:opacity-50"
-      >
-        {pending ? 'Starting…' : 'Pay now'}
-      </button>
-      {error && <span className="max-w-[16rem] text-right text-xs text-error">{error}</span>}
-    </span>
+    <FeePayButtons
+      options={options}
+      start={(method) => createLateFeePaymentCheckoutAction(lateFeeId, method)}
+    />
   )
 }

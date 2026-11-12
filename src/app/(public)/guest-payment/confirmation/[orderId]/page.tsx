@@ -6,7 +6,6 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import { CheckoutButton } from '@/components/stripe/CheckoutButton'
 import { createGuestCheckoutSessionAction } from '@/lib/stripe/actions'
 import { createGuestRevolutOrderAction } from '@/lib/revolut/actions'
-import { isRevolutConfigured } from '@/lib/revolut/client'
 import { schoolHasOwnRevolut } from '@/lib/revolut/perSchool'
 import type { OrderRow, OrderItemRow } from '@/types/database'
 
@@ -78,8 +77,7 @@ export default async function GuestConfirmationPage({
 
   // Revolut is offered when the platform key is set OR this order's school has
   // connected its own Revolut account (per-school Connect model).
-  const revolutEnabled =
-    isRevolutConfigured() || (order.school_id ? await schoolHasOwnRevolut(order.school_id) : false)
+  const revolutEnabled = order.school_id ? await schoolHasOwnRevolut(order.school_id) : false
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12 sm:px-6">

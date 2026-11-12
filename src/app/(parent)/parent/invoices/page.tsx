@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { getFeePaymentOptions } from '@/lib/fees/payment-options'
 import { Badge } from '@/components/ui/Badge'
 import { Alert } from '@/components/ui/Alert'
 import { formatCurrency } from '@/lib/utils'
@@ -58,6 +59,11 @@ export default async function ParentInvoicesPage({
       .order('due_date')
     invoices = (data ?? []) as unknown as InvoiceRow[]
   }
+
+  // Card and/or Revolut — whatever this crèche has connected (money goes to the crèche).
+  const payOptions = parent.schoolId
+    ? await getFeePaymentOptions(parent.schoolId)
+    : { card: false, revolut: false }
 
   // Same rule as the dashboard's Fees & Invoices card.
   const { outstandingCents } = summariseParentInvoices(invoices)
@@ -132,7 +138,7 @@ export default async function ParentInvoicesPage({
                     </td>
                     <td className="px-4 py-3 text-right">
                       {inv.status === 'issued' || inv.status === 'part_paid' ? (
-                        <PayInvoiceButton invoiceId={inv.id} />
+                        <PayInvoiceButton invoiceId={inv.id} options={payOptions} />
                       ) : null}
                     </td>
                   </tr>

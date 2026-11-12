@@ -136,6 +136,7 @@ async function dispatchRevolutEvent(
       break
     case 'ORDER_PAYMENT_DECLINED':
     case 'ORDER_PAYMENT_FAILED':
+    case 'ORDER_FAILED':
     case 'ORDER_CANCELLED':
       await handleOrderFailed(revolutOrderId, eventType, adminClient, apiKey)
       break

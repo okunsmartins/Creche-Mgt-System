@@ -8,6 +8,7 @@ import {
   type ConnectStatus,
 } from '@/lib/stripe/connect'
 import { schoolHasOwnRevolut } from '@/lib/revolut/perSchool'
+import { isRevolutSandbox } from '@/lib/revolut/client'
 import { ConnectStripeButton } from '@/components/payments/ConnectStripeButton'
 import { PaymentFlowDiagram } from '@/components/payments/PaymentFlowDiagram'
 import { RevolutSettingsForm } from '@/components/payments/RevolutSettingsForm'
@@ -41,7 +42,8 @@ export default async function ConnectPaymentsPage({
       <div>
         <h1 className="text-2xl font-bold text-text-primary">Payment setup</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Connect your crèche&apos;s own Stripe account so parent payments go straight to you.
+          Connect your crèche&apos;s own Stripe account (cards) and Revolut Business account, so
+          parents can pay by card or with Revolut and the money goes straight to you.
         </p>
       </div>
 
@@ -123,10 +125,10 @@ export default async function ConnectPaymentsPage({
         </div>
       </div>
 
-      <RevolutSettingsForm configured={revolutConfigured} />
+      <RevolutSettingsForm configured={revolutConfigured} testMode={isRevolutSandbox()} />
 
       <p className="flex items-center justify-center gap-1.5 text-center text-xs text-text-muted">
-        Payments are processed securely by Stripe.
+        Payments are processed securely by Stripe and Revolut.
         <ArrowRight className="h-3 w-3" aria-hidden="true" />
         Your crèche is the merchant of record.
       </p>
