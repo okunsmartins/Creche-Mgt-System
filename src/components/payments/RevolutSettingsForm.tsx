@@ -88,21 +88,26 @@ export function RevolutSettingsForm({
       ) : (
         <ol className="ml-4 list-decimal space-y-1.5 border-t border-border pt-4 text-sm text-text-secondary">
           <li>
-            Sign in to{' '}
+            Open the{' '}
             <a
-              href={
-                testMode ? 'https://sandbox-business.revolut.com' : 'https://business.revolut.com'
-              }
+              href="https://developer.revolut.com/console"
               target="_blank"
               rel="noopener noreferrer"
               className="font-semibold text-primary hover:underline"
             >
-              Revolut Business
+              Revolut API Console
             </a>{' '}
-            and go to <strong>APIs → Merchant API</strong>.
+            and sign in with your Revolut Business account (the QR code with the Revolut app is
+            quickest).
           </li>
           <li>
-            Copy your <strong>{keyKind} Secret key</strong> (it starts with <code>sk_</code>).
+            Switch to your <strong>{keyKind}</strong> account (top right), go to{' '}
+            <strong>API keys → New</strong>, choose <strong>Merchant</strong> only and set{' '}
+            <strong>Orders</strong> and <strong>Webhooks</strong> to <strong>Write</strong>.
+          </li>
+          <li>
+            Create the key and copy it straight away. Revolut shows it only once (it starts with{' '}
+            <code>{testMode ? 'r_test_' : 'r_prod_'}</code>).
           </li>
           <li>Paste it below and click Connect. We set up everything else for you.</li>
         </ol>
@@ -114,8 +119,8 @@ export function RevolutSettingsForm({
           name="apiKey"
           type="password"
           autoComplete="off"
-          placeholder="sk_..."
-          label={configured ? 'Secret key (paste a new one to replace it)' : 'Secret key'}
+          placeholder={testMode ? 'r_test_...' : 'r_prod_...'}
+          label={configured ? 'API key (paste a new one to replace it)' : 'Revolut API key'}
         />
         <details className="text-sm text-text-muted">
           <summary className="cursor-pointer select-none">Advanced</summary>

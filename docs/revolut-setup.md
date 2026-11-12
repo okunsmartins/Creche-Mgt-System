@@ -7,7 +7,7 @@ merchant and never uses a platform Revolut key for parent payments.
 ## How it works
 
 1. **Crèche admin** opens **Payments → Payment setup** (`/admin/payments/connect`).
-2. They paste **one thing**: their Revolut Business **Merchant API Secret key** (`sk_…`).
+2. They paste **one thing**: a Revolut **API key** made in the API Console (`r_test_…` for Sandbox, `r_prod_…` for live).
 3. Creche Wise then automatically:
    - checks the key with Revolut (a wrong key gives a clear error);
    - creates the webhook `https://crechewise.com/api/webhooks/revolut` on **their** Revolut account. Any older
@@ -31,10 +31,34 @@ merchant and never uses a platform Revolut key for parent payments.
 The admin page shows a **Test mode** badge while the base URL is the sandbox. Crèche keys must match the mode:
 a Sandbox key in test mode, a Production key in live mode.
 
+## Getting the API key (Revolut changed this in 2026)
+
+Revolut no longer shows Merchant API keys in the Revolut Business dashboard (**Settings → APIs** only links to the
+console now). All keys are made in the **API Console**: <https://developer.revolut.com/console>.
+
+- **Sign in** with the crèche's Revolut Business account. The API Console uses Revolut's normal sign-in
+  (`sso.revolut.com`), even for Sandbox. The quickest way in is the **QR code**, scanned with the Revolut app.
+  The text-message code can be slow or rate-limited.
+- **Switch account** (top right) to **Sandbox** or **Production**. They're separate accounts with separate keys.
+- **API keys → New**: choose **Merchant** only, set **Orders** and **Webhooks** to **Write**, then create it.
+- **Copy the key immediately**: Revolut shows a key without signing keys **only once**.
+- **Use a Merchant-only key.** Business permissions (Accounts, Transfers, Webhooks, …) make Revolut require Ed25519
+  request signing in Production, which Creche Wise doesn't do. Merchant-only keys need no signing. Sandbox
+  accounts come with a pre-generated full-access key. It works in Sandbox, where signing is optional, but don't
+  copy that pattern to Production.
+- A sandbox account you create by hand at sandbox-business.revolut.com is **not** linked to the API Console. It
+  has no keys. Use the Sandbox account the API Console creates for you.
+
+Sources: [Set up test environment](https://developer.revolut.com/docs/guides/merchant/test-and-go-live/set-up-test-environment),
+[Get started with the API Console](https://developer.revolut.com/docs/guides/api-console/get-started),
+[Create an API key](https://developer.revolut.com/docs/guides/api-console/create-key),
+[Signing requirements](https://developer.revolut.com/docs/guides/api-console/signing-requirements).
+
 ## Test it (sandbox)
 
-1. Create a Revolut Business **sandbox** account at <https://sandbox-business.revolut.com>.
-2. In it: **APIs → Merchant API**, then copy the **Sandbox Secret key**. Paste it **only** into Creche Wise, never in chat.
+1. Open the API Console, sign in, and switch to the **Sandbox** account.
+2. **API keys → New → Merchant**, with **Orders** and **Webhooks** set to **Write**. Create it, then copy the `r_test_…` key.
+   Paste it **only** into Creche Wise, never in chat.
 3. As the Angels Nest admin: **Payment setup → Revolut Business → paste → Connect Revolut**. It should show "Connected".
 4. As the test parent (Incognito), go to **Fees & Invoices**, then **Pay with Revolut**. On Revolut's sandbox checkout,
    pay with test card **4929 4205 7359 5709** (any future expiry, any CVV).
