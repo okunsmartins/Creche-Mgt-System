@@ -69,11 +69,13 @@ export async function requireAdmin(): Promise<SessionUser> {
  */
 export async function requireParent(): Promise<SessionUser> {
   const user = await requireVerifiedAuth()
+  // `?notice=parent_page` makes the staff dashboard explain why they landed there
+  // (e.g. a staff member who is also a parent clicked a reminder's invoice link).
   if (user.roles.some((r) => (ADMIN_ROLES as readonly string[]).includes(r))) {
-    redirect('/admin/dashboard')
+    redirect('/admin/dashboard?notice=parent_page')
   }
   if (user.roles.includes('teacher')) {
-    redirect('/teacher/dashboard')
+    redirect('/teacher/dashboard?notice=parent_page')
   }
   return user
 }

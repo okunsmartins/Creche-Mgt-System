@@ -12,6 +12,10 @@ import {
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/auth/guards'
+import {
+  StaffOnParentPageNotice,
+  PARENT_PAGE_NOTICE,
+} from '@/components/auth/StaffOnParentPageNotice'
 import { isPlatformOwner } from '@/lib/platform/owner'
 import { getSchoolSubscription, hasProAccess } from '@/lib/subscriptions/access'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
@@ -55,8 +59,13 @@ const timeFmt = new Intl.DateTimeFormat('en-IE', {
   timeZone: 'Europe/Dublin',
 })
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>
+}) {
   const admin = await requireAdmin()
+  const { notice } = await searchParams
   // The platform owner doesn't manage a single school — send them to the
   // platform console instead of the crèche-principal dashboard.
   if (isPlatformOwner(admin)) redirect('/platform')
@@ -296,6 +305,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5">
+      {notice === PARENT_PAGE_NOTICE && <StaffOnParentPageNotice />}
       <GreetingBanner firstName={firstName} dateLabel={dateLabel} summary={summary} />
 
       {/* Subscription status: trialing → trial notice; free → upgrade; active Pro → none. */}

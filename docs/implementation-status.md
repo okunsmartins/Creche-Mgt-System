@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-11 (fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-12 (staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -61,7 +61,7 @@ Migrations 001–088 applied (**081 collection register; 082 SMS allowance; 083 
 Hive Centre Phases 1–5** — all applied + DB-verified; 087 `core_funding_snapshots` confirmed by a browser-E2E write;
 088 `aim_cases` confirmed by the re-run isolation script passing). Test tenant: **Angels Nest Crèche**
 (`manager@angelsnest.ie`; password in the
-gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools** rows (a default + Angels Nest)
+gitignored `creche-dev-credentials.local.txt`). Note: since 2026-11-12 the DB holds **2 schools**: Angels Nest and Flomat (the owner's own test sign-up; switch it off at go-live). The old Scoil Bhríde demo was deleted
 — scope every query by `school_id`.
 
 ---
@@ -118,7 +118,8 @@ gitignored `creche-dev-credentials.local.txt`). Note: the DB holds **2 schools**
 ### Live data (read-only, 2026-11-05)
 | Crèche | Subscription row | Access |
 |---|---|---|
-| Scoil Bhríde (demo, `scoildemo`) | none | prompted to start a trial |
+| ~~Scoil Bhríde (demo, `scoildemo`)~~ | **deleted 2026-11-12** (owner-approved; sample classes/teachers/settings only) | — |
+| Flomat (`flomatie`, owner's test) | `free/trialing` until 2026-11-23 | switch off at go-live |
 | **Angels Nest** (`angelsnest`, prospect) | was `pro/trialing`, trial ended 2026-10-24 → **2026-11-11: `pro/active`** (Stripe **test** subscription, renews 2026-12-11) | ✅ unlocked via test (c) |
 | Flomat (`flomatie`, owner's test crèche) | `free/trialing`, ends 2026-11-23 | ✅ access under the #111 rule |
 
@@ -933,6 +934,8 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
     - ✅ Unlocked 2026-11-11 by subscribing in Stripe **test** mode. At go-live, cancel the test subscription and have
       Tracy subscribe for real (live mode).
     - Mark the test child inactive now that test (b) is done: **MichaelTest JordanTest** (fee schedule "Test €1", INV-2026-000025 paid). The owner's phone was added to this test family for the SMS test; remove it too.
+    - 2026-11-12: test child **Emma Byrne**'s parent links from the two admin logins (owner + Tracy) were switched off
+      (`is_active=false`), so admins no longer get parent reminders. Her parent-only link stays.
     - FYI: a school-wide test text ("Testing the SMS from crechewise.com") went to **2 Angels Nest parents** on 2026-10-21 (both delivered).
     - **Known bug to fix:** the monthly invoice for the 1–30 Nov schedule shows period **1 Nov → 5 Dec**. The period end runs past the schedule end.
 
@@ -941,7 +944,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 ## Security considerations (spec §10 + fork lessons)
 
 - **Service-role bypasses RLS** — every admin-client query must include its own `school_id` filter (RLS is a second boundary,
-  not the only one). The DB has **2 schools**, so cross-tenant leakage is testable right now.
+  not the only one). The DB has **2 schools** (Angels Nest + Flomat), so cross-tenant leakage is testable right now.
 - **New tenant-owned tables need their own grants + RLS + a cross-tenant negative test in the same PR** (release-blocking).
   `fee_schedules`/`invoices`/`child_funding_registrations` have grants + RLS, and **isolation is verified** by
   `scripts/verify-tenant-isolation.mjs`. `daily_check_ins`, `daily_records`, `enquiries` created with the same

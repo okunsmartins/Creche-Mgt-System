@@ -143,14 +143,14 @@ describe('requireParent', () => {
     async (role) => {
       const user = makeUser({ roles: [role] })
       mockedGetSessionUser.mockResolvedValue(user)
-      await expect(requireParent()).rejects.toThrow('REDIRECT:/admin/dashboard')
+      await expect(requireParent()).rejects.toThrow('REDIRECT:/admin/dashboard?notice=parent_page')
     },
   )
 
   it('redirects a teacher to the teacher dashboard', async () => {
     const user = makeUser({ roles: ['teacher'] })
     mockedGetSessionUser.mockResolvedValue(user)
-    await expect(requireParent()).rejects.toThrow('REDIRECT:/teacher/dashboard')
+    await expect(requireParent()).rejects.toThrow('REDIRECT:/teacher/dashboard?notice=parent_page')
   })
 
   it('redirects to /verify-email when email not verified', async () => {
