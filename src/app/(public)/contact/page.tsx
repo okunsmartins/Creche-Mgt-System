@@ -63,10 +63,10 @@ export default async function ContactPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className={`mx-auto px-4 py-12 sm:px-6 lg:px-8 ${school ? 'max-w-2xl' : 'max-w-4xl'}`}>
         {!school ? (
           <div className="space-y-6">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-3">
               {PLATFORM_CONTACTS.map((c) => (
                 <div key={c.email} className="card flex flex-col p-5">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
@@ -76,7 +76,7 @@ export default async function ContactPage() {
                   <p className="mt-1 flex-1 text-sm text-text-muted">{c.description}</p>
                   <a
                     href={`mailto:${c.email}`}
-                    className="mt-3 break-all text-sm font-medium text-primary hover:underline"
+                    className="mt-3 whitespace-nowrap text-sm font-medium text-primary hover:underline"
                   >
                     {c.email}
                   </a>
