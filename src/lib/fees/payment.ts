@@ -6,24 +6,37 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getStripe } from '@/lib/stripe/client'
 import { getSchoolConnect, connectStatus } from '@/lib/stripe/connect'
 import { revolutPost } from '@/lib/revolut/client'
-import { resolveRevolutApiKey, schoolHasOwnRevolut } from '@/lib/revolut/perSchool'
+import { resolveOwnRevolutApiKey } from '@/lib/revolut/perSchool'
 import { serverEnv } from '@/lib/env'
 import { logger } from '@/lib/logging'
 
 type CheckoutResult = { url: string } | { error: string }
 type SubjectKind = 'invoice' | 'late_fee'
+type Method = 'card' | 'revolut'
 
 const PAYABLE_INVOICE = new Set(['issued', 'part_paid'])
 
 const NOT_SET_UP =
-  'This crèche hasn’t finished setting up card payments yet. Please contact the crèche.'
+  'This crèche hasn’t finished setting up online payments yet. Please contact the crèche.'
+const CARD_NOT_SET_UP =
+  'This crèche doesn’t take card payments online yet. Please choose Revolut or contact the crèche.'
+const REVOLUT_NOT_SET_UP =
+  'This crèche doesn’t take Revolut payments yet. Please pay by card or contact the crèche.'
+
+/** Only the two known methods are accepted from the client; anything else = automatic. */
+function parseMethod(m: unknown): Method | undefined {
+  return m === 'card' || m === 'revolut' ? m : undefined
+}
 
 /**
- * Start a card checkout for a fees invoice / late-collection fee on the crèche's OWN
- * payment account — Stripe Connect if active, else the crèche's own Revolut. Funds go
- * to the crèche; the webhook (metadata.kind) marks the subject paid on success.
+ * Start a checkout for a fees invoice / late-collection fee on the crèche's OWN
+ * payment account: `card` = its connected Stripe account, `revolut` = its own Revolut
+ * Business account. With no method: card if available, else Revolut. Funds always go
+ * to the crèche (never a platform account); the webhook (metadata.kind) marks the
+ * subject paid on success.
  */
 async function startFeeCheckout(p: {
+  method: Method | undefined
   schoolId: string
   kind: SubjectKind
   subjectId: string
@@ -36,9 +49,11 @@ async function startFeeCheckout(p: {
   const metaIdKey = p.kind === 'invoice' ? 'invoice_id' : 'late_collection_id'
   const metadata = { kind: p.kind, [metaIdKey]: p.subjectId, school_id: p.schoolId }
 
-  // 1) Stripe Connect (direct charge on the crèche's connected account).
-  const connect = await getSchoolConnect(p.schoolId)
-  if (connectStatus(connect) === 'active' && connect?.stripe_connect_account_id) {
+  // 1) Card: Stripe Connect (direct charge on the crèche's connected account).
+  const connect = p.method === 'revolut' ? null : await getSchoolConnect(p.schoolId)
+  const cardReady = connectStatus(connect) === 'active' && !!connect?.stripe_connect_account_id
+  if (p.method === 'card' && !cardReady) return { error: CARD_NOT_SET_UP }
+  if (cardReady && connect?.stripe_connect_account_id) {
     try {
       const session = await getStripe().checkout.sessions.create(
         {
@@ -76,10 +91,11 @@ async function startFeeCheckout(p: {
     }
   }
 
-  // 2) The crèche's own Revolut account.
-  if (await schoolHasOwnRevolut(p.schoolId)) {
+  // 2) Revolut: the crèche's OWN Revolut Business account (never the platform key).
+  const apiKey = await resolveOwnRevolutApiKey(p.schoolId)
+  if (p.method === 'revolut' && !apiKey) return { error: REVOLUT_NOT_SET_UP }
+  if (apiKey) {
     try {
-      const apiKey = await resolveRevolutApiKey(p.schoolId)
       // ext_ref lets the webhook resolve the crèche (see schoolIdFromExtRef).
       const extRef = `${p.kind === 'invoice' ? 'INVPAY' : 'LFPAY'}_${p.subjectId}`
       const created = await revolutPost<{ id: string; checkout_url?: string }>(
@@ -112,6 +128,7 @@ async function startFeeCheckout(p: {
 /** Start a checkout for a parent to pay a fees invoice online. Parent-authed. */
 export async function createInvoicePaymentCheckoutAction(
   invoiceId: string,
+  method?: Method,
 ): Promise<CheckoutResult> {
   const user = await requireVerifiedAuth()
   const db = createSupabaseAdminClient()
@@ -152,6 +169,7 @@ export async function createInvoicePaymentCheckoutAction(
 
   const appUrl = serverEnv.appUrl
   return startFeeCheckout({
+    method: parseMethod(method),
     schoolId: invoice.school_id,
     kind: 'invoice',
     subjectId: invoice.id,
@@ -166,6 +184,7 @@ export async function createInvoicePaymentCheckoutAction(
 /** Start a checkout for a parent to pay a late-collection fee online. Parent-authed. */
 export async function createLateFeePaymentCheckoutAction(
   lateCollectionId: string,
+  method?: Method,
 ): Promise<CheckoutResult> {
   const user = await requireVerifiedAuth()
   const db = createSupabaseAdminClient()
@@ -195,6 +214,7 @@ export async function createLateFeePaymentCheckoutAction(
 
   const appUrl = serverEnv.appUrl
   return startFeeCheckout({
+    method: parseMethod(method),
     schoolId: lc.school_id,
     kind: 'late_fee',
     subjectId: lc.id,

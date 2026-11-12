@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-12 (cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-12 (**Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -852,6 +852,18 @@ It correctly routes through the per-crèche resolvers (`stripeAccount: connect.s
 in the invoice webhook. Also still open: FEE-11 attendance true-up + Pobal claim accrual ledger, `service_rates`
 (FEE-01), `invoice_lines` + full 8-state machine (FEE-04), parent invoice **payment** wiring, reminder **dispatch**
 (email/SMS send).
+
+**Revolut is REQUIRED on the platform (owner decision 2026-11-12).** Since PR `feat/revolut-first-class`:
+- Crèche admins connect by pasting **one** Merchant API Secret key. The app checks it and **registers the webhook on the
+  crèche's own Revolut account automatically** (`lib/revolut/webhooks.ts`, `POST /api/webhooks`), then stores key and
+  signing secret encrypted. Disconnect removes that webhook.
+- Parents get **"Pay with Revolut"** alongside **"Pay by card"** on invoices and late fees (`FeePayButtons`,
+  `getFeePaymentOptions`); activity orders already had the choice.
+- Parent payments use **only the crèche's own Revolut key** (`resolveOwnRevolutApiKey`). The platform-key fallback is
+  removed from checkout, so money can never land in a platform account.
+- ⬜ **Not yet verified live:** needs a Revolut Business **sandbox** key on Angels Nest, then a sandbox payment.
+  Steps: [revolut-setup.md](revolut-setup.md). At go-live, set `REVOLUT_API_BASE_URL` to production and reconnect with
+  Production keys.
 
 **Per-tenant payments (Stripe Connect + Revolut) — architecture in place, activation pending.** Each crèche collects
 its **own** payments straight into its **own** account once it sets up its portal — the platform is not the merchant

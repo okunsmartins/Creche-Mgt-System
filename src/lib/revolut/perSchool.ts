@@ -51,6 +51,15 @@ export async function resolveRevolutWebhookSecret(
   return safeDecrypt(enc?.revolut_webhook_secret_enc) || serverEnv.revolutWebhookSecret
 }
 
+/**
+ * The crèche's OWN Revolut key, or null — never the platform key. Parent payments
+ * must use this so money always lands in the crèche's account, not the platform's.
+ */
+export async function resolveOwnRevolutApiKey(schoolId: string): Promise<string | null> {
+  const enc = await loadEnc(schoolId)
+  return safeDecrypt(enc?.revolut_api_key_enc)
+}
+
 /** Whether the school has configured its OWN Revolut key (vs relying on platform). */
 export async function schoolHasOwnRevolut(schoolId: string): Promise<boolean> {
   const enc = await loadEnc(schoolId)

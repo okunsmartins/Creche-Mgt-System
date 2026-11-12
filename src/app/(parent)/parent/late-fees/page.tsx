@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Alert } from '@/components/ui/Alert'
 import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { getFeePaymentOptions } from '@/lib/fees/payment-options'
 import { Badge } from '@/components/ui/Badge'
 import { formatCurrency } from '@/lib/utils'
 import { PayLateFeeButton } from '@/components/fees/PayLateFeeButton'
@@ -47,6 +48,11 @@ export default async function ParentLateFeesPage({
       .order('collected_at', { ascending: false })
     fees = (data ?? []) as unknown as LateRow[]
   }
+
+  // Card and/or Revolut — whatever this crèche has connected (money goes to the crèche).
+  const payOptions = parent.schoolId
+    ? await getFeePaymentOptions(parent.schoolId)
+    : { card: false, revolut: false }
 
   const outstandingCents = fees.reduce(
     (sum, f) => sum + Math.max(0, f.fee_cents - f.amount_paid_cents),
@@ -109,7 +115,7 @@ export default async function ParentLateFeesPage({
                       <Badge variant={paid ? 'success' : 'warning'}>{paid ? 'Paid' : 'Due'}</Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {paid ? null : <PayLateFeeButton lateFeeId={f.id} />}
+                      {paid ? null : <PayLateFeeButton lateFeeId={f.id} options={payOptions} />}
                     </td>
                   </tr>
                 )

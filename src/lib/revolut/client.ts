@@ -92,3 +92,44 @@ export async function revolutGet<T>(path: string, apiKey?: string): Promise<T> {
   }
   return (text ? JSON.parse(text) : {}) as T
 }
+
+/** True when the platform talks to Revolut's SANDBOX (test mode), from the base URL. */
+export function isRevolutSandbox(): boolean {
+  return /sandbox/i.test(serverEnv.revolutApiBaseUrl)
+}
+
+/** Scheme + host of the Merchant API (sandbox or production), e.g. https://merchant.revolut.com */
+export function revolutApiOrigin(): string {
+  return new URL(serverEnv.revolutApiBaseUrl).origin
+}
+
+/**
+ * Call a dated Merchant API endpoint by its path from the API origin, e.g.
+ * `/api/webhooks`. Used where the current (non-1.0) API is needed. An explicit
+ * key is required — these calls always act on a crèche's own account.
+ */
+export async function revolutRequest<T>(
+  method: 'GET' | 'POST' | 'DELETE',
+  path: string,
+  apiKey: string,
+  body?: unknown,
+): Promise<T> {
+  if (!apiKey) throw new RevolutApiError('Revolut is not configured', 0, '')
+  const res = await fetch(`${revolutApiOrigin()}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Revolut-Api-Version': REVOLUT_API_VERSION,
+      Accept: 'application/json',
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+    cache: 'no-store',
+  })
+  const text = await res.text()
+  if (!res.ok) {
+    logger.error('revolut_api_error', { path, status: res.status })
+    throw new RevolutApiError(`Revolut API ${res.status} for ${path}`, res.status, text)
+  }
+  return (text ? JSON.parse(text) : {}) as T
+}

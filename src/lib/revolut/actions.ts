@@ -12,7 +12,7 @@ import {
   nextInstalmentCents,
 } from '@/lib/payments/instalments'
 import { revolutPost } from './client'
-import { resolveRevolutApiKey } from './perSchool'
+import { resolveOwnRevolutApiKey } from './perSchool'
 import type { OrderRow } from '@/types/database'
 
 export type RevolutOrderState = {
@@ -76,10 +76,10 @@ async function buildRevolutCheckoutUrl(
     return { error: 'This school’s portal is not active. Please contact the school.' }
   }
 
-  // Per-school Revolut: charge on the SCHOOL's own Revolut account if configured,
-  // otherwise the platform key. If neither exists, Revolut isn't available.
-  const revolutApiKey = await resolveRevolutApiKey(order.school_id)
-  if (!revolutApiKey) return { error: 'Revolut payments are not available right now.' }
+  // Charge on the crèche's OWN Revolut account only — never the platform key, so the
+  // money always lands with the crèche. Without one, Revolut isn't offered.
+  const revolutApiKey = order.school_id ? await resolveOwnRevolutApiKey(order.school_id) : null
+  if (!revolutApiKey) return { error: 'Revolut payments are not available for this crèche.' }
 
   // Ownership check: guest orders have null payer_profile_id; parent orders match by ID.
   const isGuestRequest = expectedPayerProfileId === null
