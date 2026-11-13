@@ -355,20 +355,18 @@ export async function generateInvoicesForScheduleAction(
   if (!schedule) return { ok: false, error: 'Fee schedule not found.' }
   const s = schedule as FeeScheduleRow
 
-  // Don't double-generate. Voided invoices don't count — voiding frees a schedule
-  // to be regenerated.
-  const { count: existingCount } = await db
+  // Don't double-generate. Periods that already have a live invoice (draft, issued,
+  // part-paid or paid) are skipped; voided ones don't count, so voiding unpaid invoices
+  // frees those periods to be regenerated while paid periods stay untouched.
+  const { data: existing } = await db
     .from('invoices')
-    .select('id', { count: 'exact', head: true })
+    .select('period_start')
     .eq('school_id', schoolId)
     .eq('fee_schedule_id', feeScheduleId)
     .neq('status', 'void')
-  if ((existingCount ?? 0) > 0) {
-    return {
-      ok: false,
-      error: 'Invoices already exist for this schedule. Void them before regenerating.',
-    }
-  }
+  const invoicedPeriods = new Set(
+    ((existing ?? []) as { period_start: string }[]).map((r) => r.period_start),
+  )
 
   // Active funding for this child.
   const { data: funding } = await db
@@ -403,9 +401,16 @@ export async function generateInvoicesForScheduleAction(
     buildParams.providerHourlyRateCents = s.provider_hourly_rate_cents
   if (s.contracted_day_hours != null) buildParams.contractedDayHours = s.contracted_day_hours
   if (s.flat_amount_cents != null) buildParams.flatAmountCents = s.flat_amount_cents
-  const drafts = buildInvoiceDrafts(buildParams)
-  if (drafts.length === 0)
+  const allDrafts = buildInvoiceDrafts(buildParams)
+  if (allDrafts.length === 0)
     return { ok: false, error: 'No billing periods fall in this schedule’s window.' }
+  const drafts = allDrafts.filter((d) => !invoicedPeriods.has(d.periodStart))
+  if (drafts.length === 0)
+    return {
+      ok: false,
+      error:
+        'Every period in this schedule already has an invoice. Void unpaid ones to regenerate.',
+    }
 
   let created = 0
   for (const d of drafts) {
@@ -491,7 +496,9 @@ export async function voidInvoicesForScheduleAction(
     .update({ status: 'void' })
     .eq('school_id', schoolId)
     .eq('fee_schedule_id', feeScheduleId)
-    .neq('status', 'void')
+    // Never void money the crèche has received: only unpaid draft/issued invoices.
+    .in('status', ['draft', 'issued'])
+    .eq('amount_paid_cents', 0)
     .select('id')
   if (error) {
     logger.error('invoices_void_failed', { schoolId, error: error.message })
