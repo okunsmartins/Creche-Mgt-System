@@ -31,11 +31,10 @@ export async function saveRevolutCredentialsAction(
 
   const apiKey = ((formData.get('apiKey') as string | null) ?? '').trim()
   const manualSecret = ((formData.get('webhookSecret') as string | null) ?? '').trim()
-  if (!apiKey) return { error: 'Paste your Revolut Merchant API secret key.' }
+  if (!apiKey) return { error: 'Paste your Revolut API key.' }
   if (/^pk_/i.test(apiKey)) {
     return {
-      error:
-        'That’s your Public key. Paste the Secret key instead (Revolut Business → APIs → Merchant API).',
+      error: 'That’s your Public key. Paste the API key instead (Revolut API Console → API keys).',
     }
   }
 
@@ -46,7 +45,7 @@ export async function saveRevolutCredentialsAction(
       const mode = isRevolutSandbox() ? 'Sandbox (test)' : 'live'
       const msg =
         reg.reason === 'bad_key'
-          ? `Revolut didn’t accept that key. Check you copied the whole Merchant API Secret key, and that it’s a ${mode} key.`
+          ? `Revolut didn’t accept that key. Check you copied the whole key, that it’s a ${mode} key, and that it has Merchant Orders and Webhooks set to Write.`
           : reg.reason === 'too_many'
             ? 'Your Revolut account already has the maximum of 10 webhooks. Delete an unused one in Revolut Business (APIs → Webhooks), then try again.'
             : 'We couldn’t finish connecting to Revolut. Please try again in a minute.'
