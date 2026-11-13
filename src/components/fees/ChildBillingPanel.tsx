@@ -42,6 +42,11 @@ export interface FundingView {
   higher_capitation: boolean
 }
 
+/** Unpaid invoices that "Void all" can cancel (paid or part-paid are never voided). */
+const VOIDABLE = new Set(['draft', 'issued'])
+/** While any of these exist, regenerate is hidden: void them first. */
+const UNPAID_LIVE = new Set(['draft', 'issued', 'part_paid'])
+
 export interface InvoiceView {
   id: string
   invoice_number: string
@@ -242,7 +247,11 @@ export function ChildBillingPanel({
 
   function voidAll() {
     if (!schedule) return
-    if (!window.confirm('Void all invoices for this schedule? You can regenerate afterwards.'))
+    if (
+      !window.confirm(
+        'Void all unpaid invoices for this schedule? Paid invoices are kept. You can regenerate afterwards.',
+      )
+    )
       return
     setError(null)
     setNotice(null)
@@ -250,7 +259,9 @@ export function ChildBillingPanel({
       const res = await voidInvoicesForScheduleAction(schedule.id)
       if (!res.ok) setError(res.error)
       else {
-        setNotice(`Voided ${res.voided} invoice(s). You can regenerate now.`)
+        setNotice(
+          `Voided ${res.voided} unpaid invoice(s). Paid invoices are kept. You can regenerate now.`,
+        )
         router.refresh()
       }
     })
@@ -558,7 +569,7 @@ export function ChildBillingPanel({
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-text-primary">Invoices</h2>
           <div className="flex gap-2">
-            {schedule && invoices.length === 0 && (
+            {schedule && !invoices.some((i) => UNPAID_LIVE.has(i.status)) && (
               <Button type="button" onClick={generate} disabled={isPending}>
                 Generate invoices
               </Button>
@@ -568,7 +579,7 @@ export function ChildBillingPanel({
                 Issue all
               </Button>
             )}
-            {schedule && invoices.length > 0 && (
+            {schedule && invoices.some((i) => VOIDABLE.has(i.status)) && (
               <Button type="button" variant="secondary" onClick={voidAll} disabled={isPending}>
                 Void all
               </Button>
