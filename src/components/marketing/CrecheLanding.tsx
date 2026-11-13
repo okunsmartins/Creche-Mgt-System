@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight, Check, Lock, MapPin } from 'lucide-react'
 import type { School } from '@/lib/tenant/server'
+import { LiveDate } from './LiveDate'
 import { RainbowText } from '@/components/ui/RainbowText'
 import { Icon3D } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
@@ -341,7 +342,9 @@ export function CrecheLanding({
                   ))}
                   <div className="rounded-2xl border-2 border-accent-sunny bg-white p-3">
                     <div className="flex justify-between font-extrabold">
-                      <span>October invoice</span>
+                      <span>
+                        <LiveDate format="month" /> invoice
+                      </span>
                       <span>€200.00</span>
                     </div>
                     <div className="mt-2 rounded-full bg-primary p-2 text-center font-extrabold text-white">

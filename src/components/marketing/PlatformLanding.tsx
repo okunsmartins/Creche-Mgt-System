@@ -4,6 +4,7 @@ import { RainbowText } from '@/components/ui/RainbowText'
 import { Icon3D, type Icon3DName } from '@/components/ui/Icon3D'
 import { Mascot, Star, WaveEdge } from './Mascot'
 import { CountUp, LivePhoneFeed, RevealGroup } from './motion'
+import { LiveDate, LiveDateIn } from './LiveDate'
 
 // Creche Wise platform landing page (the bare apex, no crèche resolved). Ported from
 // the approved homepage mock-up. Figures inside the product previews are
@@ -216,9 +217,11 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
               <div className="p-5" aria-hidden="true">
                 <div className="flex flex-wrap items-baseline justify-between gap-1.5">
                   <p className="font-display text-[21px] font-semibold">
-                    Good morning, Little Meadows
+                    <LiveDate format="greeting" />, Little Meadows
                   </p>
-                  <span className="text-[13px] font-bold text-text-secondary">Thu 9 Oct</span>
+                  <span className="text-[13px] font-bold text-text-secondary">
+                    <LiveDate format="today" />
+                  </span>
                 </div>
                 <div className="mt-4 grid grid-cols-3 gap-2.5">
                   {(
@@ -406,10 +409,14 @@ export function PlatformLanding({ monthlyPrice }: { monthlyPrice: string }) {
                     <div className="text-xs font-extrabold uppercase tracking-[0.05em] text-text-secondary">
                       Invoice
                     </div>
-                    <div className="font-extrabold">INV-2026-000123</div>
+                    <div className="font-extrabold">
+                      INV-
+                      <LiveDate format="year" />
+                      -000123
+                    </div>
                   </div>
                   <span className="self-start rounded-full bg-[#fff4d1] px-3 py-1 text-xs font-extrabold text-[#5b4300]">
-                    Due 21 Oct
+                    Due <LiveDateIn days={8} />
                   </span>
                 </div>
                 <div className="mt-1.5 text-sm font-bold text-text-secondary">
