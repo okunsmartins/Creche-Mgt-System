@@ -39,7 +39,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [x] `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`, `TWILIO_STATUS_CALLBACK_URL` — SMS
       delivered live as "CrecheWise" and the status callback updates.
 - [ ] **`ENCRYPTION_KEY`** set (encrypts each crèche's Revolut key). **Never change it once crèches have connected.**
-- [ ] **`CRON_SECRET`** set — needed by the 3 scheduled jobs in `vercel.json`
+- [x] **`CRON_SECRET`** set (verified 2026-11-13: all 3 cron URLs return 401, not 503) — needed by the 3 scheduled jobs in `vercel.json`
       (`permission-slip-reminders` daily 08:00, `funding-scans` daily 06:30, `ncs-weekly-compliance` Mon 07:00 UTC).
       Without it they return 503. Check Vercel → Cron Jobs → Run → expect `{ "ok": true, … }`.
 - [ ] **Stripe LIVE**: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`,
