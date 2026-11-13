@@ -1,237 +1,135 @@
-# Go-Live Checklist
+# Go-Live Checklist — Creche Wise
 
-Single launch-readiness gate for Skool Bido. Detailed context for every item lives in
-[implementation-status.md](implementation-status.md) — this file is the consolidated "are we ready?"
-list so nobody has to hunt through the log.
+The single "are we ready to launch?" list for **Creche Wise** (crechewise.com). Detail and history live in
+[implementation-status.md](implementation-status.md).
 
-**Legend:** `[x]` done & verified · `[~]` built but NOT yet live-verified · `[ ]` outstanding.
-Do **not** tick `[x]` for anything that hasn't actually been verified in the target (prod) environment.
+**Legend:** `[x]` done & verified live · `[~]` built but not yet verified live · `[ ]` outstanding.
+Only tick `[x]` for things actually verified in **production** (crechewise.com).
 
-**Prod Supabase project:** `jywkpenzhzzptsrntobf` ("PrimarySchoolPortal"). ⚠️ Always confirm this ref
-before running SQL — a decoy project caused a real incident (see the log).
+**Prod Supabase project:** `xpbavfutfejlfbmnntyl`. Always confirm this ref before running SQL.
+**Migrations applied:** through **109** (`109_platform_settings.sql`). Next new migration = **110**.
 
 ---
 
-## 0. Automated test gate — run before every deploy
+## 0. Automated test gate (every PR / deploy)
 
 ```bash
-cd "Primary Management System"
-npm run type-check && npm run lint && npx vitest run && npx prettier --check .
+rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check . && npx vitest run && npx next build
 ```
 
-- [x] `type-check` (tsc) — 0 errors
-- [x] `lint` (eslint, incl. tenant-scope rule) — 0 errors
-- [x] `vitest` — 615 unit tests passing
-- [x] `prettier --check .` — clean
-- [ ] **Playwright E2E smoke** — set `E2E_ADMIN_EMAIL` + `E2E_ADMIN_PASSWORD`, then run the e2e specs
-      (admin routes load, attendance/compose UI). Skipped in CI without creds — run once against a
-      seeded prod-like env before launch.
-
-> Coverage gaps (documented, acceptable): integration paths (Stripe/Revolut webhooks, Resend send,
-> Supabase writes) are not unit-tested — they're covered by the live tests in §3. The presentational
-> pages (`/platform`, `FindYourSchool`, `SiteHeader`) have no component tests; their pure logic does.
+- [x] Type-check, lint, Prettier, unit tests (1,122+ passing), production build: run in CI on every PR.
+- [ ] **Playwright E2E** (currently **skipped** in CI). To switch on: in GitHub → Settings → Secrets and variables →
+      Actions, add secrets `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_PARENT_EMAIL`,
+      `E2E_PARENT_PASSWORD` (a **test** admin + **test** parent, never real people) and variable `E2E_ENABLED=true`.
 
 ---
 
-## 1. Production configuration — toggles & secrets
+## 1. Production configuration
 
-### Supabase (prod `jywkpenzhzzptsrntobf`)
-- [ ] **Admin MFA enabled** (Dashboard → Authentication → MFA) — flagged *Must, pre-production*
-- [ ] **"Confirm email" ON** (Authentication → Providers → Email) — required for FR-AUTH-002 in prod
-- [x] Migrations applied through **057** (SMS 055/056/057 verified via `to_regclass`)
-- [x] `service_role` grants present (full 119-query tenant audit done 2026-07-17) — **re-verify** any
-      table added since (sms_*, subscriptions.sms_enabled): grants + a service-role probe
-- [ ] Auth redirect URLs point to the prod domain (`skoolbido.com`)
+### Supabase (`xpbavfutfejlfbmnntyl`)
+- [x] Auth emails (sign-up, reset) sent via **Resend SMTP** (`noreply@crechewise.com`); password reset verified live.
+- [x] Auth Site URL / redirect URLs use `https://crechewise.com`.
+- [ ] **"Confirm email" ON** (Authentication → Sign In / Providers → Email).
+- [ ] **MFA** available for admins (Authentication → MFA).
 
-### Vercel environment variables (Production)
-- [x] `PLATFORM_OWNER_EMAIL` set + `/platform` confirmed live
-- [x] Supabase URL/keys, `NEXT_PUBLIC_APP_URL` = prod domain
-- [ ] **Stripe LIVE keys** (currently sandbox) + live webhook secret
-- [ ] **Revolut** prod `REVOLUT_API_KEY`, `REVOLUT_API_BASE_URL` (prod), `REVOLUT_WEBHOOK_SECRET`
-- [ ] **Twilio** `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_MESSAGING_SERVICE_SID` /
-      `TWILIO_STATUS_CALLBACK_URL` (`https://skoolbido.com/api/webhooks/sms/status`)
-- [ ] `STRIPE_PRO_MONTHLY_PRICE_ID` / `STRIPE_PRO_ANNUAL_PRICE_ID` — **live-mode** ids
-- [ ] `STRIPE_PRO_SMS_MONTHLY_PRICE_ID` / `STRIPE_PRO_SMS_ANNUAL_PRICE_ID` — **live-mode** ids
-- [ ] `RESEND_API_KEY` + `EMAIL_FROM_ADDRESS` on a **verified** sending domain
-- [ ] **`CRON_SECRET`** — required for the permission-slip due-date reminder cron
-      (`GET /api/cron/permission-slip-reminders`, scheduled daily 08:00 UTC in
-      `vercel.json`). Generate with `openssl rand -hex 32`; add for **Production**
-      and redeploy. Vercel auto-sends it as `Authorization: Bearer <secret>`.
-      **Until set, the endpoint returns 503 and no reminders send.** Verify in the
-      project's **Cron Jobs** tab (job listed); optionally **Run** it — a healthy
-      response is `{ "ok": true, "slips": 0, "emails": 0 }`.
+### Vercel environment variables (Production) — redeploy after any change
+- [x] Supabase URL / anon key / service-role key; `NEXT_PUBLIC_APP_URL=https://crechewise.com`.
+- [x] `PLATFORM_OWNER_EMAIL` (platform owner gets `/platform` + portal notifications).
+- [x] `RESEND_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` — domain `crechewise.com` **verified** in Resend.
+- [x] `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID`, `TWILIO_STATUS_CALLBACK_URL` — SMS
+      delivered live as "CrecheWise" and the status callback updates.
+- [ ] **`ENCRYPTION_KEY`** set (encrypts each crèche's Revolut key). **Never change it once crèches have connected.**
+- [x] **`CRON_SECRET`** set (verified 2026-11-13: all 3 cron URLs return 401, not 503) — needed by the 3 scheduled jobs in `vercel.json`
+      (`permission-slip-reminders` daily 08:00, `funding-scans` daily 06:30, `ncs-weekly-compliance` Mon 07:00 UTC).
+      Without it they return 503. Check Vercel → Cron Jobs → Run → expect `{ "ok": true, … }`.
+- [ ] **Stripe LIVE**: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`,
+      `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID` (+ `STRIPE_PRO_ANNUAL_PRICE_ID` if offered).
+      Currently **test mode**.
+- [ ] **`REVOLUT_API_BASE_URL=https://merchant.revolut.com/api/1.0`** at go-live (unset = sandbox, shows "Test mode").
 
-> Reminder: env changes only take effect on a **fresh deploy** — redeploy after editing.
+> **Changing the subscription price (e.g. €75 → €49.99):** no code change. Create a new monthly Price on the Pro
+> product in Stripe, put its id in `STRIPE_PRO_MONTHLY_PRICE_ID`, redeploy. The homepage, pricing page and subscribe
+> button read the price live from Stripe. Existing subscribers stay on their old price unless moved in Stripe.
 
 ---
 
-## 2. Third-party accounts & products
+## 2. Third-party accounts
 
-### Stripe (switch from sandbox to LIVE)
-- [x] Sandbox Pro product + prices (€39.99/mo, €420/yr) + full trial→subscribe→webhook loop proven
-- [ ] **Live-mode Pro** product + prices
-- [ ] **Live-mode Pro + SMS** (€44.99) product + prices → drives `subscriptions.sms_enabled`
-- [ ] **SMS credit top-up** products/prices (live)
-- [ ] Live webhook endpoint registered + signing secret in Vercel
+### Stripe (platform subscription + per-crèche card payments via Connect)
+- [ ] Stripe account **activated for live** (business verification done).
+- [ ] **Live** Pro product + monthly price (€75 now; €49.99 option later).
+- [ ] **Live** webhooks: two endpoints, both `https://crechewise.com/api/webhooks/stripe`. One listens to
+      **your account** (secret → `STRIPE_WEBHOOK_SECRET`), the other to **connected accounts** (secret →
+      `STRIPE_CONNECT_WEBHOOK_SECRET`).
+- [ ] Connect branding (name, icon, colour) set in **live** mode.
 
-### Revolut
-- [x] Integration built, merged, sandbox-configured (migrations 051/052, webhook secret, deployed)
-- [ ] **Business KYC approved**
-- [ ] Prod API key + prod base URL in Vercel
+### Revolut (per-crèche — each crèche connects its OWN Revolut Business account)
+- [x] Built: one-key connect, auto webhook, "Pay with Revolut" on invoices / late fees / extras (PRs #125, #128).
+- [x] Admin instructions point to the **API Console**; keys are `r_test_…` / `r_prod_…`; crèches must use a
+      **Merchant-only** key (Orders + Webhooks = Write) so Production never needs request signing.
+      See [revolut-setup.md](revolut-setup.md).
+- The platform owner does **not** need a Revolut account for payments (only for the free Sandbox to test).
 
-### Twilio (SMS) + ComReg
-- [ ] Twilio account created (2FA — Irish number **without** the leading trunk `0`)
-- [ ] Messaging Service created (`MG…` SID)
-- [ ] `SkoolBido` alphanumeric Sender ID added
-- [ ] **ComReg** Ireland sender-ID registration **approved** (mandatory since Oct 2025; has lead time)
-
-### Resend (email)
-- [ ] Sending domain **verified** (DNS records) so receipts/notifications deliver
+### SMS (Twilio + ComReg)
+- [x] Twilio Messaging Service with "CrecheWise" alphanumeric sender; live text delivered.
+- [ ] **ComReg** sender-ID registration for "CrecheWise" confirmed/approved (mandatory in Ireland; has lead time).
 
 ---
 
-## 3. Manual / live end-to-end tests (per feature)
+## 3. Live end-to-end tests
 
-### Payments & checkout
-- [ ] Guest payment via a school's link (`/s/<school>/guest-payment` or `/pay/<token>`) → card → success page + **receipt email**
-- [ ] Parent login → pay → order + receipt visible in portal
-- [ ] **Instalments**: order ≥ €20 → 4 equal instalments; each payment advances balance
-- [ ] Refund flow (admin) → Stripe refund + status + audit
-- [ ] Payment cancelled / failed paths handled
+### Payments — card (Stripe, test mode first)
+- [ ] Angels Nest admin → **Payment setup → Connect Stripe** (test) → status Active.
+- [ ] Test parent pays an invoice with `4242 4242 4242 4242` → invoice **Paid** → parent gets "Payment received" email.
+- [ ] Late fee paid the same way.
+- [ ] Admin **refund** → Stripe refund + status updated.
 
-### Subscriptions
-- [x] Trial → lock → subscribe → webhook → active proven **in sandbox** (Scoil Demo Pro·Active)
-- [ ] Re-verify the same loop in **live mode** with the live Pro product
-- [ ] Dunning: `past_due` grace window + payment-failed email; `subscription.deleted` reverts to free
+### Payments — Revolut (sandbox first)
+- [ ] API Console → Sandbox → Merchant key → Angels Nest **Connect Revolut** → "Connected".
+- [ ] Sandbox **Revolut Checkout → Card** switched ON (off by default).
+- [ ] Test parent → **Pay with Revolut** → card `4929 4205 7359 5709` → invoice **Paid** + receipt email.
+- [ ] A declining card → payment fails cleanly, invoice stays unpaid.
 
-### Revolut
-- [ ] Live sandbox **end-to-end** payment (the one remaining sandbox step) — success + error PANs
-- [ ] Prod smoke once KYC + prod key are in
+### Platform subscription
+- [x] Trial → lock → subscribe → webhook → active, in **test** mode (Angels Nest).
+- [ ] Same loop with the **live** price (real card, then cancel/refund if needed).
 
-### SMS (needs Twilio + ComReg + Pro+SMS product first)
-- [ ] Subscribe a school to Pro+SMS → webhook sets `sms_enabled` → compose UI unlocks (currently gated)
-- [ ] Send to a test mobile → arrives from `SkoolBido` → **delivery webhook** flips
-      `sms_notifications.status` to delivered
-- [ ] Credit top-up checkout → `sms_topups` + balance increments (idempotent on webhook retry)
-- [ ] Allowance/credit debit is correct; blocked at zero balance
-- [ ] Opted-out parent is skipped
-
-### Email
-- [ ] Receipt to payer + school notification deliver (needs live Stripe + verified Resend domain)
-- [ ] Per-tenant sender name shows the school's name
-
-### Platform / multi-tenancy / privacy
-- [x] Owner `/platform` renders the schools overview (verified in prod)
-- [x] Public apex pages do **not** enumerate schools (verified in prod)
-- [ ] Signed-in non-owner gets 404 on `/platform`
-- [ ] Single-domain tenancy: bare apex = platform (anon); `/s/<school>/…` resolves that school (no
-      sticky cookie); `/pay/<token>` resolves from the token; a logged-in school user lands on their school
-
-### Attendance / activities / programmes / other modules
-- [ ] Attendance: mark a roll + per-student summary
-- [ ] Activities & programmes: create → publish → enrol → pay
-- [ ] Meeting booking, time-off, messaging (email) smoke tests
+### Already verified live
+- [x] Password reset email + new password works.
+- [x] SMS to a parent ("Text parents") delivered.
+- [x] Cross-tenant privacy test **64/64** (`ISO_CHILD_ID=<test child> node scripts/verify-tenant-isolation.mjs`).
+- [x] Overpayment flagged + emailed to the crèche; receipts go to all linked parents (PR #122, unit-tested).
+- [ ] Staff opening a parent link sees the "This link is for parents" notice (PR #123) — check live.
 
 ---
 
-## 4. Security review
+## 4. Security & privacy
+- [x] Service-role queries scoped by `school_id`; cross-tenant isolation test passed live.
+- [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
+- [ ] RLS enabled on every table (spot-check in Supabase → Table editor).
+- [ ] No secrets in the client bundle (only `NEXT_PUBLIC_*`).
+- [ ] DPIA + privacy notice reviewed for children's data.
 
-- [ ] **OWASP Top-10** manual pass (SQLi, XSS/CSP, CSRF/SameSite, broken access control)
-- [x] Tenant-scope audit of service-role queries (2026-07-17) — **re-run** for tables added since
-      (sms_*, subscriptions, platform overview: the `/platform` cross-tenant read is intentional and
-      sits behind `isPlatformOwner`)
-- [ ] Confirm **RLS enabled** on every table (SMS tables: RLS on, no policies, service-role only)
-- [ ] No secrets reachable from the client bundle (only `NEXT_PUBLIC_*`)
-- [x] `/platform` gated by `PLATFORM_OWNER_EMAIL`; 404 (not 403) to non-owners
-
-### 4a. AIM privacy review — REQUIRED before enabling the AIM module
-
-AIM (Access and Inclusion Model) data concerns a child's **additional needs** — **special-category personal data about a
-vulnerable person** (GDPR Art. 9). The AIM module is built but ships **off**: the `funding.manage_aim` permission is
-**ungranted by default**, so `/admin/funding/aim` returns 404 for everyone until someone deliberately turns it on. Do **not**
-grant `funding.manage_aim` until the items below are signed off (involve the DPO / get legal advice — this list is a
-practical prompt, not legal advice):
-
-- [ ] **Lawful basis + consent** — a clear lawful basis is documented, and the parental/guardian consent the module records
-      is genuinely obtained (the case cannot be marked Ready/Submitted without recorded `GRANTED` consent — enforced in code).
-- [ ] **DPIA** completed for AIM (children's special-category data) — ties into the DPIA already tracked for go-live.
-- [ ] **Least-privilege access** — decide exactly which role/people receive `funding.manage_aim` (e.g. manager / AIM
-      coordinator only), not all admins. Record who and why.
-- [ ] **Data minimisation briefing** — staff know the support summary is **brief + non-clinical**; no health/diagnostic
-      detail is pasted in. (The schema stores only a summary + optional evidence-doc reference; it never copies health records.)
-- [ ] **Retention & deletion** — how long AIM cases are kept and when/how they are removed is defined.
-- [ ] **Audit** — confirm the `aim.*` audit events (`aim.case_created/case_updated/consent_recorded/submitted/closed`) are
-      being written and are reviewable.
-- [ ] **Enable** — only then grant `funding.manage_aim` via `role_permissions`, and verify the case lifecycle
-      (open → record consent → prepare → submit) end-to-end in a controlled test before real children's data is entered.
+### 4a. AIM module — keep OFF until signed off
+AIM data is special-category data about children. `funding.manage_aim` is ungranted by default (404 for everyone).
+Before granting it: documented lawful basis + consent, DPIA, least-privilege (named coordinators only), staff briefed
+to keep summaries brief and non-clinical, retention rule defined, `aim.*` audit events checked, then a controlled
+end-to-end test.
 
 ---
 
-## 5. Domain / infrastructure
-- [x] `skoolbido.com` apex + `www` live on Vercel (Cloudflare CNAMEs)
-- [x] **Single-domain tenancy** — schools live on the apex via `/s/<school>` + tokens; **no per-school
-      DNS/SSL to provision**, so onboarding is instant (Aladdin-style).
-- [ ] Confirm `NEXT_PUBLIC_APP_URL` + Supabase Auth URLs use the prod domain everywhere
-- [ ] Apply migration **059** (drop `schools.subdomain_provisioned`) — after this deploy
+## 5. Launch day
+1. Stripe → live keys, live price, live webhooks in Vercel; redeploy.
+2. `REVOLUT_API_BASE_URL` → production; redeploy. Crèches reconnect with a **Production** Merchant-only key.
+3. Angels Nest: reconnect Stripe (live) and Revolut (production); **cancel the test subscription**.
+4. Switch off the owner's test crèche (**Flomat**).
+5. Real **€1 invoice** by card → Paid + receipt; real subscription; real Revolut payment. Refund the test payments.
+6. Onboard Angels Nest (Tracy) for real.
 
 ---
 
-## 6. Revolut go-live — make live payments + refunds real (step by step)
+## Housekeeping (not blocking)
+- [ ] Test child "MichaelTest JordanTest": set inactive, remove the owner's mobile.
+- [ ] Tell Tracy the 21 Oct test text reached 2 Angels Nest parents.
 
-The Revolut integration is **fully built and merged** (PR #43): create-order + hosted Revolut
-Pay, the `ORDER_COMPLETED / ORDER_PAYMENT_DECLINED / ORDER_PAYMENT_FAILED / ORDER_CANCELLED`
-webhook (HMAC-verified + idempotent, at `POST /api/webhooks/revolut`), and admin **refunds**
-(`POST /orders/{id}/refund`). **Nothing new to code** — the remaining work is testing +
-production credentials.
-
-> **Decide first — one account or per-school?** The merged integration uses a **single**
-> Revolut Merchant API key, so every Revolut payment lands in **one** Revolut account. Stripe
-> is per-school (Connect); Revolut is **not**, yet. Per-school Revolut is the held
-> `feat/revolut-per-school` branch (needs `ENCRYPTION_KEY`, migration 067, sandbox test). For a
-> multi-school launch, choose: (a) go live single-account now — only if all Revolut funds are
-> meant to land in one account; (b) finish per-school first; or (c) leave Revolut **off** at
-> launch (leave `REVOLUT_API_KEY` unset → the option is hidden) since Stripe Connect already
-> covers per-school card payments, and switch Revolut on later.
-
-### 6a. Finish the sandbox proof (last pre-prod step)
-- [ ] End-to-end sandbox payment: order → choose Revolut Pay → pay with success PAN
-      `4929420573595709` → webhook `ORDER_COMPLETED` flips the order to **paid** + receipt email
-      (sandbox already configured: migrations 051/052, webhook secret in Vercel).
-- [ ] Failure path: pay with a declining PAN → order → `payment_failed`.
-- [ ] Refund path: admin refund on the paid order → Revolut refund succeeds → order refunded +
-      audit row.
-
-### 6b. Revolut Business account + KYC (production)
-- [ ] Revolut **Business** account created and **KYC approved** for the merchant that will
-      receive the funds (First Stack Solutions, or the specific school if single-account).
-- [ ] **Merchant API / Revolut Pay** enabled on that account (Revolut Merchant dashboard).
-
-### 6c. Production credentials → Vercel (Production env)
-- [ ] **Production Secret API key** (Merchant → APIs) → set `REVOLUT_API_KEY`.
-- [ ] `REVOLUT_API_BASE_URL` = `https://merchant.revolut.com/api/1.0` (prod; sandbox is
-      `https://sandbox-merchant.revolut.com/api/1.0`).
-- [ ] Create a **production webhook** in the Revolut dashboard → URL
-      `https://skoolbido.com/api/webhooks/revolut`, subscribed to `ORDER_COMPLETED`,
-      `ORDER_PAYMENT_DECLINED`, `ORDER_PAYMENT_FAILED`, `ORDER_CANCELLED`. Copy its **signing
-      secret** → set `REVOLUT_WEBHOOK_SECRET`.
-- [ ] **Redeploy** — env changes only take effect on a fresh deploy.
-
-### 6d. Production smoke test (real money, small amount)
-- [ ] Small real order → pay by Revolut Pay → order flips to **paid** + receipt email; confirm
-      the webhook row shows `processed = true` in `webhook_events`.
-- [ ] Refund it from the admin → Revolut refund completes → order refunded.
-- [ ] Then flip the Revolut boxes in §2 and §3 to `[x]`.
-
----
-
-## Not blocking launch (tracked separately)
-- **Go-to-market validation** paused until ~8 principals confirm a wedge (see `docs/market-validation.md`).
-- Per-school **subdomains dropped** in favour of single-domain tenancy — no per-school DNS to manage.
-  (Existing `<school>.skoolbido.com` links still resolve via host-based `getTenantSubdomain`, kept for
-  backward compat; the provisioning automation was removed.)
-- Platform **"Get in Touch"** page (needs a support email) + FAQ copy sign-off (support hours, hosting region).
-
----
-
-*Keep this file current: when a live test passes or a config step is done, flip its box to `[x]` in a
-small PR. When everything above is `[x]`, we're launch-ready.*
+*Keep this file current: flip a box to `[x]` in a small PR when a step is verified live.*
