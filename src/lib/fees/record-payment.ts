@@ -17,6 +17,7 @@ import { buildEmailFrom } from '@/lib/email/from'
 import { serverEnv } from '@/lib/env'
 import { logger } from '@/lib/logging'
 import { settleInvoice, settleLateFee } from './settle-payment'
+import { RECEIVED_PAYMENT_STATUSES, netReceivedCents } from './refund-math'
 import { buildFeeReceiptEmail, buildOverpaymentAlertEmail } from './payment-emails'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
@@ -78,13 +79,13 @@ export async function recordFeePayment(
   // 2) Settle from the total received.
   const { data: payRows, error: sumErr } = await db
     .from('payments')
-    .select('amount_cents')
+    .select('amount_cents, refunded_amount_cents')
     .eq(subjectCol, p.subjectId)
-    .eq('status', 'paid')
+    .in('status', [...RECEIVED_PAYMENT_STATUSES])
   if (sumErr) throw new Error(sumErr.message)
-  const totalReceived = ((payRows ?? []) as { amount_cents: number }[]).reduce(
-    (s, r) => s + (r.amount_cents ?? 0),
-    0,
+  // Net of any refunds, so a payment after a part-refund settles correctly.
+  const totalReceived = netReceivedCents(
+    (payRows ?? []) as { amount_cents: number; refunded_amount_cents: number | null }[],
   )
 
   const info =
