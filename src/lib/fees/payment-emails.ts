@@ -14,9 +14,13 @@ export interface FeeReceiptData {
   /** Still owed on this invoice/fee after the payment (0 = fully paid). */
   balanceCents: number
   paidAtISO: string
-  /** Where the parent can see their invoices. */
+  /** Where the parent can see their invoices (or late fees). */
   portalUrl: string
 }
+
+/** Button label matching the page the portal link opens. */
+const portalLinkLabel = (url: string): string =>
+  url.endsWith('/late-fees') ? 'View your late fees' : 'View your invoices'
 
 const providerDate = (iso: string): string =>
   new Date(iso).toLocaleDateString('en-IE', {
@@ -59,7 +63,7 @@ export function buildFeeReceiptEmail(d: FeeReceiptData): {
       ${rowsHtml(rows)}
       <p style="margin:16px 0">
         <a href="${d.portalUrl}" style="display:inline-block;background:#573c9b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">
-          View your invoices
+          ${portalLinkLabel(d.portalUrl)}
         </a>
       </p>
       <p style="color:#6b7280;font-size:13px;margin:0">Please keep this email as your receipt. For any questions, contact the crèche directly.</p>`,
@@ -71,7 +75,7 @@ export function buildFeeReceiptEmail(d: FeeReceiptData): {
     '',
     ...rows.map(([k, v]) => `${k}: ${v}`),
     '',
-    `View your invoices: ${d.portalUrl}`,
+    `${portalLinkLabel(d.portalUrl)}: ${d.portalUrl}`,
     '',
     'Please keep this email as your receipt.',
   ].join('\n')
@@ -131,6 +135,57 @@ export function buildOverpaymentAlertEmail(d: OverpaymentAlertData): {
     '',
     `Please refund ${excess} to the parent from your ${providerName} dashboard, using the payment reference above.`,
     `View this child's fees: ${d.adminUrl}`,
+  ].join('\n')
+  return { subject, html, text }
+}
+
+export interface FeeRefundData {
+  schoolName: string
+  childName: string
+  /** e.g. "Invoice INV-2026-000025" or "Late collection fee". */
+  subjectLabel: string
+  amountCents: number
+  refundedAtISO: string
+  portalUrl: string
+}
+
+/** Notice the parent(s) get when the crèche refunds an online fee payment. */
+export function buildFeeRefundEmail(d: FeeRefundData): {
+  subject: string
+  html: string
+  text: string
+} {
+  const amount = formatCurrency(d.amountCents)
+  const subject = `Refund: ${amount} for ${d.childName}`
+  const rows: [string, string][] = [
+    ['For', d.subjectLabel],
+    ['Child', d.childName],
+    ['Amount refunded', amount],
+    ['Date', providerDate(d.refundedAtISO)],
+  ]
+  const label = portalLinkLabel(d.portalUrl)
+  const html = renderBrandedEmail({
+    schoolName: d.schoolName,
+    subtitle: 'Refund',
+    bodyHtml: `
+      <p style="margin:0 0 12px">Hi,</p>
+      <p>${esc(d.schoolName)} has refunded part or all of your payment. It goes back to the card or account you paid with, usually within 5–10 working days.</p>
+      ${rowsHtml(rows)}
+      <p style="margin:16px 0">
+        <a href="${d.portalUrl}" style="display:inline-block;background:#573c9b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">
+          ${label}
+        </a>
+      </p>
+      <p style="color:#6b7280;font-size:13px;margin:0">For any questions, contact the crèche directly.</p>`,
+  })
+  const text = [
+    'Hi,',
+    '',
+    `${d.schoolName} has refunded part or all of your payment. It goes back to the card or account you paid with, usually within 5–10 working days.`,
+    '',
+    ...rows.map(([k, v]) => `${k}: ${v}`),
+    '',
+    `${label}: ${d.portalUrl}`,
   ].join('\n')
   return { subject, html, text }
 }
