@@ -2,6 +2,7 @@ import 'server-only'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { ageInMonthsAt } from '@/lib/age/age'
 import { roomStaffingRequirement } from '@/lib/ratios/ratio'
+import { getRatioBands } from '@/lib/ratios/config'
 import { weekDays } from './rota'
 import { needsCover, coverShortfall } from './cover'
 
@@ -35,7 +36,7 @@ export async function getWeekCoverAlerts(schoolId: string, weekStart: string): P
   const db = createSupabaseAdminClient()
   const dates = weekDays(weekStart)
 
-  const [{ data: roomData }, { data: childData }, { data: shiftData }] = await Promise.all([
+  const [{ data: roomData }, { data: childData }, { data: shiftData }, bands] = await Promise.all([
     db
       .from('classes')
       .select('id, name')
@@ -53,6 +54,7 @@ export async function getWeekCoverAlerts(schoolId: string, weekStart: string): P
       .eq('school_id', schoolId)
       .in('shift_date', dates)
       .not('class_id', 'is', null),
+    getRatioBands(schoolId),
   ])
 
   const rooms = (roomData as { id: string; name: string }[] | null) ?? []
@@ -75,7 +77,7 @@ export async function getWeekCoverAlerts(schoolId: string, weekStart: string): P
   for (const room of rooms) {
     requiredByRoom.set(
       room.id,
-      roomStaffingRequirement(agesByRoom.get(room.id) ?? []).requiredStaff,
+      roomStaffingRequirement(agesByRoom.get(room.id) ?? [], bands).requiredStaff,
     )
   }
 
