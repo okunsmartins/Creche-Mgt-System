@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Check, X } from 'lucide-react'
+import { AlertTriangle, Check, X } from 'lucide-react'
 import { reviewTimeOffRequestAction } from '@/lib/timeoff/actions'
 
 export function TimeOffReviewButtons({ requestId }: { requestId: string }) {
@@ -9,13 +9,58 @@ export function TimeOffReviewButtons({ requestId }: { requestId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [rejecting, setRejecting] = useState(false)
   const [note, setNote] = useState('')
+  // Set when the server refuses a plain approve because of clashes / cover gaps.
+  const [warnings, setWarnings] = useState<string[] | null>(null)
 
-  function submit(decision: 'approved' | 'rejected', reviewNote?: string) {
+  function submit(decision: 'approved' | 'rejected', reviewNote?: string, confirmOverride = false) {
     setError(null)
     startTransition(async () => {
-      const result = await reviewTimeOffRequestAction(requestId, decision, reviewNote)
+      const result = await reviewTimeOffRequestAction(
+        requestId,
+        decision,
+        reviewNote,
+        confirmOverride,
+      )
       if (result && 'error' in result) setError(result.error)
+      else if (result && 'needsConfirm' in result) setWarnings(result.warnings)
+      else setWarnings(null)
     })
+  }
+
+  if (warnings) {
+    return (
+      <div className="w-full max-w-sm space-y-2 rounded-xl border border-warning/40 bg-warning/10 p-3 sm:w-80">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+          <AlertTriangle className="h-3.5 w-3.5 text-warning" aria-hidden="true" />
+          Check cover before approving
+        </p>
+        <ul className="list-disc space-y-1 pl-4 text-xs text-text-secondary">
+          {warnings.map((w) => (
+            <li key={w}>{w}</li>
+          ))}
+        </ul>
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => setWarnings(null)}
+            disabled={pending}
+            className="rounded-md px-3 py-1.5 text-xs font-semibold text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => submit('approved', undefined, true)}
+            disabled={pending}
+            className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-500/40 transition-colors hover:bg-amber-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            {pending ? 'Approving…' : 'Approve anyway'}
+          </button>
+        </div>
+        {error && <p className="text-right text-xs text-error">{error}</p>}
+      </div>
+    )
   }
 
   if (rejecting) {

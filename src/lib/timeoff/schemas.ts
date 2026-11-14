@@ -29,4 +29,9 @@ export function isRangeOrdered(startDate: string, endDate: string): boolean {
 export type TimeOffRequestValues = z.infer<typeof timeOffRequestSchema>
 
 export type TimeOffActionState = null | { error: string } | { success: true }
-export type TimeOffReviewState = null | { error: string } | { success: true }
+export type TimeOffReviewState =
+  | null
+  | { error: string }
+  | { success: true }
+  /** Approve was blocked pending confirmation: clashes / cover gaps the admin must see first. */
+  | { needsConfirm: true; warnings: string[] }
