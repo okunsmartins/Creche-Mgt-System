@@ -1,4 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  applyFeeRefund,
+  feeSubjectForPayment,
+  sendFeeRefundEmails,
+  type FeePaymentRecord,
+} from '@/lib/fees/apply-refund'
 import type Stripe from 'stripe'
 import { getStripe } from '@/lib/stripe/client'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
@@ -480,7 +486,9 @@ async function handleChargeRefunded(
 
   const { data: paymentRow, error: paymentFetchError } = await adminClient
     .from('payments')
-    .select('id, order_id, amount_cents')
+    .select(
+      'id, order_id, invoice_id, late_collection_id, amount_cents, refunded_amount_cents, status',
+    )
     .eq('provider_payment_intent_id', paymentIntentId)
     .single()
 
@@ -489,6 +497,41 @@ async function handleChargeRefunded(
       chargeId: charge.id,
       paymentIntentId,
     })
+    return
+  }
+
+  // Fee payments (invoice / late-collection fee) have no order: settle them from the
+  // cumulative refunded total. Covers refunds made in the Stripe dashboard too.
+  const feeRow = paymentRow as FeePaymentRecord & { order_id: string | null }
+  if (!feeRow.order_id) {
+    const subject = await feeSubjectForPayment(adminClient, feeRow)
+    if (!subject) {
+      logger.error('stripe_charge_refunded_fee_subject_not_found', { paymentId: feeRow.id })
+      return
+    }
+    const { newlyRefundedCents } = await applyFeeRefund(
+      adminClient,
+      feeRow,
+      subject,
+      charge.amount_refunded ?? 0,
+    )
+    if (newlyRefundedCents > 0) {
+      await adminClient.from('audit_logs').insert({
+        school_id: subject.schoolId,
+        actor_id: null,
+        actor_email: 'stripe-webhook',
+        action: 'refund.completed',
+        resource_type: 'payment',
+        resource_id: feeRow.id,
+        metadata: {
+          amount_cents: newlyRefundedCents,
+          subject: subject.label,
+          charge_id: charge.id,
+        },
+        correlation_id: createCorrelationId(),
+      })
+      await sendFeeRefundEmails(adminClient, subject, newlyRefundedCents)
+    }
     return
   }
 

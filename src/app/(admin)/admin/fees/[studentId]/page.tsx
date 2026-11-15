@@ -9,6 +9,7 @@ import {
   type FundingView,
   type InvoiceView,
 } from '@/components/fees/ChildBillingPanel'
+import { FeePaymentsPanel, type FeePaymentView } from '@/components/fees/FeePaymentsPanel'
 import { ageLabel, ncsAgeEligibility } from '@/lib/age/age'
 import { generateDueDates } from '@/lib/fees/schedule'
 import { summariseFeeYear, type ProjectionInvoice } from '@/lib/fees/projection'
@@ -81,6 +82,60 @@ export default async function ChildBillingPage({ params }: PageProps) {
     .order('due_date')
   const invoices = (invData ?? []) as (InvoiceView & { amount_paid_cents: number })[]
 
+  // Online payments for this child's invoices + late fees (both school-scoped via parent).
+  const { data: lateData } = await db
+    .from('late_collections')
+    .select('id')
+    .eq('school_id', admin.schoolId)
+    .eq('student_id', studentId)
+  const lateIds = ((lateData ?? []) as { id: string }[]).map((r) => r.id)
+  const invoiceIds = invoices.map((i) => i.id)
+  const invoiceLabel = new Map(invoices.map((i) => [i.id, `Invoice ${i.invoice_number}`]))
+  const PAY_COLS =
+    'id, payment_reference, provider, amount_cents, refunded_amount_cents, status, paid_at, invoice_id, late_collection_id'
+  type PayRow = {
+    id: string
+    payment_reference: string
+    provider: 'stripe' | 'revolut'
+    amount_cents: number
+    refunded_amount_cents: number
+    status: string
+    paid_at: string | null
+    invoice_id: string | null
+    late_collection_id: string | null
+  }
+  const [{ data: invPays }, { data: latePays }] = await Promise.all([
+    invoiceIds.length
+      ? db
+          .from('payments')
+          .select(PAY_COLS)
+          .in('invoice_id', invoiceIds)
+          .in('status', ['paid', 'partially_refunded', 'refunded'])
+      : Promise.resolve({ data: [] }),
+    lateIds.length
+      ? db
+          .from('payments')
+          .select(PAY_COLS)
+          .in('late_collection_id', lateIds)
+          .in('status', ['paid', 'partially_refunded', 'refunded'])
+      : Promise.resolve({ data: [] }),
+  ])
+  const feePayments: FeePaymentView[] = [
+    ...((invPays ?? []) as PayRow[]),
+    ...((latePays ?? []) as PayRow[]),
+  ]
+    .map((p) => ({
+      id: p.id,
+      reference: p.payment_reference,
+      label: p.invoice_id ? (invoiceLabel.get(p.invoice_id) ?? 'Invoice') : 'Late collection fee',
+      provider: p.provider,
+      amountCents: p.amount_cents,
+      refundedCents: p.refunded_amount_cents ?? 0,
+      status: p.status,
+      paidAt: p.paid_at,
+    }))
+    .sort((a, b) => (b.paidAt ?? '').localeCompare(a.paidAt ?? ''))
+
   // Full-year projection (§8.5): schedule's due dates vs invoices generated/paid.
   const projection =
     schedule && schedule.status !== 'ended'
@@ -147,6 +202,7 @@ export default async function ChildBillingPage({ params }: PageProps) {
         registrations={registrations}
         invoices={invoices}
       />
+      <FeePaymentsPanel payments={feePayments} />
     </div>
   )
 }
