@@ -1,7 +1,7 @@
 import 'server-only'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { ageInMonthsAt } from '@/lib/age/age'
-import { roomStaffingRequirement } from '@/lib/ratios/ratio'
+import { minimumStaffForRoom, roomStaffingRequirement } from '@/lib/ratios/ratio'
 import { getRatioBands } from '@/lib/ratios/config'
 import { weekDays } from './rota'
 import { needsCover, coverShortfall } from './cover'
@@ -77,7 +77,7 @@ export async function getWeekCoverAlerts(schoolId: string, weekStart: string): P
   for (const room of rooms) {
     requiredByRoom.set(
       room.id,
-      roomStaffingRequirement(agesByRoom.get(room.id) ?? [], bands).requiredStaff,
+      minimumStaffForRoom(roomStaffingRequirement(agesByRoom.get(room.id) ?? [], bands)),
     )
   }
 

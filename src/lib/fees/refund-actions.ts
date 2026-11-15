@@ -14,6 +14,7 @@ import {
   feeSubjectForPayment,
   sendFeeRefundEmails,
   type FeePaymentRecord,
+  type RefundAmount,
 } from './apply-refund'
 import { refundableCents } from './refund-math'
 
@@ -72,6 +73,9 @@ export async function refundFeePaymentAction(
     return { error: `You can refund at most ${formatCurrency(refundable)} on this payment.` }
 
   let providerRefundId: string
+  // What to record: Stripe gives a running refunded total for the charge (safe against
+  // the charge.refunded webhook landing first); Revolut only tells us this refund.
+  let recorded: RefundAmount = { deltaCents: amountCents }
   try {
     if (payment.provider === 'revolut') {
       if (!payment.provider_order_id) return { error: 'This payment has no Revolut reference.' }
@@ -95,12 +99,32 @@ export async function refundFeePaymentAction(
           reason: 'requested_by_customer',
           metadata: { fee_payment_id: payment.id, requested_by: admin.id ?? '' },
         },
-        // The charge lives on the crèche's connected account.
-        { stripeAccount: connect.stripe_connect_account_id },
+        {
+          // The charge lives on the crèche's connected account.
+          stripeAccount: connect.stripe_connect_account_id,
+          // A double-submit of the same refund from the same page state returns the
+          // first refund instead of sending the money twice (Stripe keeps keys 24h).
+          idempotencyKey: `fee-refund:${payment.id}:${payment.refunded_amount_cents ?? 0}:${amountCents}`,
+        },
       )
       if (refund.status === 'failed' || refund.status === 'canceled')
         return { error: `Stripe could not process the refund (${refund.status}).` }
       providerRefundId = refund.id
+      const chargeId = typeof refund.charge === 'string' ? refund.charge : refund.charge?.id
+      if (chargeId) {
+        try {
+          const charge = await getStripe().charges.retrieve(chargeId, undefined, {
+            stripeAccount: connect.stripe_connect_account_id,
+          })
+          recorded = { cumulativeCents: charge.amount_refunded }
+        } catch (err) {
+          // The refund itself succeeded; fall back to recording just this amount.
+          logger.warn('fee_refund_charge_lookup_failed', {
+            paymentId,
+            error: err instanceof Error ? err.message : 'unknown',
+          })
+        }
+      }
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Refund failed'
@@ -123,12 +147,16 @@ export async function refundFeePaymentAction(
     return { error: `Refund failed: ${message}` }
   }
 
-  const { newlyRefundedCents } = await applyFeeRefund(
-    db,
-    payment,
-    subject,
-    (payment.refunded_amount_cents ?? 0) + amountCents,
-  )
+  // The money has already gone back to the parent at this point, so a failure to update
+  // our records must not hide that: still audit it, and tell the admin plainly.
+  let newlyRefundedCents = 0
+  let recordError: string | null = null
+  try {
+    ;({ newlyRefundedCents } = await applyFeeRefund(db, payment, subject, recorded))
+  } catch (err) {
+    recordError = err instanceof Error ? err.message : 'unknown'
+    logger.error('fee_refund_record_failed', { paymentId, error: recordError })
+  }
 
   await db.from('audit_logs').insert({
     school_id: admin.schoolId,
@@ -143,6 +171,7 @@ export async function refundFeePaymentAction(
       provider_refund_id: providerRefundId,
       subject: subject.label,
       reason: reason || null,
+      ...(recordError ? { record_error: recordError } : {}),
     },
     correlation_id: createCorrelationId(),
     ip_address: null,
@@ -155,6 +184,10 @@ export async function refundFeePaymentAction(
   revalidatePath(`/admin/fees/${subject.studentId}`)
   revalidatePath('/parent/invoices')
   revalidatePath('/parent/late-fees')
+  if (recordError)
+    return {
+      error: `The ${formatCurrency(amountCents)} refund was sent, but Creche Wise could not update this invoice. Refresh the page; if it still shows as paid, contact support.`,
+    }
   return {
     success: true,
     message: `Refunded ${formatCurrency(amountCents)}. The parent has been emailed.`,

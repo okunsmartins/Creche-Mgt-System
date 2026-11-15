@@ -5,7 +5,7 @@ import { formatDate } from '@/lib/utils'
 import { TimeOffStatusBadge } from '@/components/timeoff/TimeOffStatusBadge'
 import { TimeOffReviewButtons } from '@/components/timeoff/TimeOffReviewButtons'
 import { assessPendingTimeOff } from '@/lib/timeoff/assess'
-import { describeAssessment, hasWarnings } from '@/lib/timeoff/cover'
+import { describeAssessment, hasCoverGaps, hasWarnings } from '@/lib/timeoff/cover'
 import type { TimeOffRequestRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Time Off | Admin' }
@@ -88,7 +88,7 @@ export default async function AdminTimeOffPage() {
                     (() => {
                       const a = assessments.get(r.id)
                       if (!a) return null
-                      if (hasWarnings(a))
+                      if (hasWarnings(a) || hasCoverGaps(a))
                         return (
                           <ul className="mt-1 space-y-0.5 text-xs font-medium text-warning">
                             {describeAssessment(a).map((line) => (

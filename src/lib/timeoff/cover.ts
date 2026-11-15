@@ -23,6 +23,8 @@ export interface RoomRequirement {
   roomId: string
   roomName: string
   requiredStaff: number
+  /** Children with no date of birth (or outside every band): their ratio can't be counted. */
+  unknownAgeChildren?: number
 }
 
 export interface CoverShortfall {
@@ -43,11 +45,25 @@ export interface LeaveAssessment {
   shortfalls: CoverShortfall[]
   /** Whether this person has any rota shifts in the leave window (else cover can't be judged). */
   onRota: boolean
+  /** Rooms this person is rostered in whose children's ages aren't all known. */
+  uncheckedAges: { roomName: string; children: number }[]
+  /** Leave days beyond MAX_COVER_DAYS that the cover check did not look at. */
+  uncheckedDays: number
 }
 
 /** True when the assessment carries anything the approver should see before approving. */
 export function hasWarnings(a: LeaveAssessment): boolean {
   return a.approvedOverlap.length > 0 || a.pendingOverlap.length > 0 || a.shortfalls.length > 0
+}
+
+/** True when part of the cover check couldn't be done (so don't claim "all covered"). */
+export function hasCoverGaps(a: LeaveAssessment): boolean {
+  return a.uncheckedAges.length > 0 || a.uncheckedDays > 0
+}
+
+function daysInclusive(start: string, end: string): number {
+  const ms = Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)
+  return Math.max(0, Math.round(ms / 86_400_000) + 1)
 }
 
 export function addDaysISO(iso: string, days: number): string {
@@ -129,6 +145,18 @@ export function assessLeaveRequest(
       })
     }
   }
+  // Rooms this person works in during the leave whose ratio can't be fully counted.
+  const rosteredRooms = new Set(
+    shifts
+      .filter((s) => s.teacherId === target.teacherId && s.roomId && daySet.has(s.date))
+      .map((s) => s.roomId as string),
+  )
+  const uncheckedAges = [...rosteredRooms]
+    .map((id) => roomById.get(id))
+    .filter((r): r is RoomRequirement => !!r && (r.unknownAgeChildren ?? 0) > 0)
+    .map((r) => ({ roomName: r.roomName, children: r.unknownAgeChildren ?? 0 }))
+    .sort((a, b) => a.roomName.localeCompare(b.roomName))
+
   shortfalls.sort((a, b) =>
     a.date === b.date ? a.roomName.localeCompare(b.roomName) : a.date < b.date ? -1 : 1,
   )
@@ -140,6 +168,8 @@ export function assessLeaveRequest(
     ),
     shortfalls,
     onRota,
+    uncheckedAges,
+    uncheckedDays: Math.max(0, daysInclusive(target.start, target.end) - days.length),
   }
 }
 
@@ -156,5 +186,13 @@ export function describeAssessment(a: LeaveAssessment): string[] {
     )
   }
   if (a.shortfalls.length > 5) lines.push(`…and ${a.shortfalls.length - 5} more room-days short.`)
+  for (const u of a.uncheckedAges)
+    lines.push(
+      `${u.roomName}: ${u.children} ${u.children === 1 ? 'child has' : 'children have'} no date of birth, so their ratio couldn't be counted. Add it on the child's profile.`,
+    )
+  if (a.uncheckedDays > 0)
+    lines.push(
+      `Only the first ${MAX_COVER_DAYS} days were checked; the last ${a.uncheckedDays} ${a.uncheckedDays === 1 ? 'day was' : 'days were'} not.`,
+    )
   return lines
 }

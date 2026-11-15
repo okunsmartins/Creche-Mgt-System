@@ -108,7 +108,7 @@ async function refund(t: Tables, paymentId: string, total: number) {
   const db = fakeDb(t) as never
   const p = t.payments!.find((r) => r.id === paymentId) as unknown as FeePaymentRecord
   const subject = (await feeSubjectForPayment(db, p))!
-  return applyFeeRefund(db, { ...p }, subject, total)
+  return applyFeeRefund(db, { ...p }, subject, { cumulativeCents: total })
 }
 
 describe('applyFeeRefund', () => {
@@ -138,6 +138,36 @@ describe('applyFeeRefund', () => {
     expect(await refund(t, 'p1', 300)).toEqual({ newlyRefundedCents: 0 })
     expect(await refund(t, 'p1', 5000)).toEqual({ newlyRefundedCents: 400 })
     expect(t.payments![0]).toMatchObject({ refunded_amount_cents: 1000 })
+  })
+
+  it('delta refunds add to the stored total, even when the caller holds a stale copy', async () => {
+    // Regression: the admin action used to pass "stale refunded + this refund" as a
+    // cumulative total, so a second part-refund made from an out-of-date page was lost.
+    const t = tables()
+    const stale = { ...(t.payments![0] as unknown as FeePaymentRecord) } // refunded 0
+    await refund(t, 'p1', 400) // first part refund lands (e.g. another tab / webhook)
+    const db = fakeDb(t) as never
+    const subject = (await feeSubjectForPayment(db, stale))!
+    expect(await applyFeeRefund(db, stale, subject, { deltaCents: 300 })).toEqual({
+      newlyRefundedCents: 300,
+    })
+    expect(t.payments![0]).toMatchObject({
+      refunded_amount_cents: 700,
+      status: 'partially_refunded',
+    })
+    expect(t.invoices![0]).toMatchObject({ amount_paid_cents: 300, status: 'part_paid' })
+  })
+
+  it('a delta is capped at what is left to refund', async () => {
+    const t = tables()
+    await refund(t, 'p1', 900)
+    const db = fakeDb(t) as never
+    const p = t.payments![0] as unknown as FeePaymentRecord
+    const subject = (await feeSubjectForPayment(db, p))!
+    expect(await applyFeeRefund(db, { ...p }, subject, { deltaCents: 500 })).toEqual({
+      newlyRefundedCents: 100,
+    })
+    expect(t.payments![0]).toMatchObject({ refunded_amount_cents: 1000, status: 'refunded' })
   })
 
   it('late fee: full refund clears paid_at', async () => {

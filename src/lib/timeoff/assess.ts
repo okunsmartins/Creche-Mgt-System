@@ -1,7 +1,7 @@
 import 'server-only'
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { ageInMonthsAt } from '@/lib/age/age'
-import { roomStaffingRequirement } from '@/lib/ratios/ratio'
+import { minimumStaffForRoom, roomStaffingRequirement } from '@/lib/ratios/ratio'
 import { getRatioBands } from '@/lib/ratios/config'
 import {
   addDaysISO,
@@ -121,11 +121,15 @@ export async function assessPendingTimeOff(
     agesByRoom.set(c.class_id, arr)
   }
   const rooms: RoomRequirement[] = ((roomData as { id: string; name: string }[] | null) ?? []).map(
-    (r) => ({
-      roomId: r.id,
-      roomName: r.name,
-      requiredStaff: roomStaffingRequirement(agesByRoom.get(r.id) ?? [], bands).requiredStaff,
-    }),
+    (r) => {
+      const staffing = roomStaffingRequirement(agesByRoom.get(r.id) ?? [], bands)
+      return {
+        roomId: r.id,
+        roomName: r.name,
+        requiredStaff: minimumStaffForRoom(staffing),
+        unknownAgeChildren: staffing.unknownAge,
+      }
+    },
   )
 
   for (const p of pending) out.set(p.id, assessLeaveRequest(p, all, shifts, rooms))
