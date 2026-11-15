@@ -4,7 +4,8 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { formatDate } from '@/lib/utils'
 import { TimeOffStatusBadge } from '@/components/timeoff/TimeOffStatusBadge'
 import { TimeOffReviewButtons } from '@/components/timeoff/TimeOffReviewButtons'
-import { overlappingLeave, type LeaveInterval } from '@/lib/timeoff/clash'
+import { assessPendingTimeOff } from '@/lib/timeoff/assess'
+import { describeAssessment, hasWarnings } from '@/lib/timeoff/cover'
 import type { TimeOffRequestRow } from '@/types/database'
 
 export const metadata: Metadata = { title: 'Time Off | Admin' }
@@ -53,20 +54,9 @@ export default async function AdminTimeOffPage() {
   })
   const pendingCount = rows.filter((r) => r.status === 'pending').length
 
-  // Impact check for approval: other APPROVED leave overlapping each pending request's dates.
-  const toInterval = (r: AdminRequestRow): LeaveInterval => ({
-    teacherId: r.teacher_id,
-    name: teacherName(r),
-    start: r.start_date,
-    end: r.end_date,
-  })
-  const approvedLeave = rows.filter((r) => r.status === 'approved').map(toInterval)
-  const overlapNamesByRequest = new Map<string, string[]>()
-  for (const r of rows.filter((r) => r.status === 'pending'))
-    overlapNamesByRequest.set(
-      r.id,
-      overlappingLeave(toInterval(r), approvedLeave).map((o) => o.name),
-    )
+  // Impact check for approval: other staff off/pending on overlapping dates + rooms that
+  // would drop below ratio cover. Computed over ALL requests (not just this page of 100).
+  const assessments = await assessPendingTimeOff(admin.schoolId!)
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -94,12 +84,26 @@ export default async function AdminTimeOffPage() {
                     {r.end_date !== r.start_date ? ` – ${formatDate(r.end_date)}` : ''}
                   </p>
                   {r.reason && <p className="mt-1 text-xs text-text-muted">{r.reason}</p>}
-                  {r.status === 'pending' && (overlapNamesByRequest.get(r.id)?.length ?? 0) > 0 && (
-                    <p className="mt-1 text-xs font-medium text-warning">
-                      ⚠ Clash: {overlapNamesByRequest.get(r.id)!.join(', ')} already off during
-                      these dates — approving may leave you short-staffed.
-                    </p>
-                  )}
+                  {r.status === 'pending' &&
+                    (() => {
+                      const a = assessments.get(r.id)
+                      if (!a) return null
+                      if (hasWarnings(a))
+                        return (
+                          <ul className="mt-1 space-y-0.5 text-xs font-medium text-warning">
+                            {describeAssessment(a).map((line) => (
+                              <li key={line}>⚠ {line}</li>
+                            ))}
+                          </ul>
+                        )
+                      return (
+                        <p className="mt-1 text-xs text-text-muted">
+                          {a.onRota
+                            ? '✓ No clashes, and room ratios stay covered on the rota.'
+                            : '✓ No clashes. Not on the rota for these dates, so room cover wasn’t checked.'}
+                        </p>
+                      )
+                    })()}
                   {r.status !== 'pending' && r.reviewed_at && (
                     <p className="mt-1 text-xs text-text-muted">
                       {r.status === 'approved' ? 'Approved' : 'Rejected'} on{' '}

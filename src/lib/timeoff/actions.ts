@@ -6,6 +6,8 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import { timeOffRequestSchema, type TimeOffActionState, type TimeOffReviewState } from './schemas'
 import { sendTimeOffRequestedEmail, sendTimeOffReviewedEmail } from './emails'
+import { assessPendingTimeOff } from './assess'
+import { describeAssessment, hasWarnings } from './cover'
 import type { AuditAction, TimeOffStatus } from '@/types/database'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
@@ -113,11 +115,17 @@ export async function createTimeOffRequestAction(
  * across tenants. Records reviewer + timestamp (and an optional note, e.g. why a
  * request was rejected), audit-logs the decision, and emails the teacher the
  * outcome (the note is included in the email).
+ *
+ * Approving re-checks clashes and ratio cover on the server. If anything is flagged
+ * (other staff off / pending on overlapping dates, or a room dropping below its ratio)
+ * the approve is refused with `needsConfirm` until the admin confirms with
+ * `confirmOverride = true`; the override is recorded in the audit log.
  */
 export async function reviewTimeOffRequestAction(
   requestId: string,
   decision: TimeOffStatus,
   reviewNote?: string,
+  confirmOverride = false,
 ): Promise<TimeOffReviewState> {
   const user = await requireAdmin()
   if (!user.schoolId) return { error: 'No school is associated with your account.' }
@@ -126,6 +134,15 @@ export async function reviewTimeOffRequestAction(
   // Optional note (server-validated): trimmed, empty → null, capped at 500 chars.
   const note = typeof reviewNote === 'string' ? reviewNote.trim() : ''
   if (note.length > 500) return { error: 'Note must be 500 characters or fewer.' }
+
+  let overrodeWarnings = false
+  if (decision === 'approved') {
+    const assessment = (await assessPendingTimeOff(user.schoolId, requestId)).get(requestId)
+    if (assessment && hasWarnings(assessment)) {
+      if (!confirmOverride) return { needsConfirm: true, warnings: describeAssessment(assessment) }
+      overrodeWarnings = true
+    }
+  }
 
   const adminClient = createSupabaseAdminClient()
   const { data: updated, error } = await adminClient
@@ -163,7 +180,11 @@ export async function reviewTimeOffRequestAction(
     actorEmail: user.email,
     action: decision === 'approved' ? 'time_off.approved' : 'time_off.rejected',
     resourceId: requestId,
-    metadata: { start_date: row.start_date, end_date: row.end_date },
+    metadata: {
+      start_date: row.start_date,
+      end_date: row.end_date,
+      ...(overrodeWarnings ? { clash_override: true } : {}),
+    },
   })
 
   const teacherEmail = row.teachers?.email
