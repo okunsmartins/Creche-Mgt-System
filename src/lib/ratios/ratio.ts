@@ -105,6 +105,14 @@ export interface RoomStaffing {
  * map to a band (null, or outside 0–72m) are counted as `unknownAge` and excluded
  * from the requirement (the UI surfaces them so a human decides).
  */
+/**
+ * Staff a room needs, erring safe: the per-band requirement, but never 0 while any child
+ * is placed there. Children with no date of birth can't be banded, yet still need an adult.
+ */
+export function minimumStaffForRoom(s: RoomStaffing): number {
+  return Math.max(s.requiredStaff, s.totalPlaced + s.unknownAge > 0 ? 1 : 0)
+}
+
 export function roomStaffingRequirement(
   agesMonths: ReadonlyArray<number | null>,
   bands: ReadonlyArray<EyRatioBand> = REFERENCE_EY_RATIOS,

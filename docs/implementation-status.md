@@ -6,13 +6,126 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-12 (**Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-15 (**live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 **Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
 🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
 🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
+
+---
+
+## Session 2026-11-12 → 2026-11-15 — live FEE-08 payment test, fee refunds (PR #133), time-off cover check (PR #132), review
+
+> Spec references:
+> - **FEE-08**: online payment of fees through the crèche's own provider, including refunds on the same rails.
+> - **§7.5** "leave request and approval; **show ratio/cover impact before approval**".
+> - **§2.2** leave impact.
+> - **§7.4** ratio warnings using tenant-configurable ratios.
+> - **§10** security.
+>
+> PRs #132 and #133 are **merged to `main` and deployed**. Vercel production showed ✅ for `840ef0e` (#133) and
+> `8f512b3` (#132). Everything below was tested on crechewise.com in **Stripe test mode** (sandbox `Creche Wise – Test`,
+> Angels Nest connected account `acct_1UT7A9DC1c381e61`), with the owner clicking and the database checked read-only
+> after each step. **Nothing has been tested in Stripe live mode or with Revolut.**
+>
+> Also merged in this window (owner-directed, not re-verified here): PRs #126–#131 (contact cards, payment icons,
+> Revolut API Console instructions, go-live checklist, "Void all" fix, live dates).
+
+### Requirements: status and evidence
+
+| Requirement | Spec | Status | Evidence | Gap / not verified |
+|---|---|---|---|---|
+| Parent pays an **invoice** by card (direct charge to the crèche) | FEE-08 | ✅ test mode | 2026-11-14: INV-2026-000028 €1 paid as PAY-2026-000002 (`pi_3UbWZ4…`). Invoice `paid`, 100 paid. Receipt email arrived from `no-reply@crechewise.com`. | Live mode not tested. |
+| Parent pays a **late-collection fee** by card | FEE-08 | ✅ test mode | 2026-11-14: €1 late fee (policy temporarily €1 flat, then reverted to €0/inactive) paid as PAY-2026-000003 (`pi_3UbWka…`). `late_collections` 100 paid. Receipt arrived. | Live mode not tested. |
+| Late-fee receipt button matches its page ("View your late fees") | FEE-08 | ✅ | Unit test + live refund email 2026-11-15 | The *receipt* (not refund) wording after the fix hasn't been seen live. |
+| **Admin refunds** an online invoice / late-fee payment (full or part) from Admin → Fees → child → **Online payments** | FEE-08 | ✅ full refund, Stripe, test mode | 2026-11-15: refunded PAY-2026-000002 €1. Payment `refunded` 100/100; invoice back to `issued`, 0 paid; one `refund.completed` audit row (`re_3UbWZ4…`); Stripe `POST /v1/refunds` succeeded on the connected account; parent email "Refund: €1.00 for MichaelTest JordanTest" arrived. | **Partial** refunds: unit-tested only. **Revolut** refunds (`POST /orders/{id}/refund`): **never run** (🟡). |
+| Refund made **in the Stripe dashboard** syncs into Creche Wise (`charge.refunded`, Connect webhook) | FEE-08 | ✅ test mode | 2026-11-15: late fee refunded in the Stripe Connect UI. Within a second: payment `refunded`, `late_collections` 0 paid with `paid_at` null, audit `refund.completed` by `stripe-webhook`, parent email with a **"View your late fees"** button. Webhook B confirmed to subscribe to `charge.refunded`. | Revolut-dashboard refunds are **not** synced (no handler) (⬜). |
+| Admin action and webhook can't double-count a refund | FEE-08 | ✅ | Live: the webhook for the app-made refund arrived 2s later and changed nothing (one audit row, one email). Unit tests cover repeats, caps and races. | — |
+| Time-off approval shows **room ratio cover impact** before approving | §7.5, §2.2 | ✅ test, single day / single room | 2026-11-15 on Angels Nest with temporary test rows (Drift Tester in Wobblers on 2026-11-24, no one else rostered): the page showed "⚠ … Wobblers Room (1–2 yrs) would have 0 staff but needs 1"; **Approve** was blocked with "Check cover before approving"; **Approve anyway** approved it and the audit has `clash_override: true`. Test rows deleted afterwards (audit row kept). | Multi-day leave, several rooms, and the "already off / also asked" lines are unit-tested only. |
+| Leave clash considers **all** overlapping requests (was the latest 100) | §7.5 | ✅ unit | `assessPendingTimeOff` is unpaginated and windowed | — |
+| Rota cover alerts use the **crèche's own ratio bands** | §7.4 | 🟡 | Code + rota suite pass | Not checked in the browser with custom bands. |
+| **Review fixes 2026-11-15** (branch `chore/review-refunds-timeoff`; see below) | FEE-08, §7.5 | 🟡 unit-tested, **not live** | 1,164 tests, typecheck, lint, format and production build all pass | Needs merge + a live re-check. |
+
+### Issues found in review (2026-11-15) and fixed
+
+1. **Part refunds could be under-recorded** (money returned, invoice still shown as paid).
+   - **Cause:** the admin action passed "the page's refunded amount + this refund" as the cumulative total. A second part refund from an out-of-date page (another tab, or the webhook landing first) recorded nothing.
+   - **Fix:** `applyFeeRefund` now takes either `{ cumulativeCents }` (Stripe's running total, read back from the charge after refunding) or `{ deltaCents }` (Revolut), and always works from the fresh stored value with a guarded retry loop.
+   - **Tests:** `apply-refund.test.ts` "delta refunds add to the stored total…" and "a delta is capped…". (They exercise the new API; the old composition is gone, so they weren't run against it.)
+2. **Unhandled error after a successful refund.** If updating our records failed after the money had already gone back, the action threw an unhandled error.
+   - **Fix:** it now still audits the refund (with `record_error` in the metadata) and tells the admin plainly that the money was sent but the invoice may need a refresh.
+3. **A double-submitted Stripe part refund could send the money twice.** Stripe already blocks refunding more than was paid, so only part refunds were exposed.
+   - **Fix:** refunds now send the idempotency key `fee-refund:<payment>:<refunded so far>:<amount>`.
+4. **Rooms whose children have no date of birth needed 0 staff.** So taking the only adult off raised no cover warning, and the rota showed no alert. Angels Nest has 3 active children with no DOB.
+   - **Fix:** new `minimumStaffForRoom` (never 0 while any child is placed), used by both the time-off check and the rota alerts.
+   - The approver now also sees "N children have no date of birth, so their ratio couldn't be counted" for the rooms the person works in, instead of a green "ratios stay covered" tick.
+   - **Tests:** `ratio.test.ts`, `cover.test.ts`.
+5. **Very long leave (over 62 days) was silently checked only for the first 62 days.**
+   - **Fix:** it now says how many days weren't checked.
+
+### Outstanding (not done; don't report as complete)
+
+- **Revolut refunds:**
+  - The in-app refund has never run (needs the Revolut sandbox key on Angels Nest).
+  - Refunds made in the Revolut dashboard aren't synced.
+  - Revolut refunds are sent without an idempotency key.
+- **Admin → Refunds page doesn't list fee refunds.** It joins `orders!inner`, while fee refunds live on `payments.refunded_amount_cents` + `audit_logs`. They are visible per child under **Online payments**, and in the audit log.
+- **No dedicated refund rows for fee refunds.** `refunds.order_id` is NOT NULL, so a fee refund's Stripe/Revolut refund id is only in the audit metadata. No migration was made.
+- **Live (non-test) mode** for card payments and refunds isn't tested. Re-run the four live checks above after the Stripe live switch.
+- **Time-off check limits:**
+  - The confirm step blocks only for clashes and shortfalls. The "no date of birth" and ">62 days" notes are shown but don't block (by design).
+  - Ages are taken at the start of the leave window, not per day.
+- **Test data left on purpose** (Angels Nest test child MichaelTest JordanTest): after the refund tests, INV-2026-000028 and the 14 Nov late fee are owed €1 again. Void them, or deactivate the test child, before Tracy goes live.
+
+### Manual configuration steps
+
+- No migration in #132, #133 or the review branch, and no new env vars.
+- **Stripe:** the Connect webhook **B** ("Creche Wise – connected", `we_1UT6HWDT87OgWuvoQWq8tzih`) must include `charge.refunded`.
+  - ✅ Confirmed in the sandbox on 2026-11-15.
+  - Include it when recreating the webhook in **live** mode.
+
+### Security considerations
+
+- **Refund action:**
+  - Runs `requireAdmin`, then is school-scoped through the payment's invoice / late fee.
+  - Another crèche's payment returns the same "Payment not found." (no enumeration).
+  - The amount is capped server-side at what's left to refund.
+  - Money only goes back on the original rails: the crèche's connected Stripe account (`stripeAccount`) or its own Revolut key.
+- **Auditing and emails:** every refund is audited as `refund.completed` / `refund.failed`, with actor, amount, provider refund id and reason. Refund emails go only to the child's active linked parents.
+- **Webhook refunds** are matched by the globally unique payment-intent id.
+  - Defence-in-depth not yet added: also check that `event.account` equals the crèche's `stripe_connect_account_id`.
+- **Time-off assessment:**
+  - School-scoped, read-only, service-role.
+  - Overrides are recorded (`clash_override: true`).
+  - The check is re-run **on the server** at approval time, so a stale page can't skip it.
+- **Live-test data:** the time-off test wrote two rows to the live DB with the owner's go-ahead (2026-11-15). Both were deleted after the test.
+
+### Verification snapshot (2026-11-15, branch `chore/review-refunds-timeoff` on `main` @ `8f512b3`)
+
+| Check | Command | Result |
+|---|---|---|
+| Type-check | `npx tsc --noEmit` | ✅ clean |
+| Lint | `npx eslint src --ext .ts,.tsx` | ✅ clean |
+| Format | `npx prettier --check .` | ✅ clean |
+| Unit/component tests | `npx vitest run` | ✅ **1164 passed / 121 files** |
+| Production build | `npx next build` | ✅ exit 0, 128/128 pages |
+| E2E (Playwright) | `npm run test:e2e` | ⬜ not run (needs a running app + env; the CI job is still skipped) |
+
+### Exact commands to continue
+
+```bash
+cd "E:/First Stack Solutions/Creche_Mgt_System"
+git checkout chore/review-refunds-timeoff        # review fixes (open a PR; the owner merges)
+npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check .
+npx vitest run src/lib/fees src/lib/timeoff src/lib/ratios src/lib/rota   # this work's suites
+npx vitest run                                    # full suite (1164)
+npx next build
+# after merge + deploy, live re-checks (Stripe test mode, Angels Nest test child):
+#   1. part-refund €0.50 of a €1 payment from Admin → Fees → child → Online payments, then refund the rest
+#   2. a pending time-off request for a room whose children have no DOB → expect the "no date of birth" note
+```
 
 ---
 
@@ -306,11 +419,11 @@ npx vitest run          # 944 passed / 85 files
 |---|---|---|---|
 | **Configurable room ratios + dashboard alert** | §7.4 "ratio warnings using **tenant-configurable** regulatory ratios"; §3.2 ratio alerts | ✅ **done + merged (PR #67)** | Configurable children-per-adult per age band on `/admin/ratios` (defaults to Irish reference); persisted staff-on-duty per room/day; dashboard flags rooms under ratio (present children at configured ratios vs saved staff-on-duty **else** rostered). mig **098 `ratio_bands` + 099 `room_staff_on_duty` applied**. **Browser-E2E:** custom 1:4 read back + applied; dashboard alert fired ("Wobblers 0 of 1, rostered"); staff-on-duty saved. Pure engine +3 tests. |
 | **Timesheet report (day/week/month + CSV)** | §7.5 payroll-ready export; reporting | ✅ **done** (PR `feat/timesheet-report`) | `/admin/timesheets/report`: per-staff approved/pending/total hours by day/week/month + CSV. **Browser-E2E with real data** (Aoife 16h, Sean 8h+8h, Total 40h/48h). `summariseTimesheets` +1 test. No migration. |
-| **Time-off clash (dashboard + before approval)** | §7.5 "leave request and approval; **show ratio/cover impact before approval**"; §2.2 leave impact | 🟡 **partial — done as a clash/shortage flag** (PR `feat/timeoff-clash`) | Dashboard banner for upcoming days where **2+ staff on approved leave**; each pending request shows a clash warning naming who's already off, **before** approving. **Browser-E2E** (banner "3 days … 21–23 Oct (Aoife, Mary)"; approval warning rendered). `clash.ts` +6 tests. No migration. **Gap vs spec:** flags staff-overlap, not a precise "this leave drops Room X below ratio" calculation. |
+| **Time-off clash (dashboard + before approval)** | §7.5 "leave request and approval; **show ratio/cover impact before approval**"; §2.2 leave impact | 🟡 **partial — done as a clash/shortage flag** (PR `feat/timeoff-clash`). **Superseded 2026-11-15 by PR #132** (per-room ratio cover check, live-tested; see "Session 2026-11-12 → 2026-11-15") | Dashboard banner for upcoming days where **2+ staff on approved leave**; each pending request shows a clash warning naming who's already off, **before** approving. **Browser-E2E** (banner "3 days … 21–23 Oct (Aoife, Mary)"; approval warning rendered). `clash.ts` +6 tests. No migration. **Gap vs spec:** flags staff-overlap, not a precise "this leave drops Room X below ratio" calculation. |
 | **Staff clock-in/out + attendance report** | §2.1/§7.4 "staff clock-in/out"; §3.2 staff clocking | ✅ **done** (PR `feat/staff-clock-in`); mig **100 applied 2026-10-07** | Manager-recorded clock board `/admin/staff-attendance` + day/week/month report + CSV. **Browser-E2E:** board shows On-duty / Clocked-out states with correct Irish-time In/Out; report CSV `200` (Sean 8.50h/1 day, Aoife in-progress 0.00h); cleaned up. `clocking.ts` +3 tests. Standalone (does not feed timesheets, by design); **no room captured at clock-in** (outstanding). *Action is a verify-then-write upsert matching the verified child-check-in pattern; the data/report path is proven end-to-end.* |
 
 **Outstanding (not done — do not report as complete):**
-1. **Leave cover-impact precision** — compute whether approving a request puts a specific room under ratio (today it flags staff overlap only).
+1. ~~**Leave cover-impact precision**~~ — ✅ done in PR #132 (2026-11-15): per-room/day ratio shortfall before approval, live-tested.
 2. **Clocking → timesheets** — feed actual clocked hours into timesheet actuals (deferred by choice; timesheets still seed from the rota).
 3. **Current room at clock-in** — the spec pairs clock-in/out with "current room assignment"; not captured.
 4. Still open from the prior review: **contracted hours / qualifications** staff-directory fields; **expected-occupancy staffing forecast**.
@@ -995,7 +1108,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
 ```bash
 # repo root: E:\First Stack Solutions\Creche_Mgt_System
 npm ci                          # install deps (first time)
-npm run test -- run             # full vitest suite (1051 tests / 104 files as of 2026-11-05)
+npm run test -- run             # full vitest suite (1164 tests / 121 files as of 2026-11-15)
 npm run type-check              # tsc --noEmit
 npm run lint                    # eslint src
 npm run format:check            # prettier --check  (CI blocks on this)

@@ -4,6 +4,7 @@ import {
   datesInRange,
   describeAssessment,
   hasWarnings,
+  hasCoverGaps,
   MAX_COVER_DAYS,
   type LeaveRequestLite,
   type RoomRequirement,
@@ -138,10 +139,65 @@ describe('describeAssessment', () => {
       pendingOverlap: ['Cat'],
       shortfalls,
       onRota: true,
+      uncheckedAges: [],
+      uncheckedDays: 0,
     })
     expect(lines[0]).toContain('Ben')
     expect(lines[1]).toContain('Cat')
     expect(lines[2]).toBe('2026-12-01: Baby Room would have 1 staff but needs 2 for its ratio.')
     expect(lines.at(-1)).toBe('…and 2 more room-days short.')
+  })
+})
+
+describe('cover gaps (review 2026-11-15)', () => {
+  const shift = (teacherId: string, roomId: string, date: string): ShiftLite => ({
+    teacherId,
+    roomId,
+    date,
+  })
+
+  it('names rooms whose children have no date of birth, and does not claim full cover', () => {
+    const a = assessLeaveRequest(
+      req('r1', 't1', 'Ann', '2026-11-24', '2026-11-24'),
+      [],
+      [shift('t1', 'wob', '2026-11-24'), shift('t2', 'wob', '2026-11-24')],
+      [{ roomId: 'wob', roomName: 'Wobblers', requiredStaff: 1, unknownAgeChildren: 2 }],
+    )
+    expect(a.shortfalls).toEqual([]) // t2 still covers the 1 required
+    expect(a.uncheckedAges).toEqual([{ roomName: 'Wobblers', children: 2 }])
+    expect(hasWarnings(a)).toBe(false)
+    expect(hasCoverGaps(a)).toBe(true)
+    expect(describeAssessment(a)).toContain(
+      "Wobblers: 2 children have no date of birth, so their ratio couldn't be counted. Add it on the child's profile.",
+    )
+  })
+
+  it('ignores unknown ages in rooms the person is not rostered in', () => {
+    const a = assessLeaveRequest(
+      req('r1', 't1', 'Ann', '2026-11-24', '2026-11-24'),
+      [],
+      [shift('t1', 'pre', '2026-11-24')],
+      [
+        { roomId: 'pre', roomName: 'Preschool', requiredStaff: 0 },
+        { roomId: 'wob', roomName: 'Wobblers', requiredStaff: 1, unknownAgeChildren: 3 },
+      ],
+    )
+    expect(a.uncheckedAges).toEqual([])
+    expect(hasCoverGaps(a)).toBe(false)
+  })
+
+  it('says how many days of a very long request were not checked', () => {
+    const a = assessLeaveRequest(req('r1', 't1', 'Ann', '2026-01-01', '2026-03-31'), [], [], rooms)
+    expect(a.uncheckedDays).toBe(90 - MAX_COVER_DAYS)
+    expect(hasCoverGaps(a)).toBe(true)
+    expect(describeAssessment(a).at(-1)).toBe(
+      `Only the first ${MAX_COVER_DAYS} days were checked; the last 28 days were not.`,
+    )
+  })
+
+  it('a normal request has no gaps', () => {
+    const a = assessLeaveRequest(req('r1', 't1', 'Ann', '2026-11-24', '2026-11-25'), [], [], rooms)
+    expect(a.uncheckedDays).toBe(0)
+    expect(a.uncheckedAges).toEqual([])
   })
 })

@@ -1,9 +1,9 @@
 // Applies a refund on an online fee payment (invoice or late-collection fee) to our
 // records. Shared by the admin refund action and the Stripe `charge.refunded` webhook.
 //
-// Retry-safe: takes the CUMULATIVE refunded total (never "add this much"), only ever
-// raises `refunded_amount_cents`, then re-settles the invoice / late fee from the net
-// received across all its payments. Applying the same refund twice changes nothing.
+// Only ever raises `refunded_amount_cents` (from the fresh stored value, guarded against
+// races), then re-settles the invoice / late fee from the net received across all its
+// payments. A cumulative provider total is retry-safe: applying it twice changes nothing.
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { getResend } from '@/lib/email/client'
@@ -86,32 +86,54 @@ export async function feeSubjectForPayment(
 }
 
 /**
- * Record that `refundedTotalCents` (cumulative) of this payment has been refunded, and
- * re-settle its invoice / late fee. Returns how much NEW refund this call recorded
- * (0 on a repeat), so callers only notify once.
+ * How much has been refunded on a payment, as the caller knows it:
+ *  - `cumulativeCents`: the provider's running total (Stripe `charge.amount_refunded`).
+ *    Retry-safe — applying the same total twice changes nothing.
+ *  - `deltaCents`: "this call refunded N more" (used when the provider gives no running
+ *    total, e.g. Revolut). Added to the FRESH database value, never a stale copy.
+ */
+export type RefundAmount = { cumulativeCents: number } | { deltaCents: number }
+
+const MAX_REFUND_WRITE_ATTEMPTS = 3
+
+/**
+ * Record a refund on this payment and re-settle its invoice / late fee. Returns how
+ * much NEW refund this call recorded (0 on a repeat), so callers only notify once.
  */
 export async function applyFeeRefund(
   db: AdminClient,
   payment: FeePaymentRecord,
   subject: FeeSubject,
-  refundedTotalCents: number,
+  amount: RefundAmount,
 ): Promise<{ newlyRefundedCents: number }> {
-  // Re-read: the webhook and the admin action can race on the same refund.
-  const { data: fresh } = await db
-    .from('payments')
-    .select('refunded_amount_cents')
-    .eq('id', payment.id)
-    .single()
-  const previous = Math.max(
-    0,
-    (fresh as { refunded_amount_cents: number | null } | null)?.refunded_amount_cents ??
-      payment.refunded_amount_cents ??
+  let newlyRefundedCents = 0
+  let total = 0
+  // Optimistic loop: the webhook and the admin action can race on the same payment, so
+  // always start from the fresh stored value and only move forward from what we read.
+  for (let attempt = 1; ; attempt++) {
+    const { data: fresh } = await db
+      .from('payments')
+      .select('refunded_amount_cents')
+      .eq('id', payment.id)
+      .single()
+    const previous = Math.max(
       0,
-  )
-  const total = Math.min(payment.amount_cents, Math.max(previous, Math.round(refundedTotalCents)))
-  let newlyRefundedCents = total - previous
+      (fresh as { refunded_amount_cents: number | null } | null)?.refunded_amount_cents ??
+        payment.refunded_amount_cents ??
+        0,
+    )
+    const wanted =
+      'cumulativeCents' in amount
+        ? Math.max(previous, Math.round(amount.cumulativeCents))
+        : previous + Math.max(0, Math.round(amount.deltaCents))
+    total = Math.min(payment.amount_cents, wanted)
+    newlyRefundedCents = total - previous
+    if (newlyRefundedCents <= 0) {
+      newlyRefundedCents = 0
+      total = previous
+      break
+    }
 
-  if (newlyRefundedCents > 0) {
     const { data: moved, error } = await db
       .from('payments')
       .update({
@@ -120,12 +142,14 @@ export async function applyFeeRefund(
         updated_at: new Date().toISOString(),
       })
       .eq('id', payment.id)
-      // Optimistic guard: only move forward from what we read.
       .eq('refunded_amount_cents', previous)
       .select('id')
     if (error) throw new Error(error.message)
-    // Lost the race: the other path recorded (and notifies about) this refund.
-    if (!moved || moved.length === 0) newlyRefundedCents = 0
+    if (moved && moved.length > 0) break
+    // Lost the race: someone else moved the total. Re-read and try again (a cumulative
+    // total usually resolves to "nothing new"; a delta is added on top of theirs).
+    if (attempt >= MAX_REFUND_WRITE_ATTEMPTS)
+      throw new Error('Could not record the refund (payment busy). Please refresh and check.')
   }
 
   // Re-settle from every payment on the subject (always — harmless when unchanged).

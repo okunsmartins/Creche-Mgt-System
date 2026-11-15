@@ -509,12 +509,9 @@ async function handleChargeRefunded(
       logger.error('stripe_charge_refunded_fee_subject_not_found', { paymentId: feeRow.id })
       return
     }
-    const { newlyRefundedCents } = await applyFeeRefund(
-      adminClient,
-      feeRow,
-      subject,
-      charge.amount_refunded ?? 0,
-    )
+    const { newlyRefundedCents } = await applyFeeRefund(adminClient, feeRow, subject, {
+      cumulativeCents: charge.amount_refunded ?? 0,
+    })
     if (newlyRefundedCents > 0) {
       await adminClient.from('audit_logs').insert({
         school_id: subject.schoolId,

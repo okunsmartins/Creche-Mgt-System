@@ -5,6 +5,7 @@ import {
   ratioSeverity,
   ratioBandForAgeMonths,
   roomStaffingRequirement,
+  minimumStaffForRoom,
 } from '../ratio'
 
 describe('requiredStaff', () => {
@@ -97,5 +98,20 @@ describe('configurable bands', () => {
   })
   it('defaults to the reference set when no bands passed', () => {
     expect(roomStaffingRequirement([18, 18, 18, 18, 18, 18, 18, 18, 18]).requiredStaff).toBe(2) // 1:5
+  })
+})
+
+describe('minimumStaffForRoom', () => {
+  it('never needs 0 staff while children are placed, even with no dates of birth', () => {
+    // Regression: a room of children with no DOB used to need 0 staff, so taking its
+    // only rostered adult off raised no cover warning.
+    const unknownOnly = roomStaffingRequirement([null, null, null])
+    expect(unknownOnly.requiredStaff).toBe(0)
+    expect(minimumStaffForRoom(unknownOnly)).toBe(1)
+  })
+  it('keeps the banded requirement when it is higher, and 0 for an empty room', () => {
+    const babies = roomStaffingRequirement([3, 4, 5, 6, 7])
+    expect(minimumStaffForRoom(babies)).toBe(babies.requiredStaff)
+    expect(minimumStaffForRoom(roomStaffingRequirement([]))).toBe(0)
   })
 })
