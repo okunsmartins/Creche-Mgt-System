@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/lib/env', () => ({
   serverEnv: {
     emailFromName: 'Creche Wise',
-    emailFromAddress: 'noreply@send.skoolbido.com',
+    emailFromAddress: 'no-reply@crechewise.com',
   },
 }))
 
@@ -13,8 +13,8 @@ import { buildEmailFrom, formatEmailFrom } from '../from'
 
 describe('formatEmailFrom', () => {
   it('quotes the display name and appends the angle-bracketed address', () => {
-    expect(formatEmailFrom('St Peters NS', 'noreply@send.skoolbido.com')).toBe(
-      '"St Peters NS" <noreply@send.skoolbido.com>',
+    expect(formatEmailFrom('Little Acorns Crèche', 'no-reply@crechewise.com')).toBe(
+      '"Little Acorns Crèche" <no-reply@crechewise.com>',
     )
   })
 
@@ -47,19 +47,23 @@ describe('formatEmailFrom', () => {
 
 describe('buildEmailFrom', () => {
   it('uses the school name as the sender when provided (per-tenant)', () => {
-    expect(buildEmailFrom('St Peters NS')).toBe('"St Peters NS" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom('Little Acorns Crèche')).toBe(
+      '"Little Acorns Crèche" <no-reply@crechewise.com>',
+    )
   })
 
   it('falls back to EMAIL_FROM_NAME when no school name is given', () => {
-    expect(buildEmailFrom()).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
-    expect(buildEmailFrom(null)).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom()).toBe('"Creche Wise" <no-reply@crechewise.com>')
+    expect(buildEmailFrom(null)).toBe('"Creche Wise" <no-reply@crechewise.com>')
   })
 
   it('falls back when the school name is blank or whitespace-only', () => {
-    expect(buildEmailFrom('   ')).toBe('"Creche Wise" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom('   ')).toBe('"Creche Wise" <no-reply@crechewise.com>')
   })
 
   it('trims surrounding whitespace from the school name', () => {
-    expect(buildEmailFrom('  St Peters NS  ')).toBe('"St Peters NS" <noreply@send.skoolbido.com>')
+    expect(buildEmailFrom('  Little Acorns Crèche  ')).toBe(
+      '"Little Acorns Crèche" <no-reply@crechewise.com>',
+    )
   })
 })

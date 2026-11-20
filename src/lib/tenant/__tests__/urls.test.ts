@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import { schoolPublicOrigin, schoolPayLinkUrl, crechePublicPath } from '../urls'
 
-const APP = 'https://skoolbido.com'
+const APP = 'https://crechewise.com'
 
 describe('schoolPublicOrigin', () => {
   it('returns the apex origin', () => {
-    expect(schoolPublicOrigin(APP)).toBe('https://skoolbido.com')
+    expect(schoolPublicOrigin(APP)).toBe('https://crechewise.com')
   })
 
   it('strips a trailing slash', () => {
-    expect(schoolPublicOrigin('https://skoolbido.com/')).toBe('https://skoolbido.com')
+    expect(schoolPublicOrigin('https://crechewise.com/')).toBe('https://crechewise.com')
   })
 
   it('preserves the http scheme (e.g. local dev)', () => {
@@ -19,7 +19,7 @@ describe('schoolPublicOrigin', () => {
 
 describe('schoolPayLinkUrl', () => {
   it('builds an apex pay-by-link URL (Aladdin-style)', () => {
-    expect(schoolPayLinkUrl(APP, 'abc123')).toBe('https://skoolbido.com/pay/abc123')
+    expect(schoolPayLinkUrl(APP, 'abc123')).toBe('https://crechewise.com/pay/abc123')
   })
 })
 

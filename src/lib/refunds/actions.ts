@@ -126,8 +126,13 @@ export async function initiateRefundAction(
           reason: 'requested_by_customer',
           metadata: { order_id: orderId, requested_by: admin.id ?? '' },
         },
-        // Refund on the school's connected account (the charge lives there).
-        { stripeAccount: connect.stripe_connect_account_id },
+        {
+          // Refund on the school's connected account (the charge lives there).
+          stripeAccount: connect.stripe_connect_account_id,
+          // A double-submit of the same refund from the same state returns the first
+          // refund instead of sending the money twice (Stripe keeps keys for 24h).
+          idempotencyKey: `order-refund:${paymentId}:${alreadyRefunded}:${amountCents}`,
+        },
       )
       providerRefundId = stripeRefund.id
       refundStatus =

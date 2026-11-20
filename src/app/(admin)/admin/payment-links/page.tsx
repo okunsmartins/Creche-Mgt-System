@@ -42,7 +42,7 @@ export default async function PaymentLinksPage() {
 
   const links = (data as LinkWithActivity[] | null) ?? []
 
-  // Single-domain: pay-links live on the apex (skoolbido.com/pay/<token>).
+  // Single-domain: pay-links live on the apex (crechewise.com/pay/<token>).
   const origin = schoolPublicOrigin(serverEnv.appUrl)
 
   return (
