@@ -7,7 +7,7 @@ The single "are we ready to launch?" list for **Creche Wise** (crechewise.com). 
 Only tick `[x]` for things actually verified in **production** (crechewise.com).
 
 **Prod Supabase project:** `xpbavfutfejlfbmnntyl`. Always confirm this ref before running SQL.
-**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) is written but **not yet applied**. Next new migration = **111**.
+**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) **applied 2026-11-20**. Next new migration = **111**.
 
 ---
 
@@ -30,13 +30,13 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 ### Step 3: Settings (You, ~5 min each)
 - [ ] Supabase: **Confirm email ON** + **MFA** for admins (§1).
 - [ ] Vercel: **`ENCRYPTION_KEY`** set (§1).
-- [ ] Supabase SQL editor: apply **migration 110** (PR #138), then re-run `node scripts/anon-read-sweep.mjs` → expect "activities" only.
+- [x] Supabase SQL editor: **migration 110** applied 2026-11-20 (PR #138); `node scripts/anon-read-sweep.mjs` → only `activities` is public.
 
 ### Step 4: Code (Claude; PRs for you to merge)
-- [~] **#10–12** fee refunds on Admin → Refunds + CSV; order-refund idempotency; Connect account check on `charge.refunded` ([PR #136](https://github.com/okunsmartins/Creche-Mgt-System/pull/136)).
+- [x] **#10–12** fee refunds on Admin → Refunds + CSV; order-refund idempotency; Connect account check on `charge.refunded` ([PR #136](https://github.com/okunsmartins/Creche-Mgt-System/pull/136)).
 - [x] **#13** invoice period running past the schedule end: **already fixed** by PR #119. Live invoices INV-2026-000027/-000028 show 1–30 Nov; only pre-fix INV-2026-000025 shows 5 Dec.
-- [~] **#14** standalone cleanup (package `creche-wise`, no `skoolbido.com` in code) + local secret check (`npm run hooks:install`) ([PR #137](https://github.com/okunsmartins/Creche-Mgt-System/pull/137)).
-- [~] **#15** security spot-checks: anon sweep found 3 public tables → migration 110 ([PR #138](https://github.com/okunsmartins/Creche-Mgt-System/pull/138)); client-bundle secret scan **clean** (see §4).
+- [x] **#14** standalone cleanup (package `creche-wise`, no `skoolbido.com` in code) + local secret check (`npm run hooks:install`) ([PR #137](https://github.com/okunsmartins/Creche-Mgt-System/pull/137)).
+- [x] **#15** security spot-checks: 3 public tables closed by migration 110 ([PR #138](https://github.com/okunsmartins/Creche-Mgt-System/pull/138), applied + re-checked); client-bundle secret scan **clean** (see §4).
 - [x] **#16** this checklist updated with the verified 14–15 Nov tests.
 
 ### Step 5: Tidy-up before Tracy uses it for real
@@ -152,7 +152,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 ## 4. Security & privacy
 - [x] Service-role queries scoped by `school_id`; cross-tenant isolation test passed live.
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
-- [~] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20 run: 78 tables, 4 readable: `activities` (public on purpose) plus `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` (**not** intended). Fix = migration 110 (PR #138). Apply it, re-run, then tick.
+- [x] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20: found `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` publicly readable (inherited policies) → **migration 110 applied**; re-run shows only `activities` (public on purpose). Service-role reads unaffected.
 - [x] No secrets in the client bundle (only `NEXT_PUBLIC_*`). 2026-11-20: production build of `main` @ `3c96a20`; 224 files in `.next/static` scanned for every server-only `.env.local` value (13) and for Stripe/Revolut/webhook/service-role/private-key patterns. **0 hits.**
 - [ ] DPIA + privacy notice reviewed for children's data.
 
