@@ -21,6 +21,8 @@ import {
 } from '@/lib/subscriptions/webhookHandlers'
 import { isSmsTopupSession, applySmsTopup } from '@/lib/sms/topupWebhook'
 import { recordFeePayment } from '@/lib/fees/record-payment'
+import { getSchoolConnect } from '@/lib/stripe/connect'
+import { refundEventMatchesSchool } from '@/lib/stripe/event-account'
 
 // This route is excluded from auth middleware (see middleware.ts matcher pattern).
 // Raw body is read BEFORE any JSON parsing — required for Stripe signature verification.
@@ -147,7 +149,11 @@ async function dispatchStripeEvent(event: Stripe.Event, adminClient: AdminClient
       await handlePaymentFailed(event.data.object as Stripe.PaymentIntent, adminClient)
       break
     case 'charge.refunded':
-      await handleChargeRefunded(event.data.object as Stripe.Charge, adminClient)
+      await handleChargeRefunded(
+        event.data.object as Stripe.Charge,
+        adminClient,
+        event.account ?? null,
+      )
       break
     // ─── Subscriptions (SaaS billing) ───────────────────────────────────────
     case 'customer.subscription.created':
@@ -473,6 +479,7 @@ async function handleCheckoutExpired(
 async function handleChargeRefunded(
   charge: Stripe.Charge,
   adminClient: AdminClient,
+  eventAccount: string | null,
 ): Promise<void> {
   const paymentIntentId =
     typeof charge.payment_intent === 'string'
@@ -507,6 +514,15 @@ async function handleChargeRefunded(
     const subject = await feeSubjectForPayment(adminClient, feeRow)
     if (!subject) {
       logger.error('stripe_charge_refunded_fee_subject_not_found', { paymentId: feeRow.id })
+      return
+    }
+    const connect = await getSchoolConnect(subject.schoolId)
+    if (!refundEventMatchesSchool(eventAccount, connect?.stripe_connect_account_id, true)) {
+      logger.error('stripe_charge_refunded_account_mismatch', {
+        paymentId: feeRow.id,
+        chargeId: charge.id,
+        eventAccount,
+      })
       return
     }
     const { newlyRefundedCents } = await applyFeeRefund(adminClient, feeRow, subject, {
@@ -551,6 +567,15 @@ async function handleChargeRefunded(
 
   if (!orderRow) {
     logger.error('stripe_charge_refunded_order_not_found', { orderId, chargeId: charge.id })
+    return
+  }
+  const orderConnect = await getSchoolConnect((orderRow as OrderRefundRecord).school_id)
+  if (!refundEventMatchesSchool(eventAccount, orderConnect?.stripe_connect_account_id, false)) {
+    logger.error('stripe_charge_refunded_account_mismatch', {
+      orderId,
+      chargeId: charge.id,
+      eventAccount,
+    })
     return
   }
 
