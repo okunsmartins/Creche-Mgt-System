@@ -48,7 +48,7 @@ export default async function EditPaymentLinkPage({ params }: { params: Promise<
       .maybeSingle()
     targetName = (data as { name: string } | null)?.name ?? '—'
   }
-  // Single-domain: pay-links live on the apex (skoolbido.com/pay/<token>).
+  // Single-domain: pay-links live on the apex (crechewise.com/pay/<token>).
   const origin = schoolPublicOrigin(serverEnv.appUrl)
   const payUrl = `${origin}/pay/${link.public_token}`
   const boundAction = updatePaymentLinkAction.bind(null, id)
