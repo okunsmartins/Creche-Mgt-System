@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/server'
 import { buildCsv, csvResponse, csvEuros, csvDate } from '@/lib/reports/utils'
 import { createCorrelationId } from '@/lib/utils'
 import type { RefundRow } from '@/types/database'
+import { listFeeRefunds } from '@/lib/fees/refund-list'
 
 export async function GET(request: NextRequest): Promise<Response> {
   let admin: Awaited<ReturnType<typeof requireAdmin>>
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     'Initiated By',
   ]
 
-  const rows = refunds.map((r) => {
+  const orderRows = refunds.map((r) => {
     const initiator = r.profiles
       ? `${r.profiles.first_name} ${r.profiles.last_name} (${r.profiles.email})`
       : 'System'
@@ -85,6 +86,25 @@ export async function GET(request: NextRequest): Promise<Response> {
       initiator,
     ]
   })
+
+  // Invoice / late-fee refunds (always completed) — same columns; "Order Reference" holds
+  // what was refunded and "Payer" the child.
+  const feeRows =
+    status === '' || status === 'succeeded'
+      ? (await listFeeRefunds(adminClient, admin.schoolId, 2000)).map((r) => [
+          '',
+          csvDate(r.createdAt),
+          r.subjectLabel,
+          r.paymentReference ?? '',
+          r.childName,
+          csvEuros(r.amountCents),
+          r.reason ?? '',
+          'succeeded',
+          r.providerRefundId ?? '',
+          r.initiatedBy,
+        ])
+      : []
+  const rows = [...orderRows, ...feeRows]
 
   await adminClient.from('audit_logs').insert({
     school_id: admin.schoolId,
