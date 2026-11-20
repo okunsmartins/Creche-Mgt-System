@@ -59,6 +59,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 ```
 
 - [x] Type-check, lint, Prettier, unit tests (1,164+ passing), production build: run in CI on every PR.
+- [x] Migration grant guard (`src/lib/__tests__/migration-grants.test.ts`, runs with the unit tests): every table needs a `service_role` grant; from migration 111 it must be in the same file (Supabase's 30 Oct 2026 change), and any grant to `anon` needs a `-- public-on-purpose` comment.
 - [~] Local secret check: `npm run hooks:install` once per machine (PR #137). Blocks commits that add live-looking keys.
 - [ ] **Playwright E2E** (currently **skipped** in CI). To switch on: in GitHub → Settings → Secrets and variables →
       Actions, add secrets `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_PARENT_EMAIL`,
