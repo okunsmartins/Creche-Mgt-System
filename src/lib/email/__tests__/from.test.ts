@@ -47,7 +47,9 @@ describe('formatEmailFrom', () => {
 
 describe('buildEmailFrom', () => {
   it('uses the school name as the sender when provided (per-tenant)', () => {
-    expect(buildEmailFrom('Little Acorns Crèche')).toBe('"Little Acorns Crèche" <no-reply@crechewise.com>')
+    expect(buildEmailFrom('Little Acorns Crèche')).toBe(
+      '"Little Acorns Crèche" <no-reply@crechewise.com>',
+    )
   })
 
   it('falls back to EMAIL_FROM_NAME when no school name is given', () => {
@@ -60,6 +62,8 @@ describe('buildEmailFrom', () => {
   })
 
   it('trims surrounding whitespace from the school name', () => {
-    expect(buildEmailFrom('  Little Acorns Crèche  ')).toBe('"Little Acorns Crèche" <no-reply@crechewise.com>')
+    expect(buildEmailFrom('  Little Acorns Crèche  ')).toBe(
+      '"Little Acorns Crèche" <no-reply@crechewise.com>',
+    )
   })
 })
