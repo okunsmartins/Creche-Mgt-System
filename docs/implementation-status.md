@@ -1062,7 +1062,7 @@ arrears + reminders preview, subvention/Pobal-prep report, commercial dashboard.
     - 2026-11-12: test child **Emma Byrne**'s parent links from the two admin logins (owner + Tracy) were switched off
       (`is_active=false`), so admins no longer get parent reminders. Her parent-only link stays.
     - FYI: a school-wide test text ("Testing the SMS from crechewise.com") went to **2 Angels Nest parents** on 2026-10-21 (both delivered).
-    - **Known bug to fix:** the monthly invoice for the 1–30 Nov schedule shows period **1 Nov → 5 Dec**. The period end runs past the schedule end.
+    - ~~**Known bug to fix:** the monthly invoice for the 1–30 Nov schedule shows period **1 Nov → 5 Dec**.~~ ✅ Fixed by PR #119 (periods capped at the schedule end); confirmed 2026-11-20 on live invoices INV-2026-000027/-000028 (1–30 Nov). Only the pre-fix INV-2026-000025 still shows 5 Dec.
 
 ---
 

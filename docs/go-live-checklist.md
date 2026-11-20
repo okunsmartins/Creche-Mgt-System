@@ -7,9 +7,50 @@ The single "are we ready to launch?" list for **Creche Wise** (crechewise.com). 
 Only tick `[x]` for things actually verified in **production** (crechewise.com).
 
 **Prod Supabase project:** `xpbavfutfejlfbmnntyl`. Always confirm this ref before running SQL.
-**Migrations applied:** through **109** (`109_platform_settings.sql`). Next new migration = **110**.
+**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) is written but **not yet applied**. Next new migration = **111**.
 
 ---
+
+## ⏱ End-of-month plan (target: launch by 30 Nov 2026)
+
+Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a small PR as each one is done.
+
+### Step 1: Start now (outside companies have lead times)
+- [ ] **(You) Stripe live verification.** Finish business verification on the live "Creche Wise" account (currently *Restricted*). This blocks launch.
+- [ ] **(You) ComReg** sender-ID registration for "CrecheWise" confirmed.
+- [ ] **(You) Vercel Pro** (~$20/mo). The Hobby plan is non-commercial.
+- [ ] **(You) GitHub Pro (~$4/mo), then make `Creche-Mgt-System` private.** Pro first, so `protect-main` keeps being enforced. Settings → General → Danger Zone → Change visibility.
+
+### Step 2: Tests left (together, one step at a time)
+- [ ] Revolut sandbox: connect Angels Nest → parent pays with "Pay with Revolut" → Paid + receipt (§3).
+- [ ] Revolut: a declined card fails cleanly; a Revolut **refund** works (never run yet).
+- [ ] Staff opening a parent link sees "This link is for parents" (PR #123).
+- [ ] Admin → **Refunds** lists the four 14–15 Nov test fee refunds (after PR #136).
+
+### Step 3: Settings (You, ~5 min each)
+- [ ] Supabase: **Confirm email ON** + **MFA** for admins (§1).
+- [ ] Vercel: **`ENCRYPTION_KEY`** set (§1).
+- [ ] Supabase SQL editor: apply **migration 110** (PR #138), then re-run `node scripts/anon-read-sweep.mjs` → expect "activities" only.
+
+### Step 4: Code (Claude; PRs for you to merge)
+- [~] **#10–12** fee refunds on Admin → Refunds + CSV; order-refund idempotency; Connect account check on `charge.refunded` ([PR #136](https://github.com/okunsmartins/Creche-Mgt-System/pull/136)).
+- [x] **#13** invoice period running past the schedule end: **already fixed** by PR #119. Live invoices INV-2026-000027/-000028 show 1–30 Nov; only pre-fix INV-2026-000025 shows 5 Dec.
+- [~] **#14** standalone cleanup (package `creche-wise`, no `skoolbido.com` in code) + local secret check (`npm run hooks:install`) ([PR #137](https://github.com/okunsmartins/Creche-Mgt-System/pull/137)).
+- [~] **#15** security spot-checks: anon sweep found 3 public tables → migration 110 ([PR #138](https://github.com/okunsmartins/Creche-Mgt-System/pull/138)); client-bundle secret scan **clean** (see §4).
+- [x] **#16** this checklist updated with the verified 14–15 Nov tests.
+
+### Step 5: Tidy-up before Tracy uses it for real
+- [ ] Test child MichaelTest JordanTest: **void INV-2026-000028 and the 14 Nov €1 late fee** (owed again after the refund tests), set the child inactive, remove the owner's mobile.
+- [ ] Ask Tracy to add **dates of birth** for the 3 children without one (Wobblers 2, Toddlers 1). Ratio checks can't count them otherwise.
+- [ ] Tell Tracy about the 21 Oct test text (2 Angels Nest parents).
+- [ ] (You) Privacy notice + DPIA reviewed for children's data (§4).
+
+### Step 6: Launch day: see §5 below.
+
+**Not this month (backlog):** Revolut-dashboard refund sync; dedicated refund rows for fee refunds; FEE-01 effective-dated rates; FEE-04 invoice lines; reminder sending; compliance centre (§7.7); AIM (stays off); Playwright E2E + security scans in CI; child meal options (mig 101, unmerged).
+
+---
+
 
 ## 0. Automated test gate (every PR / deploy)
 
@@ -17,7 +58,8 @@ Only tick `[x]` for things actually verified in **production** (crechewise.com).
 rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check . && npx vitest run && npx next build
 ```
 
-- [x] Type-check, lint, Prettier, unit tests (1,122+ passing), production build: run in CI on every PR.
+- [x] Type-check, lint, Prettier, unit tests (1,164+ passing), production build: run in CI on every PR.
+- [~] Local secret check: `npm run hooks:install` once per machine (PR #137). Blocks commits that add live-looking keys.
 - [ ] **Playwright E2E** (currently **skipped** in CI). To switch on: in GitHub → Settings → Secrets and variables →
       Actions, add secrets `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`, `E2E_PARENT_EMAIL`,
       `E2E_PARENT_PASSWORD` (a **test** admin + **test** parent, never real people) and variable `E2E_ENABLED=true`.
@@ -79,10 +121,13 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 ## 3. Live end-to-end tests
 
 ### Payments — card (Stripe, test mode first)
-- [ ] Angels Nest admin → **Payment setup → Connect Stripe** (test) → status Active.
-- [ ] Test parent pays an invoice with `4242 4242 4242 4242` → invoice **Paid** → parent gets "Payment received" email.
-- [ ] Late fee paid the same way.
-- [ ] Admin **refund** → Stripe refund + status updated.
+- [x] Angels Nest admin → **Payment setup → Connect Stripe** (test) → status Active (`acct_1UT7A9DC1c381e61`).
+- [x] Test parent pays an invoice with `4242 4242 4242 4242` → invoice **Paid** → parent gets "Payment received" email (INV-2026-000028, 14 Nov).
+- [x] Late fee paid the same way (PAY-2026-000003, 14 Nov; "View your late fees" button).
+- [x] Admin **refund** from Creche Wise → Stripe refund on the crèche's account + invoice back to issued + refund email (15 Nov).
+- [x] Refund made **in the Stripe dashboard** → `charge.refunded` (connected-accounts webhook) updates Creche Wise + refund email (15 Nov).
+- [x] Two **part refunds** (€0.50 + €0.50) on one payment → part refunded → refunded; nothing lost or doubled (15 Nov, after PR #134).
+- [ ] The same card tests in **live** mode at launch (§5).
 
 ### Payments — Revolut (sandbox first)
 - [ ] API Console → Sandbox → Merchant key → Angels Nest **Connect Revolut** → "Connected".
@@ -100,14 +145,15 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [x] Cross-tenant privacy test **64/64** (`ISO_CHILD_ID=<test child> node scripts/verify-tenant-isolation.mjs`).
 - [x] Overpayment flagged + emailed to the crèche; receipts go to all linked parents (PR #122, unit-tested).
 - [ ] Staff opening a parent link sees the "This link is for parents" notice (PR #123) — check live.
+- [x] Time-off approval checks room cover: warning → Approve blocked → "Approve anyway" (audited `clash_override`), and the "no date of birth" note (15 Nov; temporary test rows deleted).
 
 ---
 
 ## 4. Security & privacy
 - [x] Service-role queries scoped by `school_id`; cross-tenant isolation test passed live.
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
-- [ ] RLS enabled on every table (spot-check in Supabase → Table editor).
-- [ ] No secrets in the client bundle (only `NEXT_PUBLIC_*`).
+- [~] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20 run: 78 tables, 4 readable: `activities` (public on purpose) plus `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` (**not** intended). Fix = migration 110 (PR #138). Apply it, re-run, then tick.
+- [x] No secrets in the client bundle (only `NEXT_PUBLIC_*`). 2026-11-20: production build of `main` @ `3c96a20`; 224 files in `.next/static` scanned for every server-only `.env.local` value (13) and for Stripe/Revolut/webhook/service-role/private-key patterns. **0 hits.**
 - [ ] DPIA + privacy notice reviewed for children's data.
 
 ### 4a. AIM module — keep OFF until signed off
@@ -129,7 +175,7 @@ end-to-end test.
 ---
 
 ## Housekeeping (not blocking)
-- [ ] Test child "MichaelTest JordanTest": set inactive, remove the owner's mobile.
+- [ ] Test child "MichaelTest JordanTest": void INV-2026-000028 + the 14 Nov late fee (owed again after the refund tests), set inactive, remove the owner's mobile.
 - [ ] Tell Tracy the 21 Oct test text reached 2 Angels Nest parents.
 
 *Keep this file current: flip a box to `[x]` in a small PR when a step is verified live.*
