@@ -11,7 +11,7 @@
 //  1. Every table created in the migrations has a GRANT … TO service_role somewhere.
 //  2. From migration STRICT_FROM on, that grant must be in the SAME migration file.
 //  3. From migration STRICT_FROM on, any GRANT … TO anon must be marked deliberate with
-//     a `-- public-on-purpose` comment on the same line.
+//     a `-- public-on-purpose` comment on the line that ends the statement.
 
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
@@ -35,8 +35,11 @@ export function stripSqlComments(sql: string): string {
 
 /** Table names created in a migration (public schema or unqualified). */
 export function createdTables(sql: string): string[] {
-  const re = /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?"?([a-z_0-9]+)"?/gi
-  return [...stripSqlComments(sql).matchAll(re)].map((m) => m[1]!.toLowerCase())
+  // Optional schema: only `public.x` or unqualified `x` count (Supabase exposes `public`).
+  const re = /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:"?([a-z_0-9]+)"?\.)?"?([a-z_0-9]+)"?/gi
+  return [...stripSqlComments(sql).matchAll(re)]
+    .filter((m) => !m[1] || m[1].toLowerCase() === 'public')
+    .map((m) => m[2]!.toLowerCase())
 }
 
 /** Tables that get a GRANT … TO <role> in this SQL. */
@@ -58,15 +61,22 @@ export function tablesGrantedTo(sql: string, role: string): Set<string> {
   return out
 }
 
-/** `GRANT … TO anon` lines not marked as deliberately public. */
+/** `GRANT … TO anon` statements (single- or multi-line) not marked as deliberately public. */
 export function unmarkedAnonGrants(sql: string): string[] {
-  // Statement-level check on comment-free SQL, then look for the marker on the raw line.
-  const rawLines = sql.split('\n')
+  // Blank out comments but keep every character position, so a statement found in the
+  // code maps back to the raw text (which still has the marker comment).
+  const code = sql
+    .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+    .replace(/--[^\n]*/g, (c) => ' '.repeat(c.length))
   const hits: string[] = []
-  for (const line of rawLines) {
-    const code = line.replace(/--.*$/, '')
-    if (/\bgrant\b/i.test(code) && /\bto\b[^;]*\banon\b/i.test(code) && !line.includes(PUBLIC_MARK))
-      hits.push(line.trim())
+  for (const m of code.matchAll(/\bgrant\b[^;]*;/gi)) {
+    if (!/\bto\b[\s\S]*\banon\b/i.test(m[0])) continue
+    const start = m.index!
+    const end = start + m[0].length
+    // The statement's raw text plus the rest of the line its `;` is on.
+    const lineEnd = sql.indexOf('\n', end)
+    const raw = sql.slice(start, lineEnd === -1 ? sql.length : lineEnd)
+    if (!raw.includes(PUBLIC_MARK)) hits.push(m[0].replace(/\s+/g, ' ').trim())
   }
   return hits
 }
@@ -101,6 +111,31 @@ describe('migration grant guard: checker logic', () => {
   })
   it('flags anon grants unless marked public-on-purpose', () => {
     expect(unmarkedAnonGrants(sql)).toEqual(['GRANT SELECT ON public.things TO anon;'])
+  })
+})
+
+describe('migration grant guard: review 2026-11-20 regressions', () => {
+  it('catches a grant to anon split over two lines', () => {
+    const sql = ['GRANT SELECT ON public.things', '  TO anon;', ''].join('\n')
+    expect(unmarkedAnonGrants(sql)).toEqual(['GRANT SELECT ON public.things TO anon;'])
+  })
+  it('accepts a multi-line anon grant marked on its last line', () => {
+    const sql = ['GRANT SELECT ON public.things', '  TO anon; -- public-on-purpose', ''].join('\n')
+    expect(unmarkedAnonGrants(sql)).toEqual([])
+  })
+  it('ignores a commented-out anon grant', () => {
+    expect(unmarkedAnonGrants('-- GRANT SELECT ON public.x TO anon;\n')).toEqual([])
+  })
+  it('does not treat REVOKE … FROM anon as a grant', () => {
+    expect(unmarkedAnonGrants('REVOKE SELECT ON public.x FROM anon;\n')).toEqual([])
+  })
+  it('only counts tables in the public schema', () => {
+    const sql = [
+      'create table private.secrets (id int);',
+      'create table public.ok (id int);',
+      'create table plain (id int);',
+    ].join('\n')
+    expect(createdTables(sql)).toEqual(['ok', 'plain'])
   })
 })
 

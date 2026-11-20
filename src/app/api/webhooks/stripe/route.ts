@@ -23,6 +23,7 @@ import { isSmsTopupSession, applySmsTopup } from '@/lib/sms/topupWebhook'
 import { recordFeePayment } from '@/lib/fees/record-payment'
 import { getSchoolConnect } from '@/lib/stripe/connect'
 import { refundEventMatchesSchool } from '@/lib/stripe/event-account'
+import { refundsToAuditFromWebhook, type ProviderRefund } from '@/lib/fees/refund-audit'
 
 // This route is excluded from auth middleware (see middleware.ts matcher pattern).
 // Raw body is read BEFORE any JSON parsing — required for Stripe signature verification.
@@ -528,21 +529,15 @@ async function handleChargeRefunded(
     const { newlyRefundedCents } = await applyFeeRefund(adminClient, feeRow, subject, {
       cumulativeCents: charge.amount_refunded ?? 0,
     })
+    await auditDashboardFeeRefunds(adminClient, {
+      chargeId: charge.id,
+      eventAccount,
+      paymentId: feeRow.id,
+      schoolId: subject.schoolId,
+      subjectLabel: subject.label,
+      newlyRefundedCents,
+    })
     if (newlyRefundedCents > 0) {
-      await adminClient.from('audit_logs').insert({
-        school_id: subject.schoolId,
-        actor_id: null,
-        actor_email: 'stripe-webhook',
-        action: 'refund.completed',
-        resource_type: 'payment',
-        resource_id: feeRow.id,
-        metadata: {
-          amount_cents: newlyRefundedCents,
-          subject: subject.label,
-          charge_id: charge.id,
-        },
-        correlation_id: createCorrelationId(),
-      })
       await sendFeeRefundEmails(adminClient, subject, newlyRefundedCents)
     }
     return
@@ -752,4 +747,88 @@ async function handlePaymentFailed(
   }
 
   logger.info('stripe_payment_failed', { orderId, paymentIntentId: intent.id, failureCode })
+}
+
+/**
+ * Audit refunds made OUTSIDE the app (Stripe dashboard), one row per Stripe refund id,
+ * at most once. Refunds the app made carry `metadata.fee_payment_id` and are audited by
+ * the admin action, so a webhook that arrives first (or is retried) can't double them.
+ */
+async function auditDashboardFeeRefunds(
+  adminClient: AdminClient,
+  p: {
+    chargeId: string
+    eventAccount: string | null
+    paymentId: string
+    schoolId: string
+    subjectLabel: string
+    newlyRefundedCents: number
+  },
+): Promise<void> {
+  let refunds: ProviderRefund[]
+  try {
+    const list = await getStripe().refunds.list(
+      { charge: p.chargeId, limit: 100 },
+      p.eventAccount ? { stripeAccount: p.eventAccount } : undefined,
+    )
+    refunds = list.data.map((r) => ({
+      id: r.id,
+      amount: r.amount,
+      status: r.status,
+      metadata: r.metadata as Record<string, string> | null,
+    }))
+  } catch (err) {
+    // Can't see the individual refunds: fall back to one row for what's newly recorded.
+    logger.warn('stripe_fee_refund_list_failed', {
+      chargeId: p.chargeId,
+      error: err instanceof Error ? err.message : 'unknown',
+    })
+    if (p.newlyRefundedCents > 0)
+      await adminClient.from('audit_logs').insert({
+        school_id: p.schoolId,
+        actor_id: null,
+        actor_email: 'stripe-webhook',
+        action: 'refund.completed',
+        resource_type: 'payment',
+        resource_id: p.paymentId,
+        metadata: {
+          amount_cents: p.newlyRefundedCents,
+          subject: p.subjectLabel,
+          charge_id: p.chargeId,
+        },
+        correlation_id: createCorrelationId(),
+      })
+    return
+  }
+
+  const { data: existing } = await adminClient
+    .from('audit_logs')
+    .select('metadata')
+    .eq('school_id', p.schoolId)
+    .eq('action', 'refund.completed')
+    .eq('resource_type', 'payment')
+    .eq('resource_id', p.paymentId)
+  const audited = new Set(
+    ((existing ?? []) as { metadata: { provider_refund_id?: string } | null }[])
+      .map((r) => r.metadata?.provider_refund_id)
+      .filter((id): id is string => !!id),
+  )
+  for (const r of refundsToAuditFromWebhook(refunds, audited)) {
+    await adminClient.from('audit_logs').insert({
+      school_id: p.schoolId,
+      actor_id: null,
+      actor_email: 'stripe-webhook',
+      action: 'refund.completed',
+      resource_type: 'payment',
+      resource_id: p.paymentId,
+      metadata: {
+        amount_cents: r.amount,
+        subject: p.subjectLabel,
+        provider: 'stripe',
+        provider_refund_id: r.id,
+        charge_id: p.chargeId,
+      },
+      correlation_id: createCorrelationId(),
+    })
+  }
 }

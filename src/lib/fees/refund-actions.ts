@@ -158,24 +158,37 @@ export async function refundFeePaymentAction(
     logger.error('fee_refund_record_failed', { paymentId, error: recordError })
   }
 
-  await db.from('audit_logs').insert({
-    school_id: admin.schoolId,
-    actor_id: admin.id,
-    actor_email: admin.email,
-    action: 'refund.completed',
-    resource_type: 'payment',
-    resource_id: payment.id,
-    metadata: {
-      amount_cents: amountCents,
-      provider: payment.provider,
-      provider_refund_id: providerRefundId,
-      subject: subject.label,
-      reason: reason || null,
-      ...(recordError ? { record_error: recordError } : {}),
-    },
-    correlation_id: createCorrelationId(),
-    ip_address: null,
-  })
+  // A double-submit returns the SAME Stripe refund (idempotency key): audit it once.
+  const { data: priorAudit } = await db
+    .from('audit_logs')
+    .select('id')
+    .eq('school_id', admin.schoolId)
+    .eq('action', 'refund.completed')
+    .eq('resource_type', 'payment')
+    .eq('resource_id', payment.id)
+    .eq('metadata->>provider_refund_id', providerRefundId)
+    .limit(1)
+  const alreadyAudited = (priorAudit ?? []).length > 0
+
+  if (!alreadyAudited)
+    await db.from('audit_logs').insert({
+      school_id: admin.schoolId,
+      actor_id: admin.id,
+      actor_email: admin.email,
+      action: 'refund.completed',
+      resource_type: 'payment',
+      resource_id: payment.id,
+      metadata: {
+        amount_cents: amountCents,
+        provider: payment.provider,
+        provider_refund_id: providerRefundId,
+        subject: subject.label,
+        reason: reason || null,
+        ...(recordError ? { record_error: recordError } : {}),
+      },
+      correlation_id: createCorrelationId(),
+      ip_address: null,
+    })
 
   // Email only if this call recorded it (the webhook may have got there first and
   // already emailed).

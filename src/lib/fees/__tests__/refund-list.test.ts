@@ -82,3 +82,14 @@ describe('buildFeeRefundRows', () => {
     })
   })
 })
+
+describe('buildFeeRefundRows: one row per real refund', () => {
+  it('a double-submit audited twice under the same Stripe refund id shows once', () => {
+    const dup: FeeRefundAudit[] = [
+      { ...audits[0]!, id: 'a1' },
+      { ...audits[0]!, id: 'a1-again' },
+    ]
+    const rows = buildFeeRefundRows(dup, payments, new Map([['inv1', 'c1']]), new Map())
+    expect(rows.map((r) => r.id)).toEqual(['a1'])
+  })
+})

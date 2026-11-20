@@ -148,6 +148,20 @@ export async function initiateRefundAction(
     }
   }
 
+  // A double-submit with the same idempotency key gets the SAME provider refund back:
+  // record it once (refunds.provider_refund_id has no unique constraint).
+  const { data: existingRefund } = await adminClient
+    .from('refunds')
+    .select('id')
+    .eq('payment_id', paymentId)
+    .eq('provider_refund_id', providerRefundId)
+    .limit(1)
+  if ((existingRefund ?? []).length > 0) {
+    logger.info('refund_already_recorded', { orderId, paymentId, providerRefundId })
+    revalidatePath(`/admin/orders/${orderId}`)
+    return { success: true, refundedAmountCents: amountCents }
+  }
+
   const { error: refundInsertError } = await adminClient.from('refunds').insert({
     payment_id: paymentId,
     order_id: orderId,
