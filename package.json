@@ -1,8 +1,10 @@
 {
-  "name": "scoil-bhride-portal",
+  "name": "creche-wise",
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "hooks:install": "git config core.hooksPath .githooks",
+    "check:secrets": "node scripts/check-secrets.mjs --self-test",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

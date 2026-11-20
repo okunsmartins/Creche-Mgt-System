@@ -8,7 +8,7 @@ import {
 } from '../statusWebhook'
 
 const TOKEN = 'test_auth_token'
-const URL = 'https://skoolbido.com/api/webhooks/sms/status'
+const URL = 'https://crechewise.com/api/webhooks/sms/status'
 
 // Independent implementation of Twilio's documented signing algorithm.
 function sign(url: string, params: Record<string, string>): string {

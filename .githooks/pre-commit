@@ -1,0 +1,3 @@
+#!/bin/sh
+# Blocks commits that add live-looking secrets. Install once: npm run hooks:install
+exec node scripts/check-secrets.mjs
