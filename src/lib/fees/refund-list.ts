@@ -5,6 +5,7 @@
 // `charge.refunded` webhook. School-scoped at every step.
 
 import type { createSupabaseAdminClient } from '@/lib/supabase/server'
+import { dedupeByRefundId } from './refund-audit'
 
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>
 
@@ -77,7 +78,9 @@ export function buildFeeRefundRows(
       paymentReference: p.payment_reference,
     })
   }
-  return rows
+  // One row per real refund: a double-submit or an admin/webhook race can audit the same
+  // provider refund twice.
+  return dedupeByRefundId(rows, (r) => r.providerRefundId)
 }
 
 /** This school's fee refunds, newest first. */

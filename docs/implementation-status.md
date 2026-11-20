@@ -6,13 +6,149 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-15 (**live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-20 (**end-of-month wrap-up** PRs #135–#140 merged: fee refunds on Admin → Refunds, refund idempotency + Connect account check, standalone cleanup + local secret hook, **migration 110 applied** (3 public tables closed; anon sweep clean), migration grant guard for Supabase's 30 Oct change. Review branch `fix/refund-dedupe-review` fixes duplicate refund rows/audits and two guard blind spots: unit-tested, not merged. See "Session 2026-11-20". Earlier, 2026-11-15: **live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 **Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
 🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
 🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
+
+---
+
+## Session 2026-11-20 — end-of-month wrap-up (PRs #135–#140) + review
+
+> Spec references:
+> - **FEE-08**: refunds on the same rails, visible to the crèche.
+> - **§10**: security, tenant isolation, least privilege.
+> - **§11.4**: DevSecOps (secret scanning).
+> - The launch plan at the top of [go-live-checklist.md](go-live-checklist.md) (target 30 Nov 2026).
+>
+> **Merged and deployed** (Vercel production ✅):
+> - #135: docs.
+> - #136: fee refunds on the Refunds page, order-refund idempotency, Connect account check.
+> - #137: standalone cleanup + local secret check.
+> - #138: migration 110.
+> - #139: go-live plan.
+> - #140: migration grant guard.
+>
+> **This review's fixes** are on branch `fix/refund-dedupe-review` (PR below), **not merged yet**.
+>
+> All live checks were read-only scripts against `xpbavfutfejlfbmnntyl`, or done by the owner on crechewise.com.
+
+### Requirements: status and evidence
+
+| Requirement | Spec | Status | Evidence | Gap / not verified |
+|---|---|---|---|---|
+| Invoice / late-fee refunds listed on **Admin → Refunds** + CSV export | FEE-08 | 🟡 | Unit: `refund-list.test.ts` (school scoping, Stripe-dashboard label, one row per refund). Deployed with #136. | **Not yet seen live.** Step 37: the page should list the four 14–15 Nov test refunds. |
+| Order (activity/shop) refunds can't be sent twice | FEE-08 | 🟡 | Unit: `refunds/__tests__/actions.test.ts` (key sent; replay recorded once; two real part refunds both recorded). | No real double-click on a live order. |
+| `charge.refunded` only acts for the crèche's own connected account | §10 | 🟡 | Unit: `event-account.test.ts`. The 15 Nov live events carried `acct_1UT7A9DC1c381e61`, which matches Angels Nest, so they would pass. | No live event since the deploy. |
+| Package renamed `creche-wise`; no `skoolbido.com` in code | standalone product | ✅ | Code + tests (email / tenant / SMS suites) pass; docs keep their history notes only. | — |
+| Local secret check (pre-commit hook) | §11.4 | ✅ | A staged fake `sk_live_…` key was **blocked** on the owner's PC; `npm run check:secrets` self-test passes. | Needs `npm run hooks:install` on any other machine. |
+| Public (anon) key can't read tenant data | §10 | ✅ | Sweep found 3 unintended public tables. **Migration 110 applied 2026-11-20** by the owner. Re-run: only `activities` (public on purpose). Service role still reads all three. | — |
+| No secrets in the browser bundle | §10 | ✅ | 224 files in `.next/static` scanned against 13 server-only values + key patterns: **0 hits** (main, and again on this branch). | — |
+| Migration grant guard (Supabase 30 Oct 2026 change) | §10 | ✅ unit | All 78 existing tables pass; a simulated bad migration failed all 3 rules; review fixes below. | — |
+| Supabase grant change assessed | §10 | ✅ | All 78 tables already have explicit `service_role` grants; no table created since migration 109 (10 Oct). | — |
+| Invoice period ran past the schedule end | FEE-06 | ✅ | Already fixed by PR #119; live INV-2026-000027/-000028 show 1–30 Nov. | Old INV-2026-000025 still shows 5 Dec (pre-fix, void). |
+
+### Issues found in review (2026-11-20) and fixed
+
+Each one was reproduced with a failing test first.
+
+1. **Order refunds: a double-submit was recorded twice.** The idempotency key (#136) makes Stripe return the *same* refund. But the action still inserted a second `refunds` row (`provider_refund_id` has no unique constraint), so the Refunds page showed it twice and the refundable balance dropped.
+   - **Fix:** skip the insert when that provider refund is already recorded.
+   - **Test:** `actions.test.ts`. It **failed without the fix** ("expected length 1 but got 2") and passes with it.
+2. **Fee refunds could be listed twice.**
+   - **Cause:**
+     - A double-submit wrote a second `refund.completed` audit with the same Stripe refund id.
+     - If Stripe's `charge.refunded` arrived *before* the admin action finished (more likely since #134 added a charge lookup), both the webhook and the action audited the same refund.
+   - **Fix:**
+     - The admin action audits a given Stripe refund id once.
+     - The webhook now lists the charge's refunds (`refunds.list`) and audits only those **not made by the app** (no `metadata.fee_payment_id`) and not already audited. Each is recorded under its own `provider_refund_id`. If the list call fails, it falls back to one row.
+     - The Refunds list also de-duplicates by refund id.
+   - **Tests:** `refund-audit.test.ts`, `refund-list.test.ts`.
+3. **Migration guard missed a grant to `anon` split over two lines** (`GRANT … ON x` / `TO anon;`).
+   - **Fix:** the guard now checks whole statements.
+   - **Test:** `migration-grants.test.ts`. It **failed before the fix.**
+4. **Migration guard misread `create table private.x` as a table named "private".**
+   - **Fix:** only `public` or unqualified tables are counted.
+   - **Test:** `migration-grants.test.ts`. It **failed before the fix.**
+
+Emails are unchanged: the refund email is sent only by whichever path records the money (`newlyRefundedCents > 0`), so it goes out once.
+
+### Outstanding (not done; don't report as complete)
+
+- **Step 37:** live check of Admin → Refunds (owner screenshot).
+- **Suspected (not verified):** refunds of activity/shop **orders made in the Stripe dashboard** may not update their `refunds` rows or send the refund email.
+  - The order branch of the webhook reads `charge.refunds.data`. Since Stripe API 2022-11-15, `refunds` isn't included in Charge payloads (our webhooks use `2026-09-30.endive`).
+  - Fee refunds don't depend on this; they now use `refunds.list`.
+  - Needs a live sandbox order refund to confirm, then the same `refunds.list` approach.
+- **Revolut:**
+  - Never tested live: sandbox pay, decline, and in-app refund.
+  - Refunds made in the Revolut dashboard aren't synced.
+  - Revolut refunds are sent without an idempotency key.
+- **Database guard for duplicate refunds:** an optional future migration (111) could add a unique index on `refunds(payment_id, provider_refund_id)`. The code handles it today.
+- **Owner launch tasks** (go-live checklist, Step 1–5):
+  - Stripe live verification (blocks launch), ComReg, Vercel Pro, GitHub Pro then a private repo.
+  - Supabase Confirm email + MFA; `ENCRYPTION_KEY` check.
+  - Test-child tidy-up; Tracy's 3 missing dates of birth; DPIA / privacy notice.
+- **Still open from before:** Playwright E2E in CI; SAST/SCA/DAST; DB-enabled isolation job in CI.
+
+### Manual configuration steps
+
+- **Migration 110 is applied** (2026-11-20). Latest applied = **110**; next new = **111**.
+  - From 111 on, CI requires each new table's `service_role` grant **in the same file**.
+  - Any `anon` grant must carry `-- public-on-purpose`.
+- **Secret hook:** run `npm run hooks:install` once per machine. It's already done on the owner's PC.
+- **Review branch:** no migration and no env change.
+
+### Security considerations
+
+- **Least privilege on the public key.**
+  - `payment_links`, `activity_class_eligibility` and `activity_pupil_eligibility` are closed to `anon` (migration 110).
+  - CI now blocks unmarked `anon` grants and new tables without a `service_role` grant.
+  - Don't copy Supabase's example `grant select … to anon` unless the data is deliberately public.
+- **Refund integrity.**
+  - One audit row and one `refunds` row per real refund, whichever path sees it first.
+  - Idempotency keys on Stripe refunds (fee + order).
+  - Refund webhooks are ignored unless they come from the crèche's own connected account; a mismatch is logged as `stripe_charge_refunded_account_mismatch`.
+- **Tenant scoping.** Every query in the Refunds list joins through `audit_logs.school_id` and this crèche's invoices / late fees / children.
+- **Secrets.**
+  - The browser bundle is clean.
+  - A local pre-commit hook blocks live-looking keys; GitHub push protection is lost if the repo goes private on the Free plan.
+  - The repo is still **public**.
+
+### Verification snapshot (2026-11-20, branch `fix/refund-dedupe-review` on `main` @ `#140`)
+
+| Check | Command | Result |
+|---|---|---|
+| Type-check | `rm -rf .next/types && npx tsc --noEmit` | ✅ clean |
+| Lint | `npx eslint src --ext .ts,.tsx` | ✅ clean |
+| Format | `npx prettier --check .` | ✅ clean |
+| Unit/component tests | `npx vitest run` | ✅ **1190 passed / 126 files** |
+| Production build | `npx next build` | ✅ 128/128 pages |
+| Secret check self-test | `npm run check:secrets` | ✅ |
+| Client bundle scan | built `.next/static` vs server env values + key patterns | ✅ 0 hits (224 files) |
+| Anon read sweep (live, read-only) | `node scripts/anon-read-sweep.mjs` | ✅ only `activities` |
+| E2E (Playwright) | `npm run test:e2e` | ⬜ not run (CI job still skipped) |
+
+### Exact commands to continue
+
+```bash
+cd "E:/First Stack Solutions/Creche_Mgt_System"
+git checkout fix/refund-dedupe-review          # review fixes (open a PR; the owner merges)
+rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check .
+npx vitest run src/lib/refunds src/lib/fees src/lib/stripe src/lib/__tests__/migration-grants.test.ts
+npx vitest run                                  # full suite (1190)
+npx next build
+npm run check:secrets                           # secret hook self-test
+npm run hooks:install                           # once per machine
+node scripts/anon-read-sweep.mjs                # read-only: expect only "activities"
+# after merge + deploy (Stripe test mode):
+#   1. Admin → Refunds: the four 14–15 Nov fee refunds appear once each, linked to the test child
+#   2. Optional: refund a test activity order in the Stripe dashboard to confirm/refute the
+#      suspected order-refund sync gap above
+```
 
 ---
 
