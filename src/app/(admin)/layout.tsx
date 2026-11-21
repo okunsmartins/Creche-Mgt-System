@@ -6,6 +6,7 @@ import { requireSchoolAccessOrRedirect } from '@/lib/subscriptions/access'
 import { isPlatformOwner } from '@/lib/platform/owner'
 import { getSchoolLogoUrl, getSchoolPublicPath } from '@/lib/tenant/server'
 import { fundingEnabled } from '@/lib/funding/access'
+import { MfaGraceBanner } from '@/components/auth/MfaGraceBanner'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireAdmin()
@@ -22,6 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <div className="flex min-w-0 flex-1 overflow-hidden">
         <AdminSidebar user={user} isOwner={isOwner} fundingEnabled={hiveEnabled} />
         <div className="flex min-w-0 flex-1 flex-col overflow-auto">
+          <MfaGraceBanner mfa={user.mfa} />
           <AdminMain>{children}</AdminMain>
         </div>
       </div>

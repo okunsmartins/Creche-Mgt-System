@@ -92,6 +92,8 @@ export type AuditAction =
   | 'activity.archived'
   | 'activity.closed'
   | 'class.created'
+  | 'auth.mfa_enrolled'
+  | 'auth.mfa_reset'
   | 'class.updated'
   | 'teacher.created'
   | 'teacher.updated'
