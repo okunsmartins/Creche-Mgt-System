@@ -40,7 +40,7 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 | Requirement | Spec | Status | Evidence | Gap / not verified |
 |---|---|---|---|---|
-| Invoice / late-fee refunds listed on **Admin → Refunds** + CSV export | FEE-08 | 🟡 | Unit: `refund-list.test.ts` (school scoping, Stripe-dashboard label, one row per refund). Deployed with #136. | **Not yet seen live.** Step 37: the page should list the four 14–15 Nov test refunds. |
+| Invoice / late-fee refunds listed on **Admin → Refunds** + CSV export | FEE-08 | ✅ page live / 🟡 CSV | **Live 2026-11-21** (after #141, `bd84840`): owner's screenshot of crechewise.com/admin/refunds shows the four 14–15 Nov test refunds **once each** (€0.50 + €0.50 + €1.00 + €1.00), Total refunded **€3.00**, child linked, "Stripe dashboard" vs admin email in Initiated by, reasons carried over. Unit: `refund-list.test.ts`. | The CSV export with fee rows wasn't downloaded live. |
 | Order (activity/shop) refunds can't be sent twice | FEE-08 | 🟡 | Unit: `refunds/__tests__/actions.test.ts` (key sent; replay recorded once; two real part refunds both recorded). | No real double-click on a live order. |
 | `charge.refunded` only acts for the crèche's own connected account | §10 | 🟡 | Unit: `event-account.test.ts`. The 15 Nov live events carried `acct_1UT7A9DC1c381e61`, which matches Angels Nest, so they would pass. | No live event since the deploy. |
 | Package renamed `creche-wise`; no `skoolbido.com` in code | standalone product | ✅ | Code + tests (email / tenant / SMS suites) pass; docs keep their history notes only. | — |
@@ -78,7 +78,7 @@ Emails are unchanged: the refund email is sent only by whichever path records th
 
 ### Outstanding (not done; don't report as complete)
 
-- **Step 37:** live check of Admin → Refunds (owner screenshot).
+- ~~**Step 37:** live check of Admin → Refunds~~ ✅ done 2026-11-21.
 - **Suspected (not verified):** refunds of activity/shop **orders made in the Stripe dashboard** may not update their `refunds` rows or send the refund email.
   - The order branch of the webhook reads `charge.refunds.data`. Since Stripe API 2022-11-15, `refunds` isn't included in Charge payloads (our webhooks use `2026-09-30.endive`).
   - Fee refunds don't depend on this; they now use `refunds.list`.

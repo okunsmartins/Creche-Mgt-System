@@ -25,7 +25,7 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [ ] Revolut sandbox: connect Angels Nest → parent pays with "Pay with Revolut" → Paid + receipt (§3).
 - [ ] Revolut: a declined card fails cleanly; a Revolut **refund** works (never run yet).
 - [ ] Staff opening a parent link sees "This link is for parents" (PR #123).
-- [ ] Admin → **Refunds** lists the four 14–15 Nov test fee refunds (after PR #136).
+- [x] Admin → **Refunds** lists the four 14–15 Nov test fee refunds once each, total €3.00 (verified live 2026-11-21, after PRs #136 + #141).
 
 ### Step 3: Settings (You, ~5 min each)
 - [ ] Supabase: **Confirm email ON** + **MFA** for admins (§1).
