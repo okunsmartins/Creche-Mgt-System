@@ -15,7 +15,7 @@ export default function VerifyEmailPage() {
         We sent a verification link to your email address. Click the link to activate your account.
       </p>
       <p className="mt-3 text-xs text-text-muted">
-        The link expires after 24 hours. Check your spam folder if you don&apos;t see it.
+        The link expires after 1 hour. Check your spam folder if you don&apos;t see it.
       </p>
 
       <ResendVerificationForm />

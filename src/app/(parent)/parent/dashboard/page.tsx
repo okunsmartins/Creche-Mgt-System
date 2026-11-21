@@ -5,6 +5,7 @@ import { requireVerifiedAuth } from '@/lib/auth/guards'
 import { getParentPermissionSlips } from '@/lib/permission-slips/queries'
 import { getParentFeesSummary } from '@/lib/fees/parent-summary'
 import { ParentFeesCard } from '@/components/fees/ParentFeesCard'
+import { PLATFORM_NAME } from '@/lib/platform/brand'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -66,7 +67,7 @@ export default async function ParentDashboardPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text-primary">Welcome back, {firstName}</h1>
         <p className="mt-1 text-sm text-text-muted">
-          {fullName} · {user.schoolName ?? 'Admin Portal'}
+          {fullName} · {user.schoolName ?? PLATFORM_NAME}
         </p>
       </div>
 
