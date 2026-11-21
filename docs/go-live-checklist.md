@@ -7,7 +7,7 @@ The single "are we ready to launch?" list for **Creche Wise** (crechewise.com). 
 Only tick `[x]` for things actually verified in **production** (crechewise.com).
 
 **Prod Supabase project:** `xpbavfutfejlfbmnntyl`. Always confirm this ref before running SQL.
-**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) **applied 2026-11-20**. Next new migration = **111**.
+**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) **applied 2026-11-20**. **111** (`111_audit_mfa.sql`, admin MFA audit names) written, **not yet applied**. Next new migration = **112**.
 
 ---
 
@@ -28,7 +28,8 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [x] Admin → **Refunds** lists the four 14–15 Nov test fee refunds once each, total €3.00 (verified live 2026-11-21, after PRs #136 + #141).
 
 ### Step 3: Settings (You, ~5 min each)
-- [ ] Supabase: **Confirm email ON** + **MFA** for admins (§1).
+- [x] Supabase: **Confirm email ON** (2026-11-21; live sign-up → email → confirm → sign-in tested; test account deleted).
+- [~] **MFA required for admins**: see §1 (built, awaiting merge + live test).
 - [ ] Vercel: **`ENCRYPTION_KEY`** set (§1).
 - [x] Supabase SQL editor: **migration 110** applied 2026-11-20 (PR #138); `node scripts/anon-read-sweep.mjs` → only `activities` is public.
 
@@ -72,8 +73,8 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 ### Supabase (`xpbavfutfejlfbmnntyl`)
 - [x] Auth emails (sign-up, reset) sent via **Resend SMTP** (`noreply@crechewise.com`); password reset verified live.
 - [x] Auth Site URL / redirect URLs use `https://crechewise.com`.
-- [ ] **"Confirm email" ON** (Authentication → Sign In / Providers → Email).
-- [ ] **MFA** available for admins (Authentication → MFA).
+- [x] **"Confirm email" ON** (Authentication → Sign In / Providers → User Signups). Verified 2026-11-21: `mailer_autoconfirm=false`; live sign-up/confirm/sign-in test passed.
+- [~] **MFA required for admins** (7-day grace): built in `feat/admin-mfa` (enforced in `requireAuth`; `/mfa/setup`, `/mfa/verify`, Platform → Security reset). To do: merge, apply **migration 111**, confirm Supabase → Multi-Factor → TOTP enabled, then a live test with the owner's phone.
 
 ### Vercel environment variables (Production) — redeploy after any change
 - [x] Supabase URL / anon key / service-role key; `NEXT_PUBLIC_APP_URL=https://crechewise.com`.

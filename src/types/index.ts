@@ -71,4 +71,9 @@ export interface SessionUser {
   schoolId: string | null
   schoolName: string | null
   mustChangePassword: boolean
+  /**
+   * Two-step sign-in state, ONLY for privileged accounts (crèche admins, platform
+   * owner); null/undefined for everyone else. See lib/auth/mfa-policy.ts.
+   */
+  mfa?: import('@/lib/auth/mfa-policy').AdminMfaState | null
 }

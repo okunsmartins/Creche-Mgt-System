@@ -280,6 +280,9 @@ export async function updatePasswordAction(
 
   if (error) {
     logger.warn('update_password_failed', { reason: error.code })
+    // Two-step sign-in is set up on this account: Supabase wants the code (aal2)
+    // before a password change. Ask for it, then come straight back here.
+    if (error.code === 'insufficient_aal') redirect('/mfa/verify?next=/reset-password')
     return { error: updatePasswordErrorMessage(error) }
   }
 

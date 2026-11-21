@@ -16,6 +16,51 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
+## Admin two-step sign-in (TOTP MFA), required with a 7-day grace (2026-11-21)
+
+> Spec references: §10 (authentication, least privilege) and the go-live checklist §1 "MFA for admins". The owner chose **required for admins, with a 7-day grace period**. Branch `feat/admin-mfa`, **not merged yet**. **Not yet tested live.**
+
+| Requirement | Status | Evidence | Gap / not verified |
+|---|---|---|---|
+| Admins and the platform owner must use an authenticator app (TOTP), enforced on every admin page and action | 🟡 | `requireAuth` enforces it, so every privileged guard goes through it (`requireAdmin`, `requirePermission`, `requireTeacher`, the `/platform` layout). Unit: `guards.test.ts`, 6 new cases (verify / set-up / grace / ok / parents unaffected / no self-redirect). | Not tested live. |
+| 7-day grace, starting from the later of the go-live date (`ADMIN_MFA_REQUIRED_FROM`, default 2026-11-22) and the day someone became an admin | 🟡 | `mfa-policy.ts`, 13 unit tests (deadline, part-days, invalid dates). | Not tested live. |
+| Set-up page `/mfa/setup` (QR code + manual key, confirmed with the first code) | 🟡 | Builds; actions clear half-finished attempts before a new one. | Needs a real phone: live test with the owner's account. |
+| Code page `/mfa/verify` after each new sign-in | 🟡 | Builds; wrong codes show a clear message; Supabase rate-limits attempts. | Live test. |
+| Grace reminder banner (admin + platform areas) with days left and "Set up now" | 🟡 | `MfaGraceBanner`. | Not seen live. |
+| Owner reset for a lost phone: **Platform → Security** lists every admin's status with a **Reset** button (confirm, then audit `auth.mfa_reset`) | 🟡 | `mfaAdmins.ts`, `mfaActions.ts` (owner-only, and the owner must have passed two-step sign-in). | Live test. |
+
+**How it behaves:**
+- Admins without an authenticator see the banner for 7 days. After that, any admin page sends them to `/mfa/setup`. It's never a lock-out: they can still sign in with their password and set it up there.
+- Once set up, each new sign-in goes password → `/mfa/verify` → dashboard.
+- Parents and staff without an admin role are unaffected.
+
+**Manual configuration:**
+1. Apply **migration 111** (`111_audit_mfa.sql`: adds audit names `auth.mfa_enrolled` and `auth.mfa_reset`). Until it's applied, MFA still works; only those audit rows fail (best-effort).
+2. In Supabase → Authentication → **Multi-Factor**, check that **TOTP (App Authenticator)** is enabled. It's on by default.
+3. Optional: set `ADMIN_MFA_REQUIRED_FROM` in Vercel to the actual go-live date if the 7 days should start later.
+
+**Security considerations:**
+- The guard reads the session's assurance level (`aal`) from the verified JWT via `getAuthenticatorAssuranceLevel`. Privileged = an admin role, or the owner email.
+- The `/mfa` pages use `requireAuthForMfa` so they can't loop.
+- Resetting another admin's factor is owner-only and audited.
+- Recovery is owner-only. There are no self-service backup codes yet.
+- Tracy (Angels Nest) and the owner will both see the banner from go-live.
+
+**Password reset with two-step sign-in:** if Supabase refuses the change from a password-only session (`insufficient_aal`), the admin is sent to `/mfa/verify?next=/reset-password` and back. Unit-tested in `update-password-mfa.test.ts`; whether Supabase actually requires it isn't verified live.
+
+**Outstanding:** a live end-to-end test (owner enrols, signs out, signs in with a code; owner reset). Backup/recovery codes. Optionally, requiring it for staff (teachers).
+
+**Commands:**
+
+```bash
+npx vitest run src/lib/auth          # policy + guards + reset-with-MFA (73 tests)
+npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check .
+npx vitest run                       # 1212 / 128 files
+npx next build                       # 130 pages incl. /mfa/setup, /mfa/verify, /platform/security
+```
+
+---
+
 ## Session 2026-11-20 — end-of-month wrap-up (PRs #135–#140) + review
 
 > Spec references:

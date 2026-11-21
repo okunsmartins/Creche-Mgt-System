@@ -1,11 +1,15 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server'
 import type { SessionUser } from '@/types'
 import type { ProfileRow, UserRoleRow, RoleRow } from '@/types/database'
+import { isPlatformOwner } from '@/lib/platform/owner'
+import type { AdminMfaState } from './mfa-policy'
+
+const ADMIN_ROLE_NAMES = ['super_admin', 'school_admin', 'finance_admin']
 
 // Column sub-sets we actually SELECT in this function
 type ProfileSelect = Pick<ProfileRow, 'first_name' | 'last_name' | 'school_id'>
-type UserRoleSelect = Pick<UserRoleRow, 'role_id'>
-type RoleSelect = Pick<RoleRow, 'name'>
+type UserRoleSelect = Pick<UserRoleRow, 'role_id' | 'created_at'>
+type RoleSelect = Pick<RoleRow, 'id' | 'name'>
 
 /**
  * Returns the authenticated user with profile, roles and permissions,
@@ -45,7 +49,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   // which was already verified above via getUser().
   const userRolesResult = await adminClient
     .from('user_roles')
-    .select('role_id')
+    .select('role_id, created_at')
     .eq('user_id', user.id)
 
   const userRoles = userRolesResult.data as UserRoleSelect[] | null
@@ -77,9 +81,30 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   // Resolve role names — admin client for same reason as above
   let roles: string[] = []
+  let roleRows: RoleSelect[] = []
   if (roleIds.length > 0) {
-    const rolesResult = await adminClient.from('roles').select('name').in('id', roleIds)
-    roles = ((rolesResult.data as RoleSelect[] | null) ?? []).map((r) => r.name)
+    const rolesResult = await adminClient.from('roles').select('id, name').in('id', roleIds)
+    roleRows = (rolesResult.data as RoleSelect[] | null) ?? []
+    roles = roleRows.map((r) => r.name)
+  }
+
+  // Two-step sign-in state for privileged accounts only (admins + platform owner).
+  let mfa: AdminMfaState | null = null
+  const adminRoleIds = new Set(
+    roleRows.filter((r) => ADMIN_ROLE_NAMES.includes(r.name)).map((r) => r.id),
+  )
+  const owner = isPlatformOwner({ email: user.email ?? '' })
+  if (adminRoleIds.size > 0 || owner) {
+    const adminSince = (userRoles ?? [])
+      .filter((r) => adminRoleIds.has(r.role_id))
+      .map((r) => r.created_at)
+      .sort()[0]
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    mfa = {
+      currentLevel: aal?.currentLevel ?? null,
+      nextLevel: aal?.nextLevel ?? null,
+      privilegedSince: adminSince ?? (owner ? (user.created_at ?? null) : null),
+    }
   }
 
   // Resolve permissions for this user's school.
@@ -104,5 +129,6 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     schoolId,
     schoolName,
     mustChangePassword,
+    mfa,
   }
 }

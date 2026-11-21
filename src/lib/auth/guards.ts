@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSessionUser } from './session'
+import { adminMfaDecision, mfaRedirectFor } from './mfa-policy'
 import type { SessionUser } from '@/types'
 
 const ADMIN_ROLES = ['super_admin', 'school_admin', 'finance_admin'] as const
@@ -29,6 +30,21 @@ export async function requireAuth(
     const target = next?.startsWith('/') ? `&next=${encodeURIComponent(next)}` : ''
     redirect(`/${destination}?reason=auth_required${target}`)
   }
+  // Two-step sign-in for admins / the platform owner. Every privileged guard
+  // (requireAdmin, requirePermission, requireTeacher, the /platform layout…) goes
+  // through here, so no admin page or action can skip it.
+  const mfaRedirect = mfaRedirectFor(adminMfaDecision(user.mfa))
+  if (mfaRedirect) redirect(mfaRedirect)
+  return user
+}
+
+/**
+ * Signed in, WITHOUT the two-step sign-in check. Only for the /mfa pages and their
+ * actions (otherwise they would redirect to themselves).
+ */
+export async function requireAuthForMfa(): Promise<SessionUser> {
+  const user = await getSessionUser()
+  if (!user) redirect('/login?reason=auth_required')
   return user
 }
 
