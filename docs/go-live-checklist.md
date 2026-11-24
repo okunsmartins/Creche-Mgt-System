@@ -39,6 +39,8 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [x] **#14** standalone cleanup (package `creche-wise`, no `skoolbido.com` in code) + local secret check (`npm run hooks:install`) ([PR #137](https://github.com/okunsmartins/Creche-Mgt-System/pull/137)).
 - [x] **#15** security spot-checks: 3 public tables closed by migration 110 ([PR #138](https://github.com/okunsmartins/Creche-Mgt-System/pull/138), applied + re-checked); client-bundle secret scan **clean** (see §4).
 - [x] **#16** this checklist updated with the verified 14–15 Nov tests.
+- [x] Owner-only buttons between Platform and the crèche dashboard (PRs #146, #147, live). The dashboard button was only clicked live **before** the #147 fix; recheck after deploy.
+- [ ] **Two-step sign-in at the database level** (review 2026-11-24, see §4). Recommended before launch; needs your OK for **migration 112**.
 
 ### Step 5: Tidy-up before Tracy uses it for real
 - [ ] Test child MichaelTest JordanTest: **void INV-2026-000028 and the 14 Nov €1 late fee** (owed again after the refund tests), set the child inactive, remove the owner's mobile.
@@ -156,6 +158,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
 - [x] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20: found `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` publicly readable (inherited policies) → **migration 110 applied**; re-run shows only `activities` (public on purpose). Service-role reads unaffected.
 - [x] No secrets in the client bundle (only `NEXT_PUBLIC_*`). 2026-11-20: production build of `main` @ `3c96a20`; 224 files in `.next/static` scanned for every server-only `.env.local` value (13) and for Stripe/Revolut/webhook/service-role/private-key patterns. **0 hits.**
+- [ ] **MFA at the database level** (found in review 2026-11-24, not reproduced live). The app enforces two-step sign-in on every admin page, action and API route. But Supabase's own data API (public anon key + a password-only sign-in) still honours the inherited admin RLS policies (`is_admin()` / `is_admin_of_school()`, e.g. `010_rls_policies.sql`). So someone with **only an admin's password** could read that crèche's data without the code. Fix: migration 112, a RESTRICTIVE policy on every RLS table requiring `aal2` **for users who have a verified factor** (Supabase's documented pattern). Parents, staff and admins still in grace are unaffected.
 - [ ] DPIA + privacy notice reviewed for children's data.
 
 ### 4a. AIM module — keep OFF until signed off

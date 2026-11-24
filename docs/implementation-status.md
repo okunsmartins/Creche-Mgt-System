@@ -6,13 +6,66 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-20 (**end-of-month wrap-up** PRs #135–#140 merged: fee refunds on Admin → Refunds, refund idempotency + Connect account check, standalone cleanup + local secret hook, **migration 110 applied** (3 public tables closed; anon sweep clean), migration grant guard for Supabase's 30 Oct change. Review branch `fix/refund-dedupe-review` fixes duplicate refund rows/audits and two guard blind spots: unit-tested, not merged. See "Session 2026-11-20". Earlier, 2026-11-15: **live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-24 (**review of PRs #143–#147**: sign-up copy, admin MFA, owner Platform ↔ dashboard buttons. One redirect fixed on branch `chore/review-2026-11-24`; **a database-level MFA gap was found and is documented, not fixed** (needs migration 112 with your OK). The Revolut sandbox test has started: sandbox account and Merchant key created, not yet connected. See "Review 2026-11-24". Earlier, 2026-11-20: **end-of-month wrap-up** PRs #135–#140 merged: fee refunds on Admin → Refunds, refund idempotency + Connect account check, standalone cleanup + local secret hook, **migration 110 applied** (3 public tables closed; anon sweep clean), migration grant guard for Supabase's 30 Oct change. Review branch `fix/refund-dedupe-review` fixes duplicate refund rows/audits and two guard blind spots: unit-tested, not merged. See "Session 2026-11-20". Earlier, 2026-11-15: **live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 **Honesty rule:** ✅ = built **and** verified (automated test, or an explicitly-noted manual/DB verification).
 🟡 = built but **not fully verified** (no end-to-end/automated test yet — do **not** report as done).
 🔵 = inherited from the fork, reusable but **not** crèche-complete. ⬜ = not started.
+
+---
+
+## Review 2026-11-24: PRs #143–#147 (sign-up copy, admin MFA, owner buttons)
+
+> Reviewed against the Master Specification §10 (authentication, least privilege, auditability) and the go-live checklist. Scope since the last review (2026-11-20): #143 sign-up copy, #144 admin MFA (detail in the next section), #145 docs, #146 owner-only Platform/dashboard buttons, #147 the dashboard-button fix. Fixes from this review are on branch **`chore/review-2026-11-24`** (unit-tested, **not merged**).
+
+| Requirement | Status | Evidence | Gap / not verified |
+|---|---|---|---|
+| Sign-up copy: parent dashboard falls back to the platform name; verify-email says "1 hour" (#143) | ✅ | Live 2026-11-21 during the Confirm-email test. | — |
+| Owner-only **Platform** button: public header (desktop + mobile) and admin top bar (#146) | ✅ public header / 🟡 admin bar | Unit: `AdminTopBar.test.tsx`, `SiteHeader.test.tsx`. **Live:** public header shows My portal · Platform · Sign out for the owner (2026-11-24). | Admin top-bar button not yet seen live. |
+| Owner-only **"{crèche} dashboard"** button on /platform opens that dashboard (#146 + #147) | 🟡 | **Live bug (2026-11-24):** before #147 the button bounced back to /platform, because `/admin/dashboard` redirected every owner. #147 now redirects only an owner with no crèche. | **Re-click after the #147 deploy not yet done.** |
+| Owner still lands on /platform after sign-in and after the MFA code (#147) | ✅ unit / 🟡 live | `sign-in-landing.test.ts` (5): owner → /platform, admin, teacher, parent, `?next=` wins. | Not signed in again live since #147. |
+| MFA can't be skipped inside the app | ✅ (code audit) | Every `'use server'` file except the public ones (sign-in/up, website enquiry, portal sign-up) calls a `require*` guard, and all 12 `/api/admin/*` routes use `requireAdmin`. All of those go through `requireAuth`, which enforces MFA. `getSessionUser()` is called directly only by public pages. Roles for the MFA decision are read with the service client, so RLS can't hide them. | — |
+| MFA at the **database** level (Supabase data API) | ⬜ **gap** | **Code review, not reproduced live.** See security considerations below. | Needs migration 112. |
+
+**Fixed in this review (branch `chore/review-2026-11-24`):**
+1. **`/mfa/verify` sent an already-verified user to `/admin/dashboard`.** For a platform owner with no crèche of their own, that chain ended on the parent dashboard. The page and the MFA actions now share one rule, `privilegedHomeFor()` in `src/lib/auth/landing.ts`: owner → /platform, admins → /admin/dashboard. Unit: `landing.test.ts` (3).
+
+**Outstanding:**
+- **Migration 112: MFA enforced in the database** (recommended before launch; owner approval needed). Add one RESTRICTIVE policy per RLS-enabled public table: `USING/WITH CHECK (public.mfa_satisfied())`, where `mfa_satisfied()` = `(auth.jwt()->>'aal') = 'aal2'` OR the user has **no** verified factor (`auth.mfa_factors`). Effect:
+  - Users who set up an authenticator need the code for direct API access too.
+  - Parents, staff and admins still in grace are unchanged.
+  - The app's service-role queries are unaffected.
+
+  Test plan: unit test for the migration text; `scripts/anon-read-sweep.mjs`; then live sign-in as the owner with and without the code.
+- Live: re-click the "Angels Nest Crèche dashboard" button after the #147 deploy; check the dark Platform button in the admin top bar.
+- From the MFA section: the Reset button, the post-grace redirect (29 Nov), `insufficient_aal` password reset, recovery codes.
+- **Revolut sandbox test (in progress, 2026-11-24):**
+  - Done: sandbox account "Creche Wise Sandbox" created; Merchant key `Creche Wise` created with **Orders → Write, Webhooks → Write, everything else Read/None**, no expiry, no IP allowlist (Vercel has no fixed IPs).
+  - Not done yet: connect on /admin/payments/connect, parent payment (card 4929 4205 7359 5709), declined card, in-app refund. **Nothing Revolut is verified yet.**
+
+**Manual configuration:**
+1. Merge `chore/review-2026-11-24`. No migration, no env change.
+2. **Delete the local file `Revolute API Key.txt`** from the project folder, or move it out. It's untracked and was never committed, but the repo is **public**. Revolut keeps the key, and a new one can be made any time.
+3. Revolut keys must **not** use the IP allowlist (Vercel egress IPs aren't fixed). An expiry date would silently stop payments when it passes.
+
+**Security considerations:**
+- **Database-level MFA gap (main finding).** The app checks two-step sign-in in `requireAuth`. Supabase's REST API, though, can be reached with the public anon key: someone who knows an admin's password can sign in directly (aal1) and query tables whose RLS policies admit admins (`is_admin()` / `is_admin_of_school()`, e.g. `010_rls_policies.sql`, `014_payment_links.sql`). They'd skip the code. Writes are limited by table grants (newer tables grant only SELECT to `authenticated`), but tables created before Supabase's 30 Oct 2026 change may still carry the old default grants. Until migration 112, **MFA protects the app, not the raw database API**.
+- The owner's landing rule lives in one place (`landing.ts` for the MFA pages; `signInAction` checks the owner email for the post-password redirect). `?next=` is still limited to same-site paths.
+- The owner-only buttons are display only. `/platform` is still guarded server-side (404 for non-owners), and the dashboard still needs an admin role and passes the MFA guard.
+
+**Commands:**
+
+```bash
+git checkout chore/review-2026-11-24
+npx tsc --noEmit                                  # clean
+npx eslint src --ext .ts,.tsx && npx prettier --check .   # clean
+npx vitest run src/lib/auth                       # incl. landing (3) + sign-in-landing (5)
+npx vitest run                                    # 1224 tests / 131 files, all pass
+npx next build                                    # 130 pages ("stripe_mrr_failed" = local placeholder key, expected)
+node scripts/anon-read-sweep.mjs                  # read-only; expect only `activities` public
+```
 
 ---
 
