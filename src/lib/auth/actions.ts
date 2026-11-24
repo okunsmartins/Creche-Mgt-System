@@ -7,6 +7,7 @@ import { serverEnv } from '@/lib/env'
 import { getTenantSubdomain, getTenantSchoolId } from '@/lib/tenant/server'
 import { parseConfirmLink, safeNextPath } from './confirm-link'
 import { updatePasswordErrorMessage } from './password-errors'
+import { isPlatformOwner } from '@/lib/platform/owner'
 import {
   loginSchema,
   registerSchema,
@@ -83,6 +84,8 @@ export async function signInAction(
         if (isAdmin) defaultPath = '/admin/dashboard'
         else if (isTeacher) defaultPath = '/teacher/dashboard'
       }
+      // The platform owner lands on Platform (it links on to their crèche dashboard).
+      if (isPlatformOwner({ email: authUser.email ?? '' })) defaultPath = '/platform'
     }
   } catch {
     // role lookup failed — use parent dashboard default

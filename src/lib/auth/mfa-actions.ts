@@ -28,8 +28,9 @@ const WRONG_CODE =
 
 /** Where a privileged user goes once two-step sign-in is satisfied. */
 function homeFor(user: SessionUser): string {
-  if (user.roles.some((r) => ADMIN_ROLE_NAMES.includes(r))) return '/admin/dashboard'
+  // The owner lands on Platform (it has a button to their crèche dashboard).
   if (isPlatformOwner(user)) return '/platform'
+  if (user.roles.some((r) => ADMIN_ROLE_NAMES.includes(r))) return '/admin/dashboard'
   return '/'
 }
 

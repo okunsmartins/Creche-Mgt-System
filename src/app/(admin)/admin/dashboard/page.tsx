@@ -66,9 +66,10 @@ export default async function AdminDashboardPage({
 }) {
   const admin = await requireAdmin()
   const { notice } = await searchParams
-  // The platform owner doesn't manage a single school — send them to the
-  // platform console instead of the crèche-principal dashboard.
-  if (isPlatformOwner(admin)) redirect('/platform')
+  // A platform owner with no crèche of their own has no dashboard here, so send
+  // them to the platform console. When they ARE also a crèche admin (the
+  // "{crèche} dashboard" button on /platform links here) they must get in.
+  if (isPlatformOwner(admin) && !admin.schoolId) redirect('/platform')
   const schoolId = admin.schoolId!
   const db = createSupabaseAdminClient()
 
