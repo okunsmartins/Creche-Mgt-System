@@ -61,8 +61,10 @@ export const serverEnv = {
   },
   // Revolut Pay — optional until credentials are provisioned. When unset, the
   // Revolut payment option is hidden and the order/webhook paths are inert.
-  // Base URL: sandbox = https://sandbox-merchant.revolut.com/api/1.0
-  //           production = https://merchant.revolut.com/api/1.0
+  // Base URL: sandbox = https://sandbox-merchant.revolut.com/api
+  //           production = https://merchant.revolut.com/api
+  // Only the origin is used (the client always calls the dated `/api` endpoints), so
+  // an older value ending in `/api/1.0` behaves the same.
   get revolutApiKey(): string {
     return optionalEnv('REVOLUT_API_KEY')
   },
@@ -70,7 +72,7 @@ export const serverEnv = {
     return optionalEnv('REVOLUT_WEBHOOK_SECRET')
   },
   get revolutApiBaseUrl(): string {
-    return optionalEnv('REVOLUT_API_BASE_URL', 'https://sandbox-merchant.revolut.com/api/1.0')
+    return optionalEnv('REVOLUT_API_BASE_URL', 'https://sandbox-merchant.revolut.com/api')
   },
   get resendApiKey(): string {
     return requireEnv('RESEND_API_KEY')

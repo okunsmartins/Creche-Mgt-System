@@ -31,9 +31,19 @@ export class RevolutApiError extends Error {
   }
 }
 
+/**
+ * The current (dated) Merchant API: `<origin>/api`, e.g.
+ * https://sandbox-merchant.revolut.com/api/orders. Only the ORIGIN of
+ * REVOLUT_API_BASE_URL is used, so an old value ending in `/api/1.0` still works.
+ * The legacy `/api/1.0` endpoints reject API Console keys (`r_test_` / `r_prod_`)
+ * with 401 (verified against the sandbox 2026-11-24).
+ */
+export function revolutMerchantApiBase(): string {
+  return `${revolutApiOrigin()}/api`
+}
+
 function baseUrl(): string {
-  // Trim a trailing slash so path joins are predictable.
-  return serverEnv.revolutApiBaseUrl.replace(/\/+$/, '')
+  return revolutMerchantApiBase()
 }
 
 /**

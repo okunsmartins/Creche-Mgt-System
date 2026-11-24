@@ -25,7 +25,7 @@ merchant and never uses a platform Revolut key for parent payments.
 
 | Variable | Test (now) | Live (go-live) |
 |---|---|---|
-| `REVOLUT_API_BASE_URL` | unset, which defaults to `https://sandbox-merchant.revolut.com/api/1.0` | `https://merchant.revolut.com/api/1.0` |
+| `REVOLUT_API_BASE_URL` | unset, which defaults to `https://sandbox-merchant.revolut.com/api` | `https://merchant.revolut.com/api` (only the host is used; an old `/api/1.0` value still works) |
 | `ENCRYPTION_KEY` | **must be set** (encrypts crèche keys) | same value. Never change it, or saved keys can't be read |
 
 The admin page shows a **Test mode** badge while the base URL is the sandbox. Crèche keys must match the mode:

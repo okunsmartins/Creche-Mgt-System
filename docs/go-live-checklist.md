@@ -91,7 +91,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [ ] **Stripe LIVE**: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`,
       `STRIPE_CONNECT_WEBHOOK_SECRET`, `STRIPE_PRO_MONTHLY_PRICE_ID` (+ `STRIPE_PRO_ANNUAL_PRICE_ID` if offered).
       Currently **test mode**.
-- [ ] **`REVOLUT_API_BASE_URL=https://merchant.revolut.com/api/1.0`** at go-live (unset = sandbox, shows "Test mode").
+- [ ] **`REVOLUT_API_BASE_URL=https://merchant.revolut.com/api`** at go-live (unset = sandbox, shows "Test mode"). Only the host matters: the app always calls the dated `/api` endpoints, because `/api/1.0` rejects API Console keys (fixed 2026-11-24).
 
 > **Changing the subscription price (e.g. €75 → €49.99):** no code change. Create a new monthly Price on the Pro
 > product in Stripe, put its id in `STRIPE_PRO_MONTHLY_PRICE_ID`, redeploy. The homepage, pricing page and subscribe

@@ -96,14 +96,16 @@ async function startFeeCheckout(p: {
   if (p.method === 'revolut' && !apiKey) return { error: REVOLUT_NOT_SET_UP }
   if (apiKey) {
     try {
-      // ext_ref lets the webhook resolve the crèche (see schoolIdFromExtRef).
+      // The reference lets the webhook resolve the crèche (see schoolIdFromExtRef).
+      // The dated API takes it as merchant_order_data.reference (it silently drops
+      // the old merchant_order_ext_ref field).
       const extRef = `${p.kind === 'invoice' ? 'INVPAY' : 'LFPAY'}_${p.subjectId}`
       const created = await revolutPost<{ id: string; checkout_url?: string }>(
         '/orders',
         {
           amount: p.amountCents,
           currency: 'EUR',
-          merchant_order_ext_ref: extRef,
+          merchant_order_data: { reference: extRef },
           metadata,
           redirect_url: p.successUrl,
         },
