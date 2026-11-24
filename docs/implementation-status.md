@@ -18,16 +18,16 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ## Admin two-step sign-in (TOTP MFA), required with a 7-day grace (2026-11-21)
 
-> Spec references: §10 (authentication, least privilege) and the go-live checklist §1 "MFA for admins". The owner chose **required for admins, with a 7-day grace period**. Branch `feat/admin-mfa`, **not merged yet**. **Not yet tested live.**
+> Spec references: §10 (authentication, least privilege) and the go-live checklist §1 "MFA for admins". The owner chose **required for admins, with a 7-day grace period**. **Merged + live** (PR #144, `9d832db`); migration 111 applied. **Verified live 2026-11-24** on the owner's account (details per row).
 
 | Requirement | Status | Evidence | Gap / not verified |
 |---|---|---|---|
-| Admins and the platform owner must use an authenticator app (TOTP), enforced on every admin page and action | 🟡 | `requireAuth` enforces it, so every privileged guard goes through it (`requireAdmin`, `requirePermission`, `requireTeacher`, the `/platform` layout). Unit: `guards.test.ts`, 6 new cases (verify / set-up / grace / ok / parents unaffected / no self-redirect). | Not tested live. |
-| 7-day grace, starting from the later of the go-live date (`ADMIN_MFA_REQUIRED_FROM`, default 2026-11-22) and the day someone became an admin | 🟡 | `mfa-policy.ts`, 13 unit tests (deadline, part-days, invalid dates). | Not tested live. |
-| Set-up page `/mfa/setup` (QR code + manual key, confirmed with the first code) | 🟡 | Builds; actions clear half-finished attempts before a new one. | Needs a real phone: live test with the owner's account. |
-| Code page `/mfa/verify` after each new sign-in | 🟡 | Builds; wrong codes show a clear message; Supabase rate-limits attempts. | Live test. |
-| Grace reminder banner (admin + platform areas) with days left and "Set up now" | 🟡 | `MfaGraceBanner`. | Not seen live. |
-| Owner reset for a lost phone: **Platform → Security** lists every admin's status with a **Reset** button (confirm, then audit `auth.mfa_reset`) | 🟡 | `mfaAdmins.ts`, `mfaActions.ts` (owner-only, and the owner must have passed two-step sign-in). | Live test. |
+| Admins and the platform owner must use an authenticator app (TOTP), enforced on every admin page and action | ✅ | `requireAuth` enforces it, so every privileged guard goes through it (`requireAdmin`, `requirePermission`, `requireTeacher`, the `/platform` layout). Unit: `guards.test.ts`, 6 new cases. **Live:** after set-up, sign out → sign in asked for the code before any page, then let in (owner, 2026-11-24). | The post-grace "must set up" redirect isn't seen live yet (first deadline 29 Nov). |
+| 7-day grace, starting from the later of the go-live date (`ADMIN_MFA_REQUIRED_FROM`, default 2026-11-22) and the day someone became an admin | ✅ | `mfa-policy.ts`, 13 unit tests. **Live:** on 24 Nov the banner and Platform → Security show "5 days left (until 29 November)". | — |
+| Set-up page `/mfa/setup` (QR code + manual key, confirmed with the first code) | ✅ | **Live 2026-11-24:** the owner scanned with an authenticator app and confirmed; a `totp:verified` factor exists on the owner account only; audit `auth.mfa_enrolled` recorded (migration 111 working). | — |
+| Code page `/mfa/verify` after each new sign-in | ✅ | **Live 2026-11-24:** owner signed in → asked for the code → let in. | The wrong-code message isn't seen live. |
+| Grace reminder banner (admin + platform areas) with days left and "Set up now" | ✅ | **Live:** shown on the admin dashboard and on /platform; gone after set-up. | — |
+| Owner reset for a lost phone: **Platform → Security** lists every admin's status with a **Reset** button (confirm, then audit `auth.mfa_reset`) | ✅ list / 🟡 reset | **Live:** Platform → Security lists all 3 admins (owner "Set up" + Reset; Tracy and Flomat admin "Not yet · 5 days left"). | **Reset not clicked live** (it would remove the owner's own factor). |
 
 **How it behaves:**
 - Admins without an authenticator see the banner for 7 days. After that, any admin page sends them to `/mfa/setup`. It's never a lock-out: they can still sign in with their password and set it up there.
@@ -48,7 +48,12 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 **Password reset with two-step sign-in:** if Supabase refuses the change from a password-only session (`insufficient_aal`), the admin is sent to `/mfa/verify?next=/reset-password` and back. Unit-tested in `update-password-mfa.test.ts`; whether Supabase actually requires it isn't verified live.
 
-**Outstanding:** a live end-to-end test (owner enrols, signs out, signs in with a code; owner reset). Backup/recovery codes. Optionally, requiring it for staff (teachers).
+**Outstanding:**
+- The Reset button and the post-grace redirect live (first deadline 29 Nov for Tracy and the Flomat admin).
+- The password-reset `insufficient_aal` path live.
+- Backup/recovery codes.
+- The owner's account has no first/last name (shows "—").
+- Tell Tracy before 29 Nov. Optionally, requiring it for staff (teachers).
 
 **Commands:**
 
