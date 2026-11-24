@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Shield, LogOut, LogIn, LayoutDashboard } from 'lucide-react'
+import { Shield, LogOut, LogIn, LayoutDashboard, Building2 } from 'lucide-react'
 import { MobileNav } from './MobileNav'
 import { SchoolCrest } from './SchoolCrest'
 import { Mascot } from '@/components/marketing/Mascot'
@@ -41,6 +41,7 @@ export function SiteHeader({
   tenantSlug,
   isAuthenticated = false,
   portalHref,
+  platformHref,
 }: {
   schoolName?: string | null
   schoolLogoUrl?: string | null
@@ -52,6 +53,8 @@ export function SiteHeader({
   isAuthenticated?: boolean
   /** Signed in to a crèche → its portal home; shown as "My portal" on the main-site nav. */
   portalHref?: string | undefined
+  /** Platform owner only: link to /platform, shown as "Platform" on the main-site nav. */
+  platformHref?: string | undefined
 }) {
   const pathname = usePathname()
   // No school identified (apex host, signed out) → platform branding, not a
@@ -166,6 +169,12 @@ export function SiteHeader({
                       My portal
                     </Link>
                   )}
+                  {platformHref && (
+                    <Link href={platformHref} className={pillOutline}>
+                      <Building2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Platform
+                    </Link>
+                  )}
                   <form action={signOutAction}>
                     <button type="submit" className={pillOutline}>
                       <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
@@ -204,6 +213,7 @@ export function SiteHeader({
                 ? [
                     ...platformLinks,
                     ...(portalHref ? [{ href: portalHref, label: 'My portal' }] : []),
+                    ...(platformHref ? [{ href: platformHref, label: 'Platform' }] : []),
                   ]
                 : [
                     ...platformLinks,

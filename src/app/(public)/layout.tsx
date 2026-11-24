@@ -4,6 +4,7 @@ import { getPublicViewerContext } from '@/lib/tenant/server'
 import { getSessionUser } from '@/lib/auth/session'
 import { getPlatformSocialLinks, getSchoolSocialLinks } from '@/lib/social/queries'
 import { existingPortalFor } from '@/lib/onboarding/existing-portal'
+import { isPlatformOwner } from '@/lib/platform/owner'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   // A crèche is shown only when the URL names one (its subdomain or `/s/<slug>`);
@@ -27,6 +28,7 @@ export default async function PublicLayout({ children }: { children: React.React
         tenantSlug={tenantSlug ?? undefined}
         isAuthenticated={user !== null}
         portalHref={existingPortalFor(user)?.href}
+        platformHref={isPlatformOwner(user) ? '/platform' : undefined}
       />
       <main id="main-content" className="flex-1">
         {children}

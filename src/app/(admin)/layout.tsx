@@ -19,7 +19,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <AdminTopBar user={user} logoUrl={logoUrl} siteHref={siteHref} />
+      <AdminTopBar user={user} logoUrl={logoUrl} siteHref={siteHref} isOwner={isOwner} />
       <div className="flex min-w-0 flex-1 overflow-hidden">
         <AdminSidebar user={user} isOwner={isOwner} fundingEnabled={hiveEnabled} />
         <div className="flex min-w-0 flex-1 flex-col overflow-auto">
