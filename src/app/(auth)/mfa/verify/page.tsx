@@ -4,6 +4,7 @@ import { requireAuthForMfa } from '@/lib/auth/guards'
 import { signOutAction } from '@/lib/auth/actions'
 import { MfaVerifyForm } from '@/components/auth/MfaVerifyForm'
 import { safeNextPath } from '@/lib/auth/confirm-link'
+import { privilegedHomeFor } from '@/lib/auth/landing'
 
 export const metadata: Metadata = { title: 'Enter your code' }
 
@@ -18,7 +19,7 @@ export default async function MfaVerifyPage({
   const next = raw ? safeNextPath(raw, '') || undefined : undefined
   if (!user.mfa) redirect('/')
   if (user.mfa.nextLevel !== 'aal2') redirect('/mfa/setup')
-  if (user.mfa.currentLevel === 'aal2') redirect(next ?? '/admin/dashboard')
+  if (user.mfa.currentLevel === 'aal2') redirect(next ?? privilegedHomeFor(user))
 
   return (
     <div className="w-full max-w-sm space-y-5">

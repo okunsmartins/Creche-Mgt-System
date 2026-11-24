@@ -8,13 +8,11 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logging'
 import { createCorrelationId } from '@/lib/utils'
-import { isPlatformOwner } from '@/lib/platform/owner'
 import type { SessionUser } from '@/types'
 import { requireAuthForMfa } from './guards'
 import { normaliseTotpCode } from './mfa-policy'
 import { safeNextPath } from './confirm-link'
-
-const ADMIN_ROLE_NAMES = ['super_admin', 'school_admin', 'finance_admin']
+import { privilegedHomeFor } from './landing'
 
 export type MfaEnrollState =
   | null
@@ -27,12 +25,7 @@ const WRONG_CODE =
   "That code didn't work. Use the newest code from your authenticator app, and check your phone's clock is set automatically."
 
 /** Where a privileged user goes once two-step sign-in is satisfied. */
-function homeFor(user: SessionUser): string {
-  // The owner lands on Platform (it has a button to their crèche dashboard).
-  if (isPlatformOwner(user)) return '/platform'
-  if (user.roles.some((r) => ADMIN_ROLE_NAMES.includes(r))) return '/admin/dashboard'
-  return '/'
-}
+const homeFor = (user: SessionUser): string => privilegedHomeFor(user)
 
 /** Begin set-up: create a new (unverified) authenticator factor and return its QR code. */
 export async function startMfaEnrollmentAction(): Promise<MfaEnrollState> {
