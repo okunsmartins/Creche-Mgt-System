@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Bell, CircleHelp, ExternalLink, Search } from 'lucide-react'
+import { Bell, Building2, CircleHelp, ExternalLink, Search } from 'lucide-react'
 import type { SessionUser } from '@/types'
 import { schoolInitials } from '@/lib/utils'
 
@@ -15,11 +15,14 @@ export function AdminTopBar({
   user,
   logoUrl,
   siteHref = '/',
+  isOwner = false,
 }: {
   user: SessionUser
   logoUrl?: string | null
   /** The crèche's own public page (`/s/<subdomain>`). */
   siteHref?: string
+  /** Platform owner: show the "Platform" button (owner-only, also guarded on /platform). */
+  isOwner?: boolean
 }) {
   const schoolName = user.schoolName ?? 'Creche Wise'
   const first = user.profile?.firstName ?? ''
@@ -71,6 +74,17 @@ export function AdminTopBar({
         </form>
 
         <div className="flex shrink-0 items-center gap-2">
+          {isOwner && (
+            <Link
+              href="/platform"
+              title="Platform: owner overview of all crèches"
+              aria-label="Platform: owner overview of all crèches"
+              className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[#1f2b57] px-3 text-sm font-bold text-white shadow-[inset_0_-3px_0_rgba(0,0,0,0.25)] transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-sunny"
+            >
+              <Building2 className="h-[18px] w-[18px]" aria-hidden="true" />
+              <span className="hidden sm:inline">Platform</span>
+            </Link>
+          )}
           <Link
             href="/admin/dashboard#attention"
             aria-label="Alerts — see what needs attention"

@@ -36,3 +36,17 @@ describe('SiteHeader on the main Creche Wise site', () => {
     expect(nav.getByRole('link', { name: /Exit portal/ })).toHaveAttribute('href', '/s/reset')
   })
 })
+
+describe('SiteHeader: owner-only Platform button', () => {
+  it('the platform owner sees a Platform button next to My portal', () => {
+    render(<SiteHeader isAuthenticated portalHref="/admin/dashboard" platformHref="/platform" />)
+    const nav = within(mainNav())
+    expect(nav.getByRole('link', { name: /Platform/ })).toHaveAttribute('href', '/platform')
+    expect(nav.getByRole('link', { name: /My portal/ })).toHaveAttribute('href', '/admin/dashboard')
+  })
+
+  it('other signed-in users do not see it', () => {
+    render(<SiteHeader isAuthenticated portalHref="/admin/dashboard" />)
+    expect(within(mainNav()).queryByRole('link', { name: /^Platform$/ })).toBeNull()
+  })
+})
