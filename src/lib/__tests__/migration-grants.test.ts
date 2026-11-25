@@ -12,6 +12,8 @@
 //  2. From migration STRICT_FROM on, that grant must be in the SAME migration file.
 //  3. From migration STRICT_FROM on, any GRANT … TO anon must be marked deliberate with
 //     a `-- public-on-purpose` comment on the line that ends the statement.
+//  4. From migration MFA_FROM on, a new table gets the two-step sign-in rule in the SAME
+//     migration: `select public.ensure_mfa_policy('<table>');` (see migration 112).
 
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
@@ -21,6 +23,8 @@ const MIGRATIONS_DIR = path.resolve(process.cwd(), 'supabase/migrations')
 /** First migration number the stricter rules (2, 3) apply to. */
 const STRICT_FROM = 111
 const PUBLIC_MARK = 'public-on-purpose'
+/** First migration number rule 4 applies to (112 added the rule to every existing table). */
+const MFA_FROM = 113
 
 interface Migration {
   name: string
@@ -81,6 +85,12 @@ export function unmarkedAnonGrants(sql: string): string[] {
   return hits
 }
 
+/** Tables given the `mfa_required` policy via ensure_mfa_policy('<table>') in this SQL. */
+export function tablesWithMfaPolicy(sql: string): Set<string> {
+  const re = /ensure_mfa_policy\s*\(\s*'(?:public\.)?"?([a-z_0-9]+)"?'\s*\)/gi
+  return new Set([...stripSqlComments(sql).matchAll(re)].map((m) => m[1]!.toLowerCase()))
+}
+
 function loadMigrations(): Migration[] {
   return fs
     .readdirSync(MIGRATIONS_DIR)
@@ -139,6 +149,17 @@ describe('migration grant guard: review 2026-11-20 regressions', () => {
   })
 })
 
+describe('migration guard: two-step sign-in rule (rule 4)', () => {
+  it('finds tables given the policy, ignoring comments', () => {
+    const sql = [
+      "select public.ensure_mfa_policy('things');",
+      "SELECT ensure_mfa_policy( 'public.widgets' );",
+      "-- select public.ensure_mfa_policy('ghost');",
+    ].join('\n')
+    expect([...tablesWithMfaPolicy(sql)].sort()).toEqual(['things', 'widgets'])
+  })
+})
+
 describe('supabase/migrations', () => {
   const migrations = loadMigrations()
 
@@ -180,6 +201,21 @@ describe('supabase/migrations', () => {
     expect(
       unmarked,
       `anon = anyone on the internet. Only grant it for data that is public, with "-- ${PUBLIC_MARK}"`,
+    ).toEqual([])
+  })
+
+  it(`from ${MFA_FROM} on, a new table gets the two-step sign-in rule (rule 4)`, () => {
+    const missing = migrations
+      .filter((m) => m.number >= MFA_FROM)
+      .flatMap((m) => {
+        const covered = tablesWithMfaPolicy(m.sql)
+        return createdTables(m.sql)
+          .filter((t) => !covered.has(t))
+          .map((t) => `${m.name}: ${t}`)
+      })
+    expect(
+      missing,
+      "Add `select public.ensure_mfa_policy('<table>');` after enabling RLS (migration 112)",
     ).toEqual([])
   })
 })

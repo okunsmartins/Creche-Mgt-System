@@ -12,6 +12,32 @@ import { registerRevolutWebhook, removeRevolutWebhooks } from './webhooks'
 export type RevolutSettingsState = { error?: string; success?: boolean } | null
 
 /**
+ * Audit trail for connecting / replacing / disconnecting Revolut. Payment-account
+ * changes decide where parents' money goes, so the crèche can always see who changed
+ * it and when. Never records the key or secret. Best-effort: a failed audit write is
+ * logged, not shown to the admin (the change itself already succeeded).
+ */
+async function auditRevolutChange(
+  admin: { id: string; email?: string | null; schoolId: string },
+  change: 'connected' | 'key_replaced' | 'disconnected',
+  extra: Record<string, string | boolean> = {},
+): Promise<void> {
+  const adminClient = createSupabaseAdminClient()
+  const { error } = await adminClient.from('audit_logs').insert({
+    school_id: admin.schoolId,
+    actor_id: admin.id,
+    actor_email: admin.email ?? '',
+    action: 'settings.updated',
+    resource_type: 'school',
+    resource_id: admin.schoolId,
+    metadata: { area: 'revolut', change, mode: isRevolutSandbox() ? 'sandbox' : 'live', ...extra },
+    correlation_id: null,
+    ip_address: null,
+  })
+  if (error) logger.error('revolut_settings_audit_failed', { error: error.message })
+}
+
+/**
  * Connect a crèche's own Revolut Business account. Admin-only.
  *
  * The admin pastes ONE thing: their Merchant API secret key. We then register
@@ -37,6 +63,9 @@ export async function saveRevolutCredentialsAction(
       error: 'That’s your Public key. Paste the API key instead (Revolut API Console → API keys).',
     }
   }
+
+  // Connecting for the first time, or swapping the key? (For the audit trail.)
+  const wasConnected = Boolean(await resolveOwnRevolutApiKey(admin.schoolId))
 
   let signingSecret = manualSecret
   if (!signingSecret) {
@@ -67,6 +96,11 @@ export async function saveRevolutCredentialsAction(
     return { error: 'Could not save your Revolut details. Please try again.' }
   }
   logger.info('revolut_creds_saved', { schoolId: admin.schoolId, auto: !manualSecret })
+  await auditRevolutChange(
+    { id: admin.id, email: admin.email, schoolId: admin.schoolId },
+    wasConnected ? 'key_replaced' : 'connected',
+    { webhook: manualSecret ? 'manual_secret' : 'automatic' },
+  )
   revalidatePath('/admin/payments/connect')
   return { success: true }
 }
@@ -93,6 +127,10 @@ export async function disconnectRevolutAction(
     return { error: 'Could not remove your Revolut details. Please try again.' }
   }
   logger.info('revolut_creds_cleared', { schoolId: admin.schoolId })
+  await auditRevolutChange(
+    { id: admin.id, email: admin.email, schoolId: admin.schoolId },
+    'disconnected',
+  )
   revalidatePath('/admin/payments/connect')
   return { success: true }
 }
