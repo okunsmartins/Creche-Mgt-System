@@ -104,4 +104,23 @@ describe('removeRevolutWebhooks', () => {
     failWith = 500
     expect(await removeRevolutWebhooks('sk_x')).toBe(0)
   })
+
+  it('reads the dated API list shape { webhooks: [...] } (seen live 2026-11-24)', async () => {
+    vi.mocked(fetch).mockImplementation((_url, init) =>
+      init?.method === 'GET'
+        ? respond(200, {
+            webhooks: [
+              { id: 'wh_ours', url: 'https://crechewise.com/api/webhooks/revolut' },
+              { id: 'wh_other', url: 'https://some-other-shop.ie/hook' },
+            ],
+          })
+        : respond(204, undefined),
+    )
+    expect(await removeRevolutWebhooks('r_test_x')).toBe(1)
+    const deletes = vi
+      .mocked(fetch)
+      .mock.calls.filter(([, init]) => init?.method === 'DELETE')
+      .map(([url]) => url)
+    expect(deletes).toEqual(['https://sandbox-merchant.revolut.com/api/webhooks/wh_ours'])
+  })
 })

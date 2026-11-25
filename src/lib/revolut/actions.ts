@@ -129,7 +129,8 @@ async function buildRevolutCheckoutUrl(
         // Echoed back for reconciliation. Suffixed with amount_paid so each
         // instalment gets a distinct ext_ref (the webhook maps via metadata.order_id,
         // not this field).
-        merchant_order_ext_ref: `${order.order_reference}-${order.amount_paid_cents}`,
+        // (Dated API field; the old merchant_order_ext_ref is silently dropped.)
+        merchant_order_data: { reference: `${order.order_reference}-${order.amount_paid_cents}` },
         metadata: {
           order_id: orderId,
           order_reference: order.order_reference,

@@ -26,6 +26,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // `server-only` is resolved by Next.js at build time; in unit tests it's a no-op.
+      'server-only': path.resolve(__dirname, './src/test/server-only-stub.ts'),
     },
   },
 })

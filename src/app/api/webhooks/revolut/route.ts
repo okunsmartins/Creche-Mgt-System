@@ -6,6 +6,7 @@ import { verifyRevolutSignature } from '@/lib/revolut/signature'
 import { revolutGet } from '@/lib/revolut/client'
 import {
   schoolIdFromExtRef,
+  schoolIdFromWebhookSignature,
   resolveRevolutWebhookSecret,
   resolveRevolutApiKey,
 } from '@/lib/revolut/perSchool'
@@ -14,7 +15,8 @@ import { recordFeePayment } from '@/lib/fees/record-payment'
 // Excluded from auth middleware (see middleware.ts matcher). Raw body is read
 // BEFORE any JSON parse — required for HMAC signature verification.
 //
-// Revolut webhook body: { event, order_id, merchant_order_ext_ref?, timestamp? }.
+// Revolut webhook body: { event, order_id, merchant_order_ext_ref?, timestamp? }
+// (the crèche is found from the reference, else from whose secret signed it).
 // The body carries NO amount, so ORDER_COMPLETED re-fetches the order from the
 // Merchant API to verify the confirmed amount/state before marking paid.
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -23,7 +25,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Parse BEFORE verifying so we can resolve WHICH secret to verify against
   // (per-school Revolut). The payload is never acted on until the signature
   // checks out, so parsing first is safe.
-  let payload: { event?: string; order_id?: string; merchant_order_ext_ref?: string }
+  let payload: {
+    event?: string
+    order_id?: string
+    merchant_order_ext_ref?: string
+    merchant_order_data?: { reference?: string }
+  }
   try {
     payload = JSON.parse(rawBody)
   } catch {
@@ -37,28 +44,43 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Missing event or order_id' }, { status: 400 })
   }
 
-  // Per-school Revolut: resolve the school from the ext ref, then use its OWN
-  // webhook secret + API key (falling back to the platform credentials).
-  const schoolId = await schoolIdFromExtRef(payload.merchant_order_ext_ref)
-  const webhookSecret = await resolveRevolutWebhookSecret(schoolId)
-  const revolutApiKey = await resolveRevolutApiKey(schoolId)
+  const verify = (secret: string) =>
+    verifyRevolutSignature({
+      rawBody,
+      signatureHeader: request.headers.get('revolut-signature'),
+      timestampHeader: request.headers.get('revolut-request-timestamp'),
+      secret,
+    })
 
-  if (!webhookSecret) {
-    // Fail closed: without a signing secret we cannot trust any payload.
-    logger.error('revolut_webhook_no_secret_configured')
-    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+  // Per-school Revolut: find the crèche, then use its OWN webhook secret + API key.
+  // 1) The order reference names it (INVPAY_/LFPAY_/order reference). The dated API
+  //    may send it as merchant_order_data.reference, or not at all.
+  const reference = payload.merchant_order_ext_ref ?? payload.merchant_order_data?.reference
+  let schoolId = await schoolIdFromExtRef(reference)
+  const webhookSecret = await resolveRevolutWebhookSecret(schoolId)
+  let valid = !!webhookSecret && verify(webhookSecret)
+
+  // 2) Otherwise the signature does: only the crèche whose secret signed it matches.
+  let secretsChecked = 0
+  if (!valid) {
+    const bySig = await schoolIdFromWebhookSignature(verify)
+    secretsChecked = bySig.secretsChecked
+    if (bySig.schoolId) {
+      schoolId = bySig.schoolId
+      valid = true
+    }
   }
 
-  const valid = verifyRevolutSignature({
-    rawBody,
-    signatureHeader: request.headers.get('revolut-signature'),
-    timestampHeader: request.headers.get('revolut-request-timestamp'),
-    secret: webhookSecret,
-  })
   if (!valid) {
+    if (!webhookSecret && secretsChecked === 0) {
+      // Fail closed: without a signing secret we cannot trust any payload.
+      logger.error('revolut_webhook_no_secret_configured')
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 })
+    }
     logger.warn('revolut_webhook_signature_invalid')
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
+  const revolutApiKey = await resolveRevolutApiKey(schoolId)
 
   const adminClient = createSupabaseAdminClient()
 

@@ -75,8 +75,15 @@ export async function removeRevolutWebhooks(
   const url = revolutWebhookUrl()
   let removed = 0
   try {
-    const list = await revolutRequest<RevolutWebhook[]>('GET', '/api/webhooks', apiKey)
-    for (const w of Array.isArray(list) ? list : []) {
+    const list = await revolutRequest<RevolutWebhook[] | { webhooks?: RevolutWebhook[] }>(
+      'GET',
+      '/api/webhooks',
+      apiKey,
+    )
+    // The dated API wraps the list: { "webhooks": [...] } (seen 2026-11-24); older
+    // responses were a bare array. Accept both.
+    const hooks = Array.isArray(list) ? list : (list.webhooks ?? [])
+    for (const w of hooks) {
       if (w.url === url) {
         await revolutRequest('DELETE', `/api/webhooks/${encodeURIComponent(w.id)}`, apiKey)
         removed++

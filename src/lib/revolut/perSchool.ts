@@ -60,6 +60,31 @@ export async function resolveOwnRevolutApiKey(schoolId: string): Promise<string 
   return safeDecrypt(enc?.revolut_api_key_enc)
 }
 
+/**
+ * Identify the crèche behind a webhook by its SIGNATURE: try each crèche's own
+ * webhook signing secret and return the one that verifies. Used when the order
+ * reference can't name the crèche (the dated API drops `merchant_order_ext_ref`).
+ * Only the crèche whose secret signed the body can match, so this never trusts
+ * anything an attacker controls. `verify` is the caller's signature check.
+ */
+export async function schoolIdFromWebhookSignature(
+  verify: (secret: string) => boolean,
+): Promise<{ schoolId: string | null; secretsChecked: number }> {
+  const adminClient = createSupabaseAdminClient()
+  const { data } = await adminClient
+    .from('schools')
+    .select('id, revolut_webhook_secret_enc')
+    .not('revolut_webhook_secret_enc', 'is', null)
+  let secretsChecked = 0
+  for (const s of (data ?? []) as { id: string; revolut_webhook_secret_enc: string | null }[]) {
+    const secret = safeDecrypt(s.revolut_webhook_secret_enc)
+    if (!secret) continue
+    secretsChecked++
+    if (verify(secret)) return { schoolId: s.id, secretsChecked }
+  }
+  return { schoolId: null, secretsChecked }
+}
+
 /** Whether the school has configured its OWN Revolut key (vs relying on platform). */
 export async function schoolHasOwnRevolut(schoolId: string): Promise<boolean> {
   const enc = await loadEnc(schoolId)
