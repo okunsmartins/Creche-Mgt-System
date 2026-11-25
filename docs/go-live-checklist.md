@@ -22,15 +22,15 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [ ] **(You) GitHub Pro (~$4/mo), then make `Creche-Mgt-System` private.** Pro first, so `protect-main` keeps being enforced. Settings → General → Danger Zone → Change visibility.
 
 ### Step 2: Tests left (together, one step at a time)
-- [ ] Revolut sandbox: connect Angels Nest → parent pays with "Pay with Revolut" → Paid + receipt (§3).
-- [ ] Revolut: a declined card fails cleanly; a Revolut **refund** works (never run yet).
+- [x] Revolut sandbox: connect Angels Nest → parent pays with "Pay with Revolut" → Paid + receipt (§3). **Passed live 2026-11-25** after PR #149: card 4929…5709, €1 INV-2026-000028 → ORDER_AUTHORISED + ORDER_COMPLETED webhooks processed → invoice paid → receipt email. (Revolut Pay itself can't complete in the sandbox; card only.)
+- [ ] Revolut: a Revolut **refund** works (Admin → Fees → child → Payments → Refund), then a declined card fails cleanly.
 - [ ] Staff opening a parent link sees "This link is for parents" (PR #123).
 - [x] Admin → **Refunds** lists the four 14–15 Nov test fee refunds once each, total €3.00 (verified live 2026-11-21, after PRs #136 + #141).
 
 ### Step 3: Settings (You, ~5 min each)
 - [x] Supabase: **Confirm email ON** (2026-11-21; live sign-up → email → confirm → sign-in tested; test account deleted).
 - [x] **MFA required for admins**: see §1 (live + verified 2026-11-24).
-- [ ] Vercel: **`ENCRYPTION_KEY`** set (§1).
+- [x] Vercel: **`ENCRYPTION_KEY`** set (§1). Proven 2026-11-24: Revolut connect stored the key encrypted and payments decrypt it.
 - [x] Supabase SQL editor: **migration 110** applied 2026-11-20 (PR #138); `node scripts/anon-read-sweep.mjs` → only `activities` is public.
 
 ### Step 4: Code (Claude; PRs for you to merge)
@@ -40,7 +40,8 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [x] **#15** security spot-checks: 3 public tables closed by migration 110 ([PR #138](https://github.com/okunsmartins/Creche-Mgt-System/pull/138), applied + re-checked); client-bundle secret scan **clean** (see §4).
 - [x] **#16** this checklist updated with the verified 14–15 Nov tests.
 - [x] Owner-only buttons between Platform and the crèche dashboard (PRs #146, #147, live). The dashboard button was only clicked live **before** the #147 fix; recheck after deploy.
-- [ ] **Two-step sign-in at the database level** (review 2026-11-24, see §4). Recommended before launch; needs your OK for **migration 112**.
+- [ ] **Two-step sign-in at the database level**: **migration 112** built (PR `feat/mfa-db-enforcement`, owner approved 2026-11-24). **You:** apply it in the SQL editor, then run `supabase/checks/112_mfa_check.sql` and `node scripts/verify-mfa-policies.mjs` (see §4).
+- [x] Revolut connect / key replaced / disconnect written to the crèche's audit log (same PR; no migration).
 
 ### Step 5: Tidy-up before Tracy uses it for real
 - [ ] Test child MichaelTest JordanTest: **void INV-2026-000028 and the 14 Nov €1 late fee** (owed again after the refund tests), set the child inactive, remove the owner's mobile.
@@ -158,7 +159,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
 - [x] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20: found `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` publicly readable (inherited policies) → **migration 110 applied**; re-run shows only `activities` (public on purpose). Service-role reads unaffected.
 - [x] No secrets in the client bundle (only `NEXT_PUBLIC_*`). 2026-11-20: production build of `main` @ `3c96a20`; 224 files in `.next/static` scanned for every server-only `.env.local` value (13) and for Stripe/Revolut/webhook/service-role/private-key patterns. **0 hits.**
-- [ ] **MFA at the database level** (found in review 2026-11-24, not reproduced live). The app enforces two-step sign-in on every admin page, action and API route. But Supabase's own data API (public anon key + a password-only sign-in) still honours the inherited admin RLS policies (`is_admin()` / `is_admin_of_school()`, e.g. `010_rls_policies.sql`). So someone with **only an admin's password** could read that crèche's data without the code. Fix: migration 112, a RESTRICTIVE policy on every RLS table requiring `aal2` **for users who have a verified factor** (Supabase's documented pattern). Parents, staff and admins still in grace are unaffected.
+- [ ] **MFA at the database level** (found in review 2026-11-24). Someone with only an admin's **password** could sign in to Supabase's data API directly (anon key, aal1) and read what the inherited admin RLS policies allow, without the code. **Fix built: migration 112** adds one RESTRICTIVE policy `mfa_required` to every RLS table: users with a verified authenticator need an `aal2` session; parents, staff and admins in grace are unaffected; the app's service-role queries are unaffected. **Not applied yet.** After applying: `supabase/checks/112_mfa_check.sql` (read-only; expect gaps 0 · A 0 · B > 0 · C > 0) and `node scripts/verify-mfa-policies.mjs .env.local` (expect `0 gaps`). Rollback SQL is in the migration header.
 - [ ] DPIA + privacy notice reviewed for children's data.
 
 ### 4a. AIM module — keep OFF until signed off
