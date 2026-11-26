@@ -14,6 +14,10 @@
 //     a `-- public-on-purpose` comment on the line that ends the statement.
 //  4. From migration MFA_FROM on, a new table gets the two-step sign-in rule in the SAME
 //     migration: `select public.ensure_mfa_policy('<table>');` (see migration 112).
+//  5. From migration FN_FROM on, a new function in `public` revokes EXECUTE from anon in
+//     the SAME migration (Supabase grants it to anon by default, and revoking from PUBLIC
+//     doesn't remove that), unless its `create function` line is marked
+//     `-- public-on-purpose`. Found live after migration 112 (fixed by 113).
 
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
@@ -25,6 +29,8 @@ const STRICT_FROM = 111
 const PUBLIC_MARK = 'public-on-purpose'
 /** First migration number rule 4 applies to (112 added the rule to every existing table). */
 const MFA_FROM = 113
+/** First migration number rule 5 applies to. */
+const FN_FROM = 113
 
 interface Migration {
   name: string
@@ -89,6 +95,51 @@ export function unmarkedAnonGrants(sql: string): string[] {
 export function tablesWithMfaPolicy(sql: string): Set<string> {
   const re = /ensure_mfa_policy\s*\(\s*'(?:public\.)?"?([a-z_0-9]+)"?'\s*\)/gi
   return new Set([...stripSqlComments(sql).matchAll(re)].map((m) => m[1]!.toLowerCase()))
+}
+
+/** Functions created in the public schema (or unqualified), with their raw line. */
+export function createdFunctions(sql: string): { name: string; line: string }[] {
+  // Blank out comments but keep positions, so the raw line (with any marker) is found.
+  const code = sql
+    .replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '))
+    .replace(/--[^\n]*/g, (c) => ' '.repeat(c.length))
+  const re =
+    /create\s+(?:or\s+replace\s+)?function\s+(?:"?([a-z_0-9]+)"?\.)?"?([a-z_0-9]+)"?\s*\(/gi
+  return [...code.matchAll(re)]
+    .filter((m) => !m[1] || m[1].toLowerCase() === 'public')
+    .map((m) => {
+      const lineStart = sql.lastIndexOf('\n', m.index!) + 1
+      const lineEnd = sql.indexOf('\n', m.index!)
+      return {
+        name: m[2]!.toLowerCase(),
+        line: sql.slice(lineStart, lineEnd === -1 ? undefined : lineEnd),
+      }
+    })
+}
+
+/** Functions that get `REVOKE … ON FUNCTION … FROM … anon` in this SQL. */
+export function functionsRevokedFromAnon(sql: string): Set<string> {
+  const out = new Set<string>()
+  const re = /revoke\s+[^;]*?\bon\s+function\s+([^;]*?)\s+from\s+([^;]*);/gi
+  for (const m of stripSqlComments(sql).matchAll(re)) {
+    if (
+      !m[2]!
+        .toLowerCase()
+        .split(/[\s,]+/)
+        .includes('anon')
+    )
+      continue
+    // Drop argument lists first: `f(text, int), g()` → `f, g`.
+    for (const f of m[1]!.replace(/\([^)]*\)/g, '').split(',')) {
+      const name = f
+        .trim()
+        .replace(/^public\./i, '')
+        .replace(/"/g, '')
+        .toLowerCase()
+      if (name) out.add(name)
+    }
+  }
+  return out
 }
 
 function loadMigrations(): Migration[] {
@@ -160,6 +211,29 @@ describe('migration guard: two-step sign-in rule (rule 4)', () => {
   })
 })
 
+describe('migration guard: function access (rule 5)', () => {
+  it('finds public functions and anon revokes, ignoring comments and other schemas', () => {
+    const sql = [
+      'create or replace function public.a(p text, q int) returns int language sql as $$ select 1 $$;',
+      'CREATE FUNCTION b() returns int language sql as $$ select 1 $$;',
+      'create function private.c() returns int language sql as $$ select 1 $$;',
+      '-- create function public.ghost() returns int;',
+      'revoke all on function public.a(text, int), b() from public, anon, authenticated;',
+    ].join('\n')
+    expect(createdFunctions(sql).map((f) => f.name)).toEqual(['a', 'b'])
+    expect([...functionsRevokedFromAnon(sql)].sort()).toEqual(['a', 'b'])
+  })
+  it('revoking from PUBLIC only does not count (the 112 mistake)', () => {
+    const sql = 'revoke all on function public.mfa_satisfied() from public;'
+    expect(functionsRevokedFromAnon(sql).size).toBe(0)
+  })
+  it('keeps the raw line so a public-on-purpose marker can be seen', () => {
+    const sql =
+      'create function public.open_hours() returns int -- public-on-purpose\nlanguage sql as $$ select 1 $$;'
+    expect(createdFunctions(sql)[0]!.line).toContain('public-on-purpose')
+  })
+})
+
 describe('supabase/migrations', () => {
   const migrations = loadMigrations()
 
@@ -216,6 +290,21 @@ describe('supabase/migrations', () => {
     expect(
       missing,
       "Add `select public.ensure_mfa_policy('<table>');` after enabling RLS (migration 112)",
+    ).toEqual([])
+  })
+
+  it(`from ${FN_FROM} on, a new function revokes EXECUTE from anon (rule 5)`, () => {
+    const missing = migrations
+      .filter((m) => m.number >= FN_FROM)
+      .flatMap((m) => {
+        const revoked = functionsRevokedFromAnon(m.sql)
+        return createdFunctions(m.sql)
+          .filter((f) => !revoked.has(f.name) && !f.line.includes(PUBLIC_MARK))
+          .map((f) => `${m.name}: ${f.name}`)
+      })
+    expect(
+      missing,
+      `Supabase lets anon call new functions by default: add "revoke execute on function public.<fn>(…) from anon;" (or mark the create line "-- ${PUBLIC_MARK}")`,
     ).toEqual([])
   })
 })

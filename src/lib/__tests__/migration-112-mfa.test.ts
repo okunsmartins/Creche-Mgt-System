@@ -50,6 +50,15 @@ describe('migration 112: two-step sign-in in the database', () => {
       )
       expect(sql).not.toMatch(/grant execute on function public\.mfa_satisfied\(\) to [^;]*anon/)
     })
+    it('anon is revoked explicitly by 113 (Supabase grants new functions to anon by default)', () => {
+      // Found live 2026-11-26: revoking from PUBLIC left the direct anon grant in place.
+      const fix = fs.readdirSync(dir).find((f) => f.startsWith('113_'))!
+      const fixSql = stripSqlComments(fs.readFileSync(path.join(dir, fix), 'utf8'))
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+      expect(fixSql).toContain('revoke execute on function public.mfa_satisfied() from anon;')
+      expect(fixSql).not.toMatch(/\b(grant|create|drop|alter)\b/)
+    })
     it('runs as the owner with a locked search_path, so API roles never need auth-schema access', () => {
       // Invoker rights would make every signed-in query fail if `authenticated` can't
       // read auth.mfa_factors. Definer is safe here: yes/no about the caller's own factors.

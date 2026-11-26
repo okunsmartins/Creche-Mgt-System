@@ -6,7 +6,7 @@
 > [design/reuse-map.md](design/reuse-map.md). Tickets: [backlog/p3-fee-subvention-tickets.md](backlog/p3-fee-subvention-tickets.md).
 
 **Project:** Creche Wise — Crèche Management Platform (First Stack Solutions)
-**Last updated:** 2026-11-25 (**Revolut works end to end in the sandbox**: parent paid €1 with Pay with Revolut → webhook → invoice paid → receipt, after PR #149 fixed the legacy-API 401. **Migration 112** (MFA enforced in the database) + Revolut settings audit built on `feat/mfa-db-enforcement`, unit-tested, **not applied**. Revolut refund + declined card not yet run. See "2026-11-25". Earlier, 2026-11-24: **review of PRs #143–#147**: sign-up copy, admin MFA, owner Platform ↔ dashboard buttons. One redirect fixed on branch `chore/review-2026-11-24`; **a database-level MFA gap was found and is documented, not fixed** (needs migration 112 with your OK). The Revolut sandbox test has started: sandbox account and Merchant key created, not yet connected. See "Review 2026-11-24". Earlier, 2026-11-20: **end-of-month wrap-up** PRs #135–#140 merged: fee refunds on Admin → Refunds, refund idempotency + Connect account check, standalone cleanup + local secret hook, **migration 110 applied** (3 public tables closed; anon sweep clean), migration grant guard for Supabase's 30 Oct change. Review branch `fix/refund-dedupe-review` fixes duplicate refund rows/audits and two guard blind spots: unit-tested, not merged. See "Session 2026-11-20". Earlier, 2026-11-15: **live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
+**Last updated:** 2026-11-26 (**Migration 112 applied and checked** (MFA enforced in the database: gaps 0, admin with password only sees 0 children, with the code 8, parent 3). Review found the anon key could still call `mfa_satisfied()` (harmless): **fix = migration 113** on `fix/mfa-satisfied-anon`, **not applied**. Owner live sign-in after 112, Revolut refund and declined card **not yet run**. See "Review 2026-11-26". Earlier, 2026-11-25: **Revolut works end to end in the sandbox**: parent paid €1 with Pay with Revolut → webhook → invoice paid → receipt, after PR #149 fixed the legacy-API 401. **Migration 112** (MFA enforced in the database) + Revolut settings audit built on `feat/mfa-db-enforcement`, unit-tested, **not applied**. Revolut refund + declined card not yet run. See "2026-11-25". Earlier, 2026-11-24: **review of PRs #143–#147**: sign-up copy, admin MFA, owner Platform ↔ dashboard buttons. One redirect fixed on branch `chore/review-2026-11-24`; **a database-level MFA gap was found and is documented, not fixed** (needs migration 112 with your OK). The Revolut sandbox test has started: sandbox account and Merchant key created, not yet connected. See "Review 2026-11-24". Earlier, 2026-11-20: **end-of-month wrap-up** PRs #135–#140 merged: fee refunds on Admin → Refunds, refund idempotency + Connect account check, standalone cleanup + local secret hook, **migration 110 applied** (3 public tables closed; anon sweep clean), migration grant guard for Supabase's 30 Oct change. Review branch `fix/refund-dedupe-review` fixes duplicate refund rows/audits and two guard blind spots: unit-tested, not merged. See "Session 2026-11-20". Earlier, 2026-11-15: **live Stripe test-mode checks passed**: parent pays invoice + late fee, admin refund from Creche Wise, refund made in the Stripe dashboard syncs; **time-off cover check** live-tested (warning → blocked Approve → Approve anyway, audited); PRs #132/#133 merged; review branch `chore/review-refunds-timeoff` fixes part-refund under-recording, refund idempotency, and no-DOB rooms needing 0 staff — unit-tested, not yet live. See "Session 2026-11-12 → 2026-11-15". Earlier, 2026-11-12: **Revolut made a first-class, required payment option** (PR `feat/revolut-first-class`, see [revolut-setup.md](revolut-setup.md)): one-key connect with automatic webhook, "Pay with Revolut" on invoices + late fees, crèche-own-key only; cross-crèche privacy test passed live, 64/64; staff opening a parent link now see "This link is for parents" on their dashboard; Scoil Bhríde demo tenant deleted; admin logins unlinked from test child Emma Byrne. 2026-11-11: fee payments hardened: overpayment cap + crèche alert, parent receipt email, webhook tests; SMS live: test text delivered as CrecheWise; login emails via Resend live and password reset verified; Stripe tests (b) and (c) both passed in test mode on Angels Nest; PRs #115–#118; PR #115 locked-crèche banner. Earlier: 2026-11-05 session review of 2026-10-21 → 2026-11-05: Stripe sandbox, SMS sender, PRs #110–#112 — see "Session 2026-10-21 → 2026-11-05")
 **Also governed by:** the _Early Years Hive & Funding Automation — Claude Code Implementation Addendum_ for the
 Funding & Hive Centre (Phases 1–4). Phase-0 impact map: [design/hive-funding-centre-impact-assessment.md](design/hive-funding-centre-impact-assessment.md).
 See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
@@ -16,9 +16,65 @@ See the dedicated section **"Funding & Hive Centre — Phases 1–4"** below.
 
 ---
 
+## Review 2026-11-26: PR #150 (migration 112 MFA in the database, Revolut settings audit)
+
+> Spec references: §10 (authentication, auditability), [security.md](security.md) pre-launch checklist ("Enable … MFA for admin accounts", "Review Supabase RLS policies"). Reviewed on `main` @ `b71889f` (PR #150 merged). Review fix on branch **`fix/mfa-satisfied-anon`** (unit-tested; migration 113 **not applied**).
+
+**Verification (2026-11-26, `main` @ `b71889f`):** `npx tsc --noEmit` ✅ · `npx eslint src --ext .ts,.tsx` ✅ · `npx prettier --check .` ✅ · `npx vitest run` ✅ **1261 / 136 files** · CI on `b71889f` ✅ (lint/type, unit, build) · Vercel production deploy of `b71889f` ✅ · crechewise.com/login 200. On the review branch: migration tests 38/38 (112: 20, guard: 18).
+
+| Requirement | Status | Evidence | Gap / not verified |
+|---|---|---|---|
+| Migration 112 applied to prod (`xpbavfutfejlfbmnntyl`) | ✅ | Owner ran it 2026-11-26: "Success. No rows returned". | — |
+| Every table in `public` has RLS + the restrictive `mfa_required` policy | ✅ | `node scripts/verify-mfa-policies.mjs .env.local` → **0 gaps**; check SQL "tables without the rule: 0". | — |
+| Admin with **password only** (aal1, verified authenticator) sees no data through the database | ✅ | `supabase/checks/112_mfa_check.sql` as `authenticated`: **A = 0 children**. | Simulated session (JWT claims), not a real stolen-password attack. |
+| Same admin **with the code** (aal2) sees data as before | ✅ | Check SQL: **B = 8 children**. | — |
+| Parents (no authenticator) unaffected | ✅ | Check SQL: **C = 3 children** (that parent's own, RLS-scoped). | — |
+| App still works for the owner on the live site after 112 | 🟡 | Code audit: `getSessionUser` reads profile/roles with the service role; the user-session reads (`students/actions.ts` link lookups, `orders/actions.ts` basket check, parent payments) run after `requireAdmin` (aal2) or as parents (no factor). | **Not yet signed in live** (Step 63: owner → Platform → Angels Nest → Children, Fees; then the test parent). |
+| `ensure_mfa_policy` / `mfa_policy_gaps` not callable with the public anon key | ✅ | Live probe 2026-11-26: both **401 / 42501 permission denied**. | — |
+| `mfa_satisfied()` not callable with the anon key (112's stated intent) | 🟡 fix built | **Reproduced live:** `POST /rest/v1/rpc/mfa_satisfied` with the anon key → **200 `true`**. Cause: Supabase's default privileges grant EXECUTE on new `public` functions to `anon` directly; 112 only revoked from PUBLIC. **Fix: migration 113** (`revoke execute … from anon`). | **113 not applied.** Leaked nothing (no user ⇒ no factors ⇒ always `true`), so not urgent. |
+| Future migrations can't repeat it | ✅ unit | Migration guard **rule 5** (from 113): every new `public` function must revoke EXECUTE from anon in the same migration, or mark its `create function` line `-- public-on-purpose`. Mutation-tested: adding a function with only `revoke … from public` fails the guard. | — |
+| Revolut connect / key replaced / disconnect audited | ✅ unit / 🟡 live | Unit `settings-audit.test.ts` (5). | No live entry yet: Angels Nest connected **before** #150 deployed. Shows on the next connect/replace/disconnect. |
+| Revolut in-app refund · declined card | 🟡 | Code + unit tests. | **Not run live** (next tests). |
+
+**Issues found in this review**
+
+1. **Fixed (branch `fix/mfa-satisfied-anon`):** anon could call `public.mfa_satisfied()`. Migration **113** + test in `migration-112-mfa.test.ts` + guard rule 5. Root cause documented in the migration header.
+2. **Fixed:** `scripts/verify-mfa-policies.mjs` crashed at exit on Windows (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`, exit 127) because it called `process.exit()` while network handles were closing. It now sets `process.exitCode`. The script also checks live that the anon key is refused on all three MFA functions (text tests can't see default privileges).
+3. **Not fixed, known (from 2026-11-24):** `get_user_permissions(uuid)` is callable by any signed-in user for any user id. It returns permission names only, with no child or family data. Tighten it after launch (restrict it to `auth.uid()`, or to the service role).
+4. **Limitation:** the check SQL simulates sessions with `set local role` + JWT claims. It proves the policies, not Supabase Auth's issuing of `aal`. The live sign-in (Step 63) covers the real path.
+
+**Manual configuration (owner)**
+
+1. Merge `fix/mfa-satisfied-anon` (docs, tests, script, migration file; no env changes).
+2. Supabase (`xpbavfutfejlfbmnntyl`) → SQL editor → new query → paste **`supabase/migrations/113_mfa_satisfied_no_anon.sql`** → Run. Expect "Success. No rows returned".
+3. Run `node scripts/verify-mfa-policies.mjs .env.local`. Expect `0 gaps` and `anon blocked: mfa_satisfied, mfa_policy_gaps, ensure_mfa_policy` (exit 0). Before 113 it prints `anon CAN call: mfa_satisfied (HTTP 200)` and exits 1, which is today's state.
+4. Step 63: in a private window, sign in as the owner (code) → Platform → Angels Nest dashboard → Children + Fees load. Then sign in as the test parent → invoices load.
+5. Rollback if a live page breaks: SQL in the header of 112 (and `grant execute on function public.mfa_satisfied() to anon;` for 113).
+
+**Security considerations**
+
+- The database rule only takes access away (restrictive, AND-ed). The service role bypasses RLS, so app server code is unaffected; the app's own aal2 checks (`requireAuth`) remain the first line.
+- Today only the owner has a verified authenticator. Tracy and the Flomat admin enrol by **29 Nov**; from then the rule covers them automatically, because it looks at `auth.mfa_factors`, not a role list.
+- An admin who **removes** their authenticator (MFA Reset) becomes "no factor", so the database lets aal1 through again until they re-enrol. The app still forces enrolment after the grace period. Acceptable, but the Reset button is still untested live.
+- New tables (guard rule 4) and new functions (guard rule 5) are covered by CI from migration 113 on.
+- Storage: no `storage.objects` policies exist in the migrations; files go through the service role only.
+
+**Exact commands to continue**
+
+```bash
+git fetch origin && git checkout fix/mfa-satisfied-anon
+npx vitest run src/lib/__tests__/migration-112-mfa.test.ts src/lib/__tests__/migration-grants.test.ts
+npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx prettier --check .
+npx vitest run
+# after the owner applies 113 in the SQL editor:
+node scripts/verify-mfa-policies.mjs .env.local   # 0 gaps + anon blocked: all three; exit 0
+```
+
+---
+
 ## 2026-11-25: Revolut live in the sandbox (PR #149), MFA in the database (migration 112), Revolut audit
 
-> Spec references: §10 (authentication, auditability), payments requirements (Revolut is compulsory). Migration 112 and the Revolut audit are on branch **`feat/mfa-db-enforcement`** (unit-tested, **not merged, migration not applied**).
+> Spec references: §10 (authentication, auditability), payments requirements (Revolut is compulsory). Migration 112 and the Revolut audit are on branch **`feat/mfa-db-enforcement`** (unit-tested). **Update 2026-11-26:** merged as PR #150, 112 applied and checked; see "Review 2026-11-26".
 
 | Requirement | Status | Evidence | Gap / not verified |
 |---|---|---|---|
