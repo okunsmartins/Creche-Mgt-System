@@ -1,0 +1,22 @@
+-- 113_mfa_satisfied_no_anon.sql
+--
+-- Review fix for migration 112 (found live on 2026-11-26).
+--
+-- Migration 112 meant public.mfa_satisfied() to be callable by signed-in users only, and
+-- it revoked EXECUTE from PUBLIC. But Supabase's default privileges also grant EXECUTE on
+-- every new function in `public` to `anon` directly, and revoking from PUBLIC doesn't
+-- remove a direct grant. So the public anon key could call
+-- POST /rest/v1/rpc/mfa_satisfied (it returned `true`).
+--
+-- It leaked nothing (with no signed-in user there are no authenticators to look at), but
+-- the API surface should be what we intended. The RESTRICTIVE policies only apply
+-- `to authenticated`, so anon never needs this function.
+--
+-- From this migration on, src/lib/__tests__/migration-grants.test.ts (rule 5) requires
+-- every new public function to revoke EXECUTE from anon in the same migration, unless
+-- the line is marked `-- public-on-purpose`.
+--
+-- Verify after applying: the anon call should return 401 / 42501 "permission denied".
+-- Rollback: grant execute on function public.mfa_satisfied() to anon;
+
+revoke execute on function public.mfa_satisfied() from anon;
