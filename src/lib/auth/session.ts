@@ -110,9 +110,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   // Resolve permissions for this user's school.
   let permissions: string[] = []
   if (schoolId) {
-    // @ts-expect-error — Supabase rpc() inference fails with manual Database types:
-    // Schema resolves to never so args becomes undefined. Correct at runtime.
-    const permsResult = await supabase.rpc('get_user_permissions', {
+    // Service role, like the profile / role reads above: migration 114 only lets a
+    // signed-in user ask about THEMSELVES, and the server asks for the user it has
+    // just verified with getUser(). Same answer either way; no dependency on the
+    // migration being applied first.
+    const permsResult = await adminClient.rpc('get_user_permissions', {
       p_user_id: user.id,
       p_school_id: schoolId,
     })

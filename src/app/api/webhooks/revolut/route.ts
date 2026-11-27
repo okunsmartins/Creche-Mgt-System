@@ -170,12 +170,25 @@ async function dispatchRevolutEvent(
 /** Tolerant read of the Merchant API retrieve-order response. */
 interface RetrievedRevolutOrder {
   id: string
+  /** 'payment' for money coming in; 'refund', 'chargeback', … are separate orders. */
+  type?: string
   state?: string
   amount?: number
   currency?: string
   order_amount?: { value?: number; currency?: string }
   metadata?: Record<string, string> | null
   merchant_order_ext_ref?: string | null
+}
+
+/**
+ * Only PAYMENT orders move money in. A refund (or chargeback) is its own Revolut order
+ * with its own webhooks; treating its ORDER_COMPLETED as a payment would record the
+ * refunded money as a new payment. Our records are updated by the refund action itself
+ * (refund-actions.ts → applyFeeRefund), so these events are only logged.
+ * A missing type (older API versions) counts as a payment.
+ */
+function isPaymentOrder(o: Pick<RetrievedRevolutOrder, 'type'>): boolean {
+  return !o.type || o.type.toLowerCase() === 'payment'
 }
 
 function orderAmountCents(o: RetrievedRevolutOrder): number {
@@ -196,6 +209,15 @@ async function handleOrderCompleted(
   // Authoritative source of amount/state is the Merchant API, not the webhook
   // body — re-fetched on the SAME (school or platform) account that took payment.
   const order = await revolutGet<RetrievedRevolutOrder>(`/orders/${revolutOrderId}`, apiKey)
+
+  if (!isPaymentOrder(order)) {
+    logger.info('revolut_non_payment_order_completed', {
+      revolutOrderId,
+      type: order.type,
+      state: order.state,
+    })
+    return
+  }
 
   if ((order.state ?? '').toLowerCase() !== 'completed') {
     logger.info('revolut_order_not_completed', { revolutOrderId, state: order.state })
@@ -351,6 +373,18 @@ async function handleOrderFailed(
   let localOrderId: string | null = null
   try {
     const order = await revolutGet<RetrievedRevolutOrder>(`/orders/${revolutOrderId}`, apiKey)
+    if (!isPaymentOrder(order)) {
+      // A refund Revolut couldn't complete: our records already show it as refunded
+      // (the refund action recorded it when Revolut accepted the request), so this
+      // needs a person to look at it. Logged as an error so it shows in monitoring.
+      logger.error('revolut_non_payment_order_failed', {
+        revolutOrderId,
+        type: order.type,
+        state: order.state,
+        eventType,
+      })
+      return
+    }
     localOrderId = order.metadata?.order_id ?? null
   } catch (err) {
     logger.warn('revolut_failed_order_fetch_error', {
