@@ -111,3 +111,63 @@ describe('Revolut webhook: finding the crèche', () => {
     expect(inserted).toHaveLength(0)
   })
 })
+
+describe('Revolut webhook: refund orders are not payments', () => {
+  beforeEach(async () => {
+    refSchool = null
+    inserted.length = 0
+    revolutGet.mockReset()
+    const { recordFeePayment } = await import('@/lib/fees/record-payment')
+    vi.mocked(recordFeePayment).mockClear()
+  })
+
+  // A refund is its own Revolut order (type "refund") with its own ORDER_COMPLETED.
+  // Even if it carried the original order's metadata, it must never be recorded as
+  // money coming in (that would mark the refunded invoice paid a second time).
+  it('ORDER_COMPLETED for a refund order records nothing', async () => {
+    revolutGet.mockResolvedValue({
+      id: 'ref_1',
+      type: 'refund',
+      state: 'completed',
+      amount: 100,
+      currency: 'EUR',
+      metadata: { kind: 'invoice', invoice_id: 'inv_1', school_id: 'school_b' },
+    })
+    const body = JSON.stringify({ event: 'ORDER_COMPLETED', order_id: 'ref_1' })
+    const res = await POST(request(body, 'wsk_b'))
+    expect(res.status).toBe(200)
+    const { recordFeePayment } = await import('@/lib/fees/record-payment')
+    expect(recordFeePayment).not.toHaveBeenCalled()
+    // Only the webhook_events row (dedupe), no payment.
+    expect(inserted).toHaveLength(1)
+  })
+
+  it('a failed refund order is reported, not treated as a failed payment', async () => {
+    revolutGet.mockResolvedValue({ id: 'ref_2', type: 'refund', state: 'failed' })
+    const body = JSON.stringify({ event: 'ORDER_FAILED', order_id: 'ref_2' })
+    expect((await POST(request(body, 'wsk_b'))).status).toBe(200)
+    const { logger } = await import('@/lib/logging')
+    expect(logger.error).toHaveBeenCalledWith(
+      'revolut_non_payment_order_failed',
+      expect.objectContaining({ revolutOrderId: 'ref_2', type: 'refund' }),
+    )
+  })
+
+  it('a completed PAYMENT order for an invoice is still recorded', async () => {
+    revolutGet.mockResolvedValue({
+      id: 'ord_9',
+      type: 'payment',
+      state: 'completed',
+      amount: 100,
+      currency: 'EUR',
+      metadata: { kind: 'invoice', invoice_id: 'inv_1', school_id: 'school_b' },
+    })
+    const body = JSON.stringify({ event: 'ORDER_COMPLETED', order_id: 'ord_9' })
+    expect((await POST(request(body, 'wsk_b'))).status).toBe(200)
+    const { recordFeePayment } = await import('@/lib/fees/record-payment')
+    expect(recordFeePayment).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ kind: 'invoice', subjectId: 'inv_1', amountCents: 100 }),
+    )
+  })
+})

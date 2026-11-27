@@ -7,7 +7,7 @@ The single "are we ready to launch?" list for **Creche Wise** (crechewise.com). 
 Only tick `[x]` for things actually verified in **production** (crechewise.com).
 
 **Prod Supabase project:** `xpbavfutfejlfbmnntyl`. Always confirm this ref before running SQL.
-**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) **applied 2026-11-20**. **111** (`111_audit_mfa.sql`) **applied 2026-11-21**. **112** (`112_mfa_database_enforcement.sql`, PR #150) **applied 2026-11-26** and checked (gaps 0 · A 0 · B 8 · C 3). **113** (`113_mfa_satisfied_no_anon.sql`, review fix) **not applied yet**. Next new migration = **114**.
+**Migrations applied:** through **109** (`109_platform_settings.sql`). **110** (`110_close_anon_reads.sql`, PR #138) **applied 2026-11-20**. **111** (`111_audit_mfa.sql`) **applied 2026-11-21**. **112** (`112_mfa_database_enforcement.sql`, PR #150) **applied 2026-11-26** and checked (gaps 0 · A 0 · B 8 · C 3). **113** (`113_mfa_satisfied_no_anon.sql`, PR #151) **applied 2026-11-26** and verified (anon blocked). **114** (`114_get_user_permissions_self_only.sql`, review 2026-11-27) **not applied yet**. Next new migration = **115**.
 
 ---
 
@@ -23,7 +23,7 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 
 ### Step 2: Tests left (together, one step at a time)
 - [x] Revolut sandbox: connect Angels Nest → parent pays with "Pay with Revolut" → Paid + receipt (§3). **Passed live 2026-11-25** after PR #149: card 4929…5709, €1 INV-2026-000028 → ORDER_AUTHORISED + ORDER_COMPLETED webhooks processed → invoice paid → receipt email. (Revolut Pay itself can't complete in the sandbox; card only.)
-- [ ] Revolut: a Revolut **refund** works (Admin → Fees → child → Payments → Refund), then a declined card fails cleanly.
+- [ ] Revolut: a Revolut **refund** works (Admin → Fees → child → Payments → Refund), then a declined card fails cleanly. **Merge the 2026-11-27 review PR first**: without it, Revolut's webhook for the refund order could be recorded as a new €1 payment.
 - [ ] Staff opening a parent link sees "This link is for parents" (PR #123).
 - [x] Admin → **Refunds** lists the four 14–15 Nov test fee refunds once each, total €3.00 (verified live 2026-11-21, after PRs #136 + #141).
 
@@ -41,8 +41,9 @@ Agreed 2026-11-19. "You" = owner; "Claude" = code/PRs (owner merges). Tick in a 
 - [x] **#16** this checklist updated with the verified 14–15 Nov tests.
 - [x] Owner-only buttons between Platform and the crèche dashboard (PRs #146, #147, live). The dashboard button was only clicked live **before** the #147 fix; recheck after deploy.
 - [x] **Two-step sign-in at the database level**: **migration 112** merged (PR #150) and **applied 2026-11-26**; check SQL passed (gaps 0 · admin password-only 0 children · admin with code 8 · parent 3); `verify-mfa-policies.mjs` → 0 gaps.
-- [ ] **Migration 113** (review fix: stop the public anon key calling `mfa_satisfied()`). **You:** apply it in the SQL editor, then `node scripts/verify-mfa-policies.mjs .env.local` → `0 gaps` + `anon blocked: mfa_satisfied, mfa_policy_gaps, ensure_mfa_policy`.
-- [ ] **Owner sign-in on the live site after 112** (Platform → Angels Nest dashboard → Children, Fees load) and test parent sign-in. Not done yet.
+- [x] **Migration 113** (stop the public anon key calling `mfa_satisfied()`): PR #151 merged, **applied 2026-11-26**; `verify-mfa-policies.mjs` → `0 gaps` + `anon blocked: mfa_satisfied, mfa_policy_gaps, ensure_mfa_policy`.
+- [x] **Owner sign-in on the live site after 112**: **passed 2026-11-27** (private window, code → Platform → Angels Nest dashboard → Fees lists all 8 children). Parent side proven by the check SQL (parent sees 3); a real parent sign-in happens in the declined-card test.
+- [ ] **Review 2026-11-27 PR** (Claude built, you merge): Revolut webhook ignores refund/chargeback orders (otherwise a refund could be recorded as a new payment); **migration 114** (`get_user_permissions` self-only: today anyone with the public key and a staff member's user id + crèche id can read their permission names). **You:** merge, then apply 114 in the SQL editor, then `node scripts/verify-mfa-policies.mjs .env.local` → `anon blocked: …, get_user_permissions`.
 - [x] Revolut connect / key replaced / disconnect written to the crèche's audit log (same PR; no migration).
 
 ### Step 5: Tidy-up before Tracy uses it for real
@@ -161,7 +162,7 @@ rm -rf .next/types && npx tsc --noEmit && npx eslint src --ext .ts,.tsx && npx p
 - [x] `/platform` gated by `PLATFORM_OWNER_EMAIL` (404 to everyone else).
 - [x] Public (anon) key can't read tenant data: `node scripts/anon-read-sweep.mjs` (read-only). 2026-11-20: found `payment_links`, `activity_class_eligibility`, `activity_pupil_eligibility` publicly readable (inherited policies) → **migration 110 applied**; re-run shows only `activities` (public on purpose). Service-role reads unaffected.
 - [x] No secrets in the client bundle (only `NEXT_PUBLIC_*`). 2026-11-20: production build of `main` @ `3c96a20`; 224 files in `.next/static` scanned for every server-only `.env.local` value (13) and for Stripe/Revolut/webhook/service-role/private-key patterns. **0 hits.**
-- [x] **MFA at the database level** (found in review 2026-11-24). Someone with only an admin's **password** could sign in to Supabase's data API directly (anon key, aal1) and read what the inherited admin RLS policies allow, without the code. **Fix built: migration 112** adds one RESTRICTIVE policy `mfa_required` to every RLS table: users with a verified authenticator need an `aal2` session; parents, staff and admins in grace are unaffected; the app's service-role queries are unaffected. **Not applied yet.** After applying: `supabase/checks/112_mfa_check.sql` (read-only; expect gaps 0 · A 0 · B > 0 · C > 0) and `node scripts/verify-mfa-policies.mjs .env.local` (expect `0 gaps`). Rollback SQL is in the migration header. **Update 2026-11-26: applied and checked (gaps 0 · A 0 · B 8 · C 3).** Review fix **113** (anon could call `mfa_satisfied()`, harmless) waiting to be applied. Live sign-in after 112 not yet confirmed.
+- [x] **MFA at the database level** (found in review 2026-11-24). Someone with only an admin's **password** could sign in to Supabase's data API directly (anon key, aal1) and read what the inherited admin RLS policies allow, without the code. **Fix built: migration 112** adds one RESTRICTIVE policy `mfa_required` to every RLS table: users with a verified authenticator need an `aal2` session; parents, staff and admins in grace are unaffected; the app's service-role queries are unaffected. **Not applied yet.** After applying: `supabase/checks/112_mfa_check.sql` (read-only; expect gaps 0 · A 0 · B > 0 · C > 0) and `node scripts/verify-mfa-policies.mjs .env.local` (expect `0 gaps`). Rollback SQL is in the migration header. **Update 2026-11-26: applied and checked (gaps 0 · A 0 · B 8 · C 3).** Review fix **113** applied 2026-11-26 (anon blocked). Owner live sign-in after 112 passed 2026-11-27.
 - [ ] DPIA + privacy notice reviewed for children's data.
 
 ### 4a. AIM module — keep OFF until signed off

@@ -8,7 +8,8 @@
 // 1. Calls public.mfa_policy_gaps() with the service-role key (it only reads the catalog).
 //    Expected: "0 gaps".
 // 2. Checks the public anon key can't call the MFA functions (migration 113).
-//    Expected: "anon blocked: mfa_satisfied, mfa_policy_gaps, ensure_mfa_policy".
+//    Expected: "anon blocked: mfa_satisfied, mfa_policy_gaps, ensure_mfa_policy,
+//    get_user_permissions" (the last one from migration 114).
 // Exit code 1 if anything is wrong. Sets process.exitCode instead of calling
 // process.exit(), which crashes Node on Windows while network handles are closing.
 
@@ -69,6 +70,14 @@ if (!anon) {
     ['mfa_satisfied', {}],
     ['mfa_policy_gaps', {}],
     ['ensure_mfa_policy', { p_table: 'zz_verify_does_not_exist' }],
+    // Migration 114: permission lookups only by the server or the user themselves.
+    [
+      'get_user_permissions',
+      {
+        p_user_id: '00000000-0000-0000-0000-000000000000',
+        p_school_id: '00000000-0000-0000-0000-000000000000',
+      },
+    ],
   ]) {
     const res = await fetch(`${url}/rest/v1/rpc/${fn}`, {
       method: 'POST',
@@ -85,7 +94,7 @@ if (!anon) {
   }
   if (blocked.length) console.log(`anon blocked: ${blocked.join(', ')}`)
   if (open.length) {
-    console.log(`anon CAN call: ${open.join(', ')}  (is migration 113 applied?)`)
+    console.log(`anon CAN call: ${open.join(', ')}  (are migrations 113 and 114 applied?)`)
     ok = false
   }
 }
